@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const router = express.Router();
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const mariadbPool = mysql.createPool({
   host: 'ec2-54-205-4-218.compute-1.amazonaws.com',
