@@ -23,7 +23,7 @@ function formatAndValidatePhone(input) {
 }
 
 router.get('/gpt/getCode', async (req, res) => {
-  const { phone } = req.body;
+  const { phone } = req.query.phone;
   const formattedPhone = formatAndValidatePhone(phone);
   if (!formattedPhone) {
     return res.status(400).json({ success: false, message: 'Phone number invalid' });
