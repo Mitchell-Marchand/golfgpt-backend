@@ -23,5 +23,5 @@ app.use('/', agenticRoutes);
 app.use('/', golfgptRoutes);
 
 const PORT = process.env.PORT;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
 
