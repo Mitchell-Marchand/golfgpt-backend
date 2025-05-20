@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
+const twilio = require('twilio');
 require('dotenv').config();
 
 const router = express.Router();
