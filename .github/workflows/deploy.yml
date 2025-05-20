@@ -23,7 +23,8 @@ jobs:
       run: |
         ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o LogLevel=ERROR ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
           cd /home/ec2-user/agentic-picks-backend &&
-          git pull origin main &&
+          git fetch origin main &&
+	  git reset --hard origin/main &&
           npm install &&
           pm2 restart index.js || pm2 start index.js --name backend
         "
