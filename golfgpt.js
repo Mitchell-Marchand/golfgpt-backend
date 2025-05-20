@@ -1,4 +1,3 @@
-// golfgpt.js
 const express = require('express');
 const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
@@ -10,7 +9,7 @@ const router = express.Router();
 const mariadbPool = mysql.createPool({
   host: 'ec2-54-205-4-218.compute-1.amazonaws.com',
   user: 'golfuser',
-  password: 'GolfGPTPass1234++!',
+  password: process.env.DB_PASS,
   database: 'golfpicks',
   waitForConnections: true,
   connectionLimit: 10,
