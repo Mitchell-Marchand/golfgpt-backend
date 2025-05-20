@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
 
+console.log('✅ Loaded PORT:', process.env.PORT);
+
 const agenticRoutes = require('./agentic');
 const golfgptRoutes = require('./golfgpt');
 
