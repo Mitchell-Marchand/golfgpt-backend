@@ -127,9 +127,13 @@ async function getGhinToken() {
     const loginRes = await axios.post(
       "https://api2.ghin.com/api/v1/golfer_login.json",
       {
-        email_or_ghin: GHIN_EMAIL,
+        user: {
+          password: GHIN_PASSWORD,
+          remember_me: true,
+          email_or_ghin: GHIN_EMAIL,
+        },
         password: GHIN_PASSWORD,
-        source: "ghincom",
+        source: "GHINcom",
         token: uuidv4()
       },
       {
