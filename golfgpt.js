@@ -146,6 +146,7 @@ async function getGhinToken() {
     );
 
     const token = loginRes.data.golfer_user_token;
+    console.log("response from login", loginRes.data);
     cachedToken = token;
     tokenFetchedAt = Date.now();
     return token;
