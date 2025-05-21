@@ -130,7 +130,7 @@ async function getGhinToken() {
         email_or_ghin: GHIN_EMAIL,
         password: GHIN_PASSWORD,
         source: "ghincom",
-        token: ""
+        token: uuidv4()
       },
       {
         headers: {
