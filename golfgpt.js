@@ -185,4 +185,38 @@ router.get("/gpt/ghin/courses", async (req, res) => {
   }
 });
 
+router.get("/gpt/ghin/course-details", async (req, res) => {
+  const { courseId } = req.query;
+  if (!courseId) {
+    return res.status(400).json({ success: false, message: "Missing courseId" });
+  }
+
+  try {
+    const token = await getGhinToken();
+
+    const ghResponse = await axios.get(
+      "https://api2.ghin.com/api/v1/crsCourseMethods.asmx/GetCourseDetails.json",
+      {
+        params: {
+          courseId,
+          include_altered_tees: false,
+          source: "GHINcom",
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Origin: "https://www.ghin.com",
+          Referer: "https://www.ghin.com/",
+        },
+      }
+    );
+
+    res.status(200).json({ success: true, results: ghResponse.data });
+  } catch (err) {
+    console.error("GHIN course details error:", err.response?.data || err.message);
+    res.status(500).json({ success: false, message: "Failed to fetch course details" });
+  }
+});
+
+
 module.exports = router;
