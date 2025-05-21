@@ -3,6 +3,7 @@ const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
+const axios = require('axios');
 require('dotenv').config();
 
 const router = express.Router();
@@ -106,6 +107,75 @@ router.post('/gpt/register', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+let cachedToken = null;
+let tokenFetchedAt = null;
+const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
+
+const GHIN_EMAIL = process.env.GHIN_EMAIL;
+const GHIN_PASSWORD = process.env.GHIN_PASSWORD;
+
+async function getGhinToken() {
+  // reuse if token is recent
+  if (cachedToken && Date.now() - tokenFetchedAt < TOKEN_TTL_MS) {
+    return cachedToken;
+  }
+
+  try {
+    const loginRes = await axios.post(
+      "https://api2.ghin.com/api/v1/golfer_login.json",
+      {
+        email_or_ghin: GHIN_EMAIL,
+        password: GHIN_PASSWORD,
+        source: "ghincom",
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://www.ghin.com",
+          Referer: "https://www.ghin.com/",
+        },
+      }
+    );
+
+    const token = loginRes.data.golfer_user_token;
+    cachedToken = token;
+    tokenFetchedAt = Date.now();
+    return token;
+  } catch (err) {
+    console.error("GHIN login failed:", err.response?.data || err.message);
+    throw new Error("Login to GHIN failed.");
+  }
+}
+
+router.get("/gpt/ghin/courses", async (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    return res.status(400).json({ success: false, message: "Missing query" });
+  }
+
+  try {
+    const token = await getGhinToken();
+
+    const response = await axios.get(
+      "https://api2.ghin.com/api/v1/crsCourseMethods.asmx/SearchCourses.json",
+      {
+        params: { name: query, source: "GHINcom" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Origin: "https://www.ghin.com",
+          Referer: "https://www.ghin.com/",
+        },
+      }
+    );
+
+    res.status(200).json({ success: true, results: response.data });
+  } catch (error) {
+    console.error("GHIN course search error:", error?.response?.data || error.message);
+    res.status(500).json({ success: false, message: "Failed to fetch courses" });
   }
 });
 
