@@ -80,15 +80,23 @@ Return ONLY a valid JSON object with the following structure:
           "holeNumber": number,
           "par": number,
           "yardage": number,
-          "courseHandicap": number, // the player's handicap for this hole
-          "score": null, // placeholder, to be filled in by the user later
-          "strokes": number, // the number of strokes deducted on this hole
-          "netScore": null // placeholder, to be calculated after score is added
+          "courseHandicap": number, // the index of the hole (1-18) based on the tee set being played
+          "score": null,
+          "strokes": number,
+          "netScore": null
         }
       ]
     }
   ]
 }
+
+Instructions:
+- Use the matchData.selectedTees to determine which tee each golfer is playing.
+- Use matchData.scorecards to find the correct tee set and extract:
+  - hole yardage,
+  - par,
+  - and allocation (courseHandicap) for each hole.
+- Set courseHandicap = allocation value from the matching tee set hole.
 
 **Requirements**:
 - Calculate strokes per hole based on each golfer's course handicap and tee selection.
