@@ -13,6 +13,7 @@ async function authenticateUser(req, res, next) {
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET)
     req.user = user // Attach user to request
+    console.log("user authenticated", user);
     next()
   } catch (err) {
     return res.status(403).json({ error: 'Invalid or expired token' })
