@@ -22,7 +22,7 @@ const mariadbPool = mysql.createPool({
 router.post("/start", authenticateUser, async (req, res) => {
     const { matchData, rules } = req.body
 
-    const createdBy = req.user
+    const createdBy = req.user.id
     matchData.createdBy = createdBy
 
     const courseId = matchData?.course?.CourseID
