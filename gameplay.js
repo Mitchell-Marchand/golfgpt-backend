@@ -75,14 +75,14 @@ router.post("/start", authenticateUser, async (req, res) => {
         content: fullPrompt,
     });
 
-    console.log("Prompt sent");
+    console.log("Prompt sent", fullPrompt);
 
     // Run GPT assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
         assistant_id: process.env.ASSISTANT_ID, // ⬅️ you set this in your OpenAI dashboard
     })
 
-    console.log("run started");
+    console.log("polling started");
 
     // Poll for completion
     let result
@@ -92,7 +92,7 @@ router.post("/start", authenticateUser, async (req, res) => {
         await new Promise((r) => setTimeout(r, 1000))
     }
 
-    console.lof("polling completed")
+    console.log("polling completed")
 
     const messages = await openai.beta.threads.messages.list(thread.id)
     const last = messages.data.find((m) => m.role === "assistant")
