@@ -75,6 +75,7 @@ Return ONLY a valid JSON object with the following structure:
     {
       "playerName": string,
       "tees": string,
+      "chancesOfWinning": 50 // percent chance of the player winning the match based on how things have gone so far
       "holes": [
         {
           "holeNumber": number,
@@ -83,7 +84,8 @@ Return ONLY a valid JSON object with the following structure:
           "courseHandicap": number, // the index of the hole (1-18) based on the tee set being played
           "score": null,
           "strokes": number,
-          "netScore": null
+          "netScore": null,
+          "moneyWonLost": null, //Amount of money the golfer won/lost on that hole, which will be updated as scores are posted
         }
       ]
     }
