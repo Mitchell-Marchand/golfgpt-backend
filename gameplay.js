@@ -162,7 +162,7 @@ Instructions:
         const matchId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Matches 
-            (id, threadId, createdBy, golfers, courseId, isPublic, displayName, teeTime, results) 
+            (id, threadId, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 matchId,
@@ -174,6 +174,7 @@ Instructions:
                 gameName,
                 new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
                 JSON.stringify(scorecard),
+                JSON.stringify(additionalInputs)
             ]
         );
 
