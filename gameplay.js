@@ -64,11 +64,19 @@ Now, respond ONLY with a JSON object using this format:
 
 {
   "gameName": string,         // A concise and fun name for the game based on the rules and golfers
-  "confirmation": string      // A detailed explanation in your own words confirming your full understanding of the rules, including the format, scoring, pops/strokes, and any money rules mentioned. Confirm how you will calculate and track results.
+  "confirmation": string,     // A detailed explanation in your own words confirming your full understanding of the rules, including the format, scoring, pops/strokes, and any money rules mentioned. Confirm how you will calculate and track results.
+  "additionalInputs": [       // Optional inputs to collect from the user on each hole
+    {
+      "question": string,     // What question should be asked for that hole
+      "answers": string[]     // List of possible answers to show the user as options (can be empty if free text is allowed)
+    }
+  ]
 }
 
+For example, this could include things like whether there were presses, greenies, sandies, or who played with whom on a given hole.
+
 Do NOT include any explanation outside the JSON.
-        `;
+`;
 
         await openai.beta.threads.messages.create(thread.id, {
             role: "user",
@@ -105,6 +113,7 @@ Do NOT include any explanation outside the JSON.
 
         let gameName = 'Untitled Match';
         let confirmation = '';
+        let additionalInputs = [];
 
         try {
             const cleaned = content
@@ -115,8 +124,9 @@ Do NOT include any explanation outside the JSON.
             const parsed = JSON.parse(cleaned);
             gameName = parsed.gameName ?? gameName;
             confirmation = parsed.confirmation ?? '';
+            additionalInputs = parsed.additionalInputs ?? [];
         } catch (err) {
-            console.error('⚠️ Failed to parse GPT response:', content);
+            console.error('Failed to parse GPT response:', content);
         }
 
         // Save match to DB
@@ -129,7 +139,7 @@ Do NOT include any explanation outside the JSON.
                 matchId,
                 thread.id,
                 matchData.createdBy,
-                JSON.stringify(matchData.selectedTees),
+                matchData.selectedTees,
                 courseId,
                 matchData.isPublic ?? true,
                 gameName,
