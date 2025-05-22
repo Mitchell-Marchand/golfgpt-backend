@@ -139,7 +139,7 @@ Do NOT include any explanation outside the JSON.
                 matchId,
                 thread.id,
                 matchData.createdBy,
-                matchData.selectedTees,
+                JSON.stringify(matchData.selectedTees),
                 courseId,
                 matchData.isPublic ?? true,
                 gameName,
