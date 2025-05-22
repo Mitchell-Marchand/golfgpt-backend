@@ -22,15 +22,21 @@ const mariadbPool = mysql.createPool({
 router.post("/update", authenticateUser, async (req, res) => {
     try {
         const { threadId, holeResults, matchId, oldResults } = req.body;
+
+        const file = await openai.files.create({
+            purpose: "assistants",
+            file: Readable.from([JSON.stringify(oldResults)]),
+            name: "old_results.json",
+        });
+
         const prompt = `
 You are a golf scoring assistant.
 
-The user just submitted results for hole ${holeResults?.[Object.keys(holeResults)[0]]?.holeNumber ?? 'X'}.
+The user just submitted results for hole ${currentHoleNumber}.
 Here is the hole result data:
 ${JSON.stringify(holeResults, null, 2)}
 
-Here are the match results before this hole:
-${JSON.stringify(oldResults, null, 2)}
+The previous results are available in the file 'old_results.json'.
 
 Update the match results using the new hole data.
 
@@ -38,15 +44,14 @@ Requirements:
 - Update each golfer's score, strokes, netScore, and moneyWonLost for that hole.
 - Update their winLossBalance and chancesOfWinning across the full match.
 - If the hole has already been filled out, overwrite the values with the new results.
-- Only return valid JSON with the updated full match results in the same format as oldResults.
+- Only return valid JSON with the updated full match results in the same format as the file.
 - Do not explain anything or include extra commentary.
 `;
-
-console.log(prompt);
 
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: prompt,
+            file_ids: [file.id],
         });
 
         const run = await openai.beta.threads.runs.create(threadId, {
