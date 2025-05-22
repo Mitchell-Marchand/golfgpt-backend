@@ -133,6 +133,7 @@ Return ONLY a valid JSON object with the following structure:
         let gameName = 'Untitled Match';
         let confirmation = '';
         let additionalInputs = [];
+        let scorecard = [];
 
         try {
             const cleaned = content
@@ -144,6 +145,7 @@ Return ONLY a valid JSON object with the following structure:
             gameName = parsed.gameName ?? gameName;
             confirmation = parsed.confirmation ?? '';
             additionalInputs = parsed.additionalInputs ?? [];
+            scorecard = parsed.scorecard ?? [];
         } catch (err) {
             console.error('Failed to parse GPT response:', content);
         }
@@ -163,11 +165,11 @@ Return ONLY a valid JSON object with the following structure:
                 matchData.isPublic ?? true,
                 gameName,
                 new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
-                null,
+                JSON.stringify(scorecard),
             ]
         );
 
-        res.json({ inputs: additionalInputs, gameName, confirmation, matchId });
+        res.json({ inputs: additionalInputs, scorecard, gameName, confirmation, matchId });
 
     } catch (err) {
         console.error("Error in /start:", err);
