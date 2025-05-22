@@ -42,6 +42,8 @@ Requirements:
 - Do not explain anything or include extra commentary.
 `;
 
+console.log(prompt);
+
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: prompt,
@@ -91,10 +93,8 @@ Requirements:
         );
 
         res.json({ updatedResults });
-
-
     } catch (err) {
-        console.error("Error in /start:", err);
+        console.error("Error in /update:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
