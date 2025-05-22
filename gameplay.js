@@ -52,53 +52,51 @@ router.post("/start", authenticateUser, async (req, res) => {
         const fullPrompt = `
 You are a golf scoring assistant.
 
-You are provided with structured match data as a JSON object. This includes:
-- Golfers and selected tees
-- Course and hole details
-- Tee time
-- Whether the match is public
-- A natural-language description of the game rules written by the user
-
----
-
-Here is the match data:
+Here is the match data as JSON:
 ${JSON.stringify(matchData, null, 2)}
 
-Here is the user's description of the rules:
+Here is the user's description of the game rules:
 "${rules}"
 
----
+You will help calculate results for each golfer on every hole.
 
-Your job is to:
-1. Understand the game and rules.
-2. Identify **any additional questions** the user must answer **after each hole** in order to calculate correct results.
-3. Return a structured JSON object with the information below.
+Return ONLY a valid JSON object with the following structure:
 
-🏌️ Special Instructions:
-- Some game types have *expected behaviors*. If the user mentions "Scotch", "Nassau", "Greenies", "Skins", etc., you should **assume proximity (closest to the pin in regulation)** and include a question about it unless told otherwise.
-- Do not ask about things you can determine from the score (e.g. team scores, who won the hole).
-- Do not ask about automatic game rules — just apply them.
-- If a bet can be doubled or quadrupled, collapse that into one question: “Was the bet increased?” with answers like: "No", "Doubled", "Quadrupled".
-
-All questions must be written in **past tense**, as they are being asked *after* the hole has been played.
-
----
-
-Return this JSON ONLY (do not include explanation or commentary):
-
-\`\`\`json
 {
-  "gameName": string,          // a short, fun name for the game
-  "confirmation": string,      // a clear explanation of the rules as understood
-  "additionalInputs": [        // questions for the user after each hole
+  "gameName": string, // a fun, descriptive name for the match
+  "confirmation": string, // a confirmation that explains your understanding of the format and rules in detail
+  "additionalInputs": [
     {
-      "question": string,
-      "answers": string[]
+      "question": string, // a question that needs to be asked after each hole
+      "answers": string[] // possible answers
+    }
+  ],
+  "scorecard": [
+    {
+      "playerName": string,
+      "tees": string,
+      "holes": [
+        {
+          "holeNumber": number,
+          "par": number,
+          "yardage": number,
+          "courseHandicap": number, // the player's handicap for this hole
+          "score": null, // placeholder, to be filled in by the user later
+          "strokes": number, // the number of strokes deducted on this hole
+          "netScore": null // placeholder, to be calculated after score is added
+        }
+      ]
     }
   ]
 }
-\`\`\`
+
+**Requirements**:
+- Calculate strokes per hole based on each golfer's course handicap and tee selection.
+- Even if the user has not provided handicaps, return the rest of the structure with \`strokes: 0\`.
+- All holes should be populated using data from the selected course and tees.
+- Do not explain or include anything outside the JSON.
 `;
+
 
         await openai.beta.threads.messages.create(thread.id, {
             role: "user",
