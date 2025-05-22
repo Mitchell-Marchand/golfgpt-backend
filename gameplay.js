@@ -4,7 +4,8 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 require('dotenv').config();
 const OpenAI = require("openai");
-const { Readable } = require("stream");
+const fs = require("fs");
+const path = require("path");
 
 // Initialize OpenAI
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -24,11 +25,16 @@ router.post("/update", authenticateUser, async (req, res) => {
     try {
         const { threadId, holeResults, matchId, oldResults } = req.body;
 
+        const filePath = path.join(__dirname, `temp_old_results_${matchId}.json`);
+        fs.writeFileSync(filePath, JSON.stringify(oldResults));
+
         const file = await openai.files.create({
             purpose: "assistants",
-            file: Buffer.from(JSON.stringify(oldResults)),
-            name: "old_results.json",
+            file: fs.createReadStream(filePath),
+            name: `old_results_${matchId}.json`,
         });
+
+        fs.unlinkSync(filePath);
 
         const prompt = `
 You are a golf scoring assistant.
@@ -37,7 +43,7 @@ The user just submitted results for hole ${currentHoleNumber}.
 Here is the hole result data:
 ${JSON.stringify(holeResults, null, 2)}
 
-The previous results are available in the file 'old_results.json'.
+The previous results are available in the file 'old_results_${matchId}.json'.
 
 Update the match results using the new hole data.
 
