@@ -60,13 +60,14 @@ Here is the user's description of the game rules:
 
 You will help calculate results for each golfer on every hole.
 
-First, please respond ONLY with a JSON object using this format:
+Now, respond ONLY with a JSON object using this format:
+
 {
-  "gameName": string,
-  "confirmation": string
+  "gameName": string,         // A concise and fun name for the game based on the rules and golfers
+  "confirmation": string      // A detailed explanation in your own words confirming your full understanding of the rules, including the format, scoring, pops/strokes, and any money rules mentioned. Confirm how you will calculate and track results.
 }
 
-Do not include any explanation outside the JSON.
+Do NOT include any explanation outside the JSON.
         `;
 
         await openai.beta.threads.messages.create(thread.id, {
