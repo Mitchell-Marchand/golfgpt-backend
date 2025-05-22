@@ -52,30 +52,44 @@ router.post("/start", authenticateUser, async (req, res) => {
         const fullPrompt = `
 You are a golf scoring assistant.
 
-Here is the match data as JSON:
+You are provided with structured match data as a JSON object. This includes the golfers, the course and tee information, tee time, and selected tees per golfer. The user has also written a free-form description of the game rules.
+
+Your job is to understand how scoring should be handled on each hole based on this data.
+
+---
+
+Here is the match data:
 ${JSON.stringify(matchData, null, 2)}
 
-Here is the user's description of the game rules:
+Here is the user's description of the rules:
 "${rules}"
 
-You will help calculate results for each golfer on every hole.
+---
 
-Now, respond ONLY with a JSON object using this format:
+❗️You will assist the user by evaluating scoring after each hole. In addition to collecting gross scores per golfer, you must also determine what other data should be collected after each hole in order to accurately compute results according to the rules of the game.
 
+🔁 Return a JSON object in the following format, and **nothing else**:
+
+\`\`\`json
 {
-  "gameName": string,         // A concise and fun name for the game based on the rules and golfers
-  "confirmation": string,     // A detailed explanation in your own words confirming your full understanding of the rules, including the format, scoring, pops/strokes, and any money rules mentioned. Confirm how you will calculate and track results.
-  "additionalInputs": [       // Optional inputs to collect from the user on each hole
+  "gameName": string, // A fun, clear name for the game
+  "confirmation": string, // A detailed summary of the rules and format that shows you understand how scoring should be done
+  "additionalInputs": [
     {
-      "question": string,     // What question should be asked for that hole
-      "answers": string[]     // List of possible answers to show the user as options (can be empty if free text is allowed)
-    }
+      "question": string, // A past-tense question to ask the user after each hole
+      "answers": string[] // Possible responses
+    },
+    ...
   ]
 }
+\`\`\`
 
-For example, this could include things like whether there were presses, greenies, sandies, or who played with whom on a given hole.
-
-Do NOT include any explanation outside the JSON.
+Guidelines:
+- Use **past tense** in the questions (e.g. "Was the bet doubled?" not "Would you like to double?").
+- Only include additional questions that are **relevant to scoring** based on the rules.
+- If the game includes things like presses, automatic doubles, greenies, sandies, or team-based formats, ask about those.
+- Be concise but accurate in the confirmation.
+- Do NOT include any explanation or commentary outside the JSON block.
 `;
 
         await openai.beta.threads.messages.create(thread.id, {
