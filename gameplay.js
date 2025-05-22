@@ -178,7 +178,7 @@ Instructions:
             ]
         );
 
-        const [matches] = await mariadbPool.query('SELECT * FROM Users MATCHES id = ?', [matchId]);
+        const [matches] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
         res.json({ match: matches[0], confirmation });
     } catch (err) {
         console.error("Error in /start:", err);
