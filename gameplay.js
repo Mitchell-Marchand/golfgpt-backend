@@ -52,10 +52,13 @@ router.post("/start", authenticateUser, async (req, res) => {
         );
 
         if (existing.length === 0) {
+            console.log("Creating course", courseId);
             await mariadbPool.query(
                 `INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)`,
                 [courseId, courseName, scorecards]
             );
+        } else {
+            console.log("Course already created", courseId);
         }
 
         const matchId = uuidv4();
@@ -111,6 +114,8 @@ Instructions:
 - If handicaps are not provided, use strokes = 0.
 - DO NOT return any explanation — JSON only.`;
 
+        console.log("prompts generated");
+
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
@@ -121,9 +126,13 @@ Instructions:
             max_tokens: 4000,
         });
 
+        console.log("chat completions sent");
+
         const reply = response.choices[0].message.content;
         await storeMessage(matchId, userPrompt);
         await storeMessage(matchId, reply);
+
+        console.log("messages stored");
 
         let parsed = {};
         try {
@@ -131,6 +140,8 @@ Instructions:
         } catch (err) {
             return res.status(400).json({ error: 'Invalid JSON from GPT', raw: reply });
         }
+
+        console.log("got response", parsed);
 
         await mariadbPool.query(
             `INSERT INTO Matches 
@@ -148,6 +159,8 @@ Instructions:
                 JSON.stringify(parsed.additionalInputs ?? [])
             ]
         );
+
+        console.log("created match");
 
         const [match] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
         res.json({ match: match[0], confirmation: parsed.confirmation });
