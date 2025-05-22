@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware')
 require('dotenv').config();
-import OpenAI from "openai"
+const OpenAI = require("openai")
 
 // You'll want to set this securely in an .env file
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -98,7 +98,7 @@ app.post("/start", authenticateUser, async (req, res) => {
     }
 
     // Save match to DB
-    const matchId = crypto.randomUUID()
+    const matchId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Matches 
        (id, threadId, createdBy, golfers, courseId, isPublic, displayName, teeTime, results) 
