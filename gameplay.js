@@ -53,12 +53,11 @@ router.post("/start", authenticateUser, async (req, res) => {
 You are a golf scoring assistant.
 
 You are provided with structured match data as a JSON object. This includes:
-- The list of golfers
-- Selected tees
-- Course and hole information
+- Golfers and selected tees
+- Course and hole details
 - Tee time
 - Whether the match is public
-- A free-form description of the game rules written by the user
+- A natural-language description of the game rules written by the user
 
 ---
 
@@ -70,40 +69,35 @@ Here is the user's description of the rules:
 
 ---
 
-You will calculate results after each hole is played.
+Your job is to:
+1. Understand the game and rules.
+2. Identify **any additional questions** the user must answer **after each hole** in order to calculate correct results.
+3. Return a structured JSON object with the information below.
 
-Before scoring can occur, identify **any additional information that must be collected after each hole** based on the rules. These are questions the user will be prompted to answer **after** the hole is complete.
+🏌️ Special Instructions:
+- Some game types have *expected behaviors*. If the user mentions "Scotch", "Nassau", "Greenies", "Skins", etc., you should **assume proximity (closest to the pin in regulation)** and include a question about it unless told otherwise.
+- Do not ask about things you can determine from the score (e.g. team scores, who won the hole).
+- Do not ask about automatic game rules — just apply them.
+- If a bet can be doubled or quadrupled, collapse that into one question: “Was the bet increased?” with answers like: "No", "Doubled", "Quadrupled".
 
-❗️Be smart: if a rule like automatic doubling is described, it should be enforced internally based on the game state — do **not** ask the user to confirm it.
-
-If a hole cannot be both doubled and quadrupled, collapse those into a single multiple-choice question:  
-"Was the bet increased on this hole?" → with answers like "No", "Doubled", "Quadrupled".
-
-If the game includes proximity, greenies, or side games, include past-tense questions like:  
-"Who had closest to the pin on this hole?"
+All questions must be written in **past tense**, as they are being asked *after* the hole has been played.
 
 ---
 
-Return a single JSON object only (nothing else), in the format:
+Return this JSON ONLY (do not include explanation or commentary):
 
 \`\`\`json
 {
-  "gameName": string,          // a fun name for the match
-  "confirmation": string,      // confirmation that you understand how scoring works
-  "additionalInputs": [        // questions to ask the user after each hole
+  "gameName": string,          // a short, fun name for the game
+  "confirmation": string,      // a clear explanation of the rules as understood
+  "additionalInputs": [        // questions for the user after each hole
     {
-      "question": string,      // past-tense question
-      "answers": string[]      // multiple choice options
+      "question": string,
+      "answers": string[]
     }
   ]
 }
 \`\`\`
-
-Rules:
-- Use **past-tense** in all questions.
-- Do **not** include explanation outside the JSON block.
-- Only include questions that the user **must answer manually** in order to score the hole correctly.
-- If something is deterministic from data (e.g., team assignments or auto-doubles), just apply it — don’t ask the user.
 `;
 
         await openai.beta.threads.messages.create(thread.id, {
