@@ -102,14 +102,20 @@ Do not include any explanation outside the JSON.
         const last = messages.data.find((m) => m.role === "assistant");
         const content = last?.content?.[0]?.text?.value || "{}";
 
-        let gameName = "Untitled Match";
-        let confirmation = "";
+        let gameName = 'Untitled Match';
+        let confirmation = '';
+
         try {
-            const parsed = JSON.parse(content);
-            gameName = parsed.gameName || gameName;
-            confirmation = parsed.confirmation || "";
+            const cleaned = content
+                .replace(/^```json\s*/i, '')
+                .replace(/```$/, '')
+                .trim();
+
+            const parsed = JSON.parse(cleaned);
+            gameName = parsed.gameName ?? gameName;
+            confirmation = parsed.confirmation ?? '';
         } catch (err) {
-            console.error("Failed to parse GPT response:", content);
+            console.error('⚠️ Failed to parse GPT response:', content);
         }
 
         // Save match to DB
@@ -126,7 +132,7 @@ Do not include any explanation outside the JSON.
                 courseId,
                 matchData.isPublic ?? true,
                 gameName,
-                matchData.teeTime,
+                new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
                 null,
             ]
         );
