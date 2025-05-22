@@ -163,7 +163,7 @@ Instructions:
         await mariadbPool.query(
             `INSERT INTO Matches 
             (id, threadId, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 matchId,
                 thread.id,
