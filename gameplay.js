@@ -43,7 +43,7 @@ The user just submitted results for hole ${currentHoleNumber}.
 Here is the new hole result data:
 ${JSON.stringify(holeResults, null, 2)}
 
-The previous match results are included in the attached file.
+The previous match results are provided as a file attached to this run.
 
 Your task:
 - Combine the new hole results with the prior match data from the file.
@@ -57,11 +57,11 @@ Your task:
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: prompt,
-            files: [file.id],
         });
 
         const run = await openai.beta.threads.runs.create(threadId, {
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
+            file_ids: [file.id]
         });
 
         console.log("Polling for run to complete...");
