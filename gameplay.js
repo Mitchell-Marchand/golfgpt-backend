@@ -78,9 +78,10 @@ router.post("/start", authenticateUser, async (req, res) => {
     console.log("Prompt sent", fullPrompt);
 
     // Run GPT assistant
-    const run = await openai.beta.threads.runs.create(thread.id, {
-        assistant_id: process.env.ASSISTANT_ID, // ⬅️ you set this in your OpenAI dashboard
-    })
+    const run = await openai.beta.threads.runs.create({
+        thread_id: thread.id,
+        assistant_id: process.env.OPENAI_ASSISTANT_ID,
+    });
 
     console.log("polling started");
 
