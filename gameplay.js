@@ -106,7 +106,6 @@ Return this JSON ONLY (do not include explanation or commentary):
         });
 
         console.log("Prompt sent");
-        console.log("assistant ID", process.env.OPENAI_ASSISTANT_ID);
 
         // Start Assistant Run (✅ fix applied here)
         const run = await openai.beta.threads.runs.create(thread.id, {
