@@ -7,13 +7,14 @@ console.log('✅ Loaded PORT:', process.env.PORT);
 
 const agenticRoutes = require('./agentic');
 const golfgptRoutes = require('./golfgpt');
+const gamePlayRoutes = require('./gameplay');
 
 const app = express();
 
 const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
 
@@ -23,6 +24,7 @@ app.use(bodyParser.json());
 
 app.use('/', agenticRoutes);
 app.use('/', golfgptRoutes);
+app.use('/game', gamePlayRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
