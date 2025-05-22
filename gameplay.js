@@ -25,13 +25,13 @@ router.post("/update", authenticateUser, async (req, res) => {
     try {
         const { threadId, holeResults, matchId, oldResults } = req.body;
 
+        const currentHoleNumber = holeResults?.[Object.keys(holeResults)[0]]?.holeNumber;
         const filePath = path.join(__dirname, `temp_old_results_${matchId}.json`);
         fs.writeFileSync(filePath, JSON.stringify(oldResults));
 
         const file = await openai.files.create({
             purpose: "assistants",
-            file: fs.createReadStream(filePath),
-            name: `old_results_${matchId}.json`,
+            file: fs.createReadStream(filePath)
         });
 
         fs.unlinkSync(filePath);
@@ -40,19 +40,18 @@ router.post("/update", authenticateUser, async (req, res) => {
 You are a golf scoring assistant.
 
 The user just submitted results for hole ${currentHoleNumber}.
-Here is the hole result data:
+Here is the new hole result data:
 ${JSON.stringify(holeResults, null, 2)}
 
-The previous results are available in the file 'old_results_${matchId}.json'.
+The previous match results are included in the attached file.
 
-Update the match results using the new hole data.
-
-Requirements:
-- Update each golfer's score, strokes, netScore, and moneyWonLost for that hole.
-- Update their winLossBalance and chancesOfWinning across the full match.
-- If the hole has already been filled out, overwrite the values with the new results.
-- Only return valid JSON with the updated full match results in the same format as the file.
-- Do not explain anything or include extra commentary.
+Your task:
+- Combine the new hole results with the prior match data from the file.
+- For each golfer, update their score, strokes, netScore, and moneyWonLost for this hole.
+- Recalculate winLossBalance and chancesOfWinning for each golfer across the match.
+- Overwrite any existing data for this hole if it exists.
+- Return ONLY the updated match results as valid JSON in the exact format of the original match results.
+- Do NOT include any explanations or extra text. Return JSON only.
 `;
 
         await openai.beta.threads.messages.create(threadId, {
