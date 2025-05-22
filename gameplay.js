@@ -59,9 +59,10 @@ Your task:
             content: prompt,
         });
 
-        const run = await openai.beta.threads.runs.create(threadId, {
+        const run = await openai.beta.assistants.createRun({
+            thread_id: threadId,
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
-            file_ids: [file.id]
+            additional_files: [file.id], // ✅ this is the CORRECT parameter
         });
 
         console.log("Polling for run to complete...");
