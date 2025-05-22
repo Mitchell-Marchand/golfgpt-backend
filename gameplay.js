@@ -148,7 +148,7 @@ Do NOT include any explanation outside the JSON.
             ]
         );
 
-        res.json({ threadId: thread.id, gameName, confirmation, matchId });
+        res.json({ inputs: additionalInputs, gameName, confirmation, matchId });
 
     } catch (err) {
         console.error("Error in /start:", err);
