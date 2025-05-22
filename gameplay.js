@@ -177,8 +177,8 @@ Instructions:
             ]
         );
 
-        res.json({ inputs: additionalInputs, scorecard, gameName, confirmation, matchId });
-
+        const [matches] = await mariadbPool.query('SELECT * FROM Users MATCHES id = ?', [matchId]);
+        res.json({ matches: matches[0], confirmation });
     } catch (err) {
         console.error("Error in /start:", err);
         res.status(500).json({ error: "Internal Server Error" });
