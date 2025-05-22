@@ -36,14 +36,19 @@ router.post("/start", authenticateUser, async (req, res) => {
     )
 
     if (existing.length === 0) {
+        console.log("Creating course", courseId);
         await mariadbPool.query(
             `INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)`,
             [courseId, courseName, scorecards]
         )
+    } else {
+        console.log("Course already created", courseId);
     }
 
     // Create GPT thread
-    const thread = await openai.beta.threads.create()
+    const thread = await openai.beta.threads.create();
+
+    console.log("Thread created", thread.id);
 
     const fullPrompt = `
   You are a golf scoring assistant.
@@ -68,12 +73,16 @@ router.post("/start", authenticateUser, async (req, res) => {
     await openai.beta.threads.messages.create(thread.id, {
         role: "user",
         content: fullPrompt,
-    })
+    });
+
+    console.log("Prompt sent");
 
     // Run GPT assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
         assistant_id: process.env.ASSISTANT_ID, // ⬅️ you set this in your OpenAI dashboard
     })
+
+    console.log("run started");
 
     // Poll for completion
     let result
@@ -82,6 +91,8 @@ router.post("/start", authenticateUser, async (req, res) => {
         if (result.status === "completed") break
         await new Promise((r) => setTimeout(r, 1000))
     }
+
+    console.lof("polling completed")
 
     const messages = await openai.beta.threads.messages.list(thread.id)
     const last = messages.data.find((m) => m.role === "assistant")
