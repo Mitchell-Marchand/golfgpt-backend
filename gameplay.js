@@ -19,6 +19,86 @@ const mariadbPool = mysql.createPool({
     connectionLimit: 10,
 });
 
+router.post("/update", authenticateUser, async (req, res) => {
+    try {
+        const { threadId, holeResults, matchId, oldResults } = req.body;
+        const prompt = `
+You are a golf scoring assistant.
+
+The user just submitted results for hole ${holeResults?.[Object.keys(holeResults)[0]]?.holeNumber ?? 'X'}.
+Here is the hole result data:
+${JSON.stringify(holeResults, null, 2)}
+
+Here are the match results before this hole:
+${JSON.stringify(oldResults, null, 2)}
+
+Update the match results using the new hole data.
+
+Requirements:
+- Update each golfer's score, strokes, netScore, and moneyWonLost for that hole.
+- Update their winLossBalance and chancesOfWinning across the full match.
+- If the hole has already been filled out, overwrite the values with the new results.
+- Only return valid JSON with the updated full match results in the same format as oldResults.
+- Do not explain anything or include extra commentary.
+`;
+
+        await openai.beta.threads.messages.create(threadId, {
+            role: "user",
+            content: prompt,
+        });
+
+        const run = await openai.beta.threads.runs.create(threadId, {
+            assistant_id: process.env.OPENAI_ASSISTANT_ID,
+        });
+
+        console.log("Polling for run to complete...");
+
+        let result;
+        while (true) {
+            result = await openai.beta.threads.runs.retrieve(threadId, run.id);
+            if (result.status === "completed") break;
+            if (result.status === "failed" || result.status === "cancelled") {
+                console.error("Run failed:", result);
+                return res.status(500).json({ error: "GPT Assistant run failed." });
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        console.log("Run completed");
+
+        const messages = await openai.beta.threads.messages.list(threadId);
+        const last = messages.data.find((m) => m.role === "assistant");
+        const content = last?.content?.[0]?.text?.value || "{}";
+
+        let updatedResults;
+
+        try {
+            const cleaned = content
+                .replace(/^```json\s*/i, '')
+                .replace(/```$/, '')
+                .trim();
+
+            updatedResults = JSON.parse(cleaned);
+        } catch (err) {
+            console.error("Failed to parse updated match results:", content);
+            return res.status(400).json({ error: "Invalid JSON returned from GPT." });
+        }
+
+        // Save updated results to DB
+        await mariadbPool.query(
+            `UPDATE Matches SET results = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+            [JSON.stringify(updatedResults), matchId]
+        );
+
+        res.json({ updatedResults });
+
+
+    } catch (err) {
+        console.error("Error in /start:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 router.post("/start", authenticateUser, async (req, res) => {
     try {
         const { matchData, rules } = req.body;
