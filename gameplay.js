@@ -26,7 +26,7 @@ router.post("/update", authenticateUser, async (req, res) => {
 
         const file = await openai.files.create({
             purpose: "assistants",
-            file: Buffer.from(JSON.stringify(trimmedResults)),
+            file: Buffer.from(JSON.stringify(oldResults)),
             name: "old_results.json",
         });
 
