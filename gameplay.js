@@ -19,7 +19,7 @@ const mariadbPool = mysql.createPool({
     connectionLimit: 10,
 });
 
-app.post("/start", authenticateUser, async (req, res) => {
+router.post("/start", authenticateUser, async (req, res) => {
     const { matchData, rules } = req.body
 
     const createdBy = req.user
