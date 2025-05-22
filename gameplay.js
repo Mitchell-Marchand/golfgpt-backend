@@ -76,6 +76,7 @@ Return ONLY a valid JSON object with the following structure:
       "playerName": string,
       "tees": string,
       "chancesOfWinning": 50 // percent chance of the player winning the match based on how things have gone so far
+      "winLossBalance": 0, //amount the user has won/lost in the match. updated as results are given.
       "holes": [
         {
           "holeNumber": number,
