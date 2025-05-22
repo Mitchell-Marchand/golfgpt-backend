@@ -57,7 +57,7 @@ Your task:
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: prompt,
-            file_ids: [file.id],
+            files: [file.id],
         });
 
         const run = await openai.beta.threads.runs.create(threadId, {
