@@ -25,33 +25,28 @@ router.post("/update", authenticateUser, async (req, res) => {
     try {
         const { threadId, holeResults, matchId, oldResults } = req.body;
 
-        const currentHoleNumber = holeResults?.[Object.keys(holeResults)[0]]?.holeNumber;
-        const filePath = path.join(__dirname, `temp_old_results_${matchId}.json`);
+        const currentHoleNumber = holeResults[Object.keys(holeResults)[0]].holeNumber;
+        const filePath = path.join(__dirname, "temp_old_results.json");
         fs.writeFileSync(filePath, JSON.stringify(oldResults));
 
-        const file = await openai.files.create({
+        const uploadedFile = await openai.files.create({
             purpose: "assistants",
-            file: fs.createReadStream(filePath)
+            file: fs.createReadStream(filePath),
         });
-
-        fs.unlinkSync(filePath);
 
         const prompt = `
 You are a golf scoring assistant.
 
-The user just submitted results for hole ${currentHoleNumber}.
-Here is the new hole result data:
+The match history is uploaded as a file attached to this thread. It contains the state of the match before hole ${currentHoleNumber}.
+
+Here are the results for hole ${currentHoleNumber}:
 ${JSON.stringify(holeResults, null, 2)}
 
-The previous match results are provided as a file attached to this run.
-
-Your task:
-- Combine the new hole results with the prior match data from the file.
-- For each golfer, update their score, strokes, netScore, and moneyWonLost for this hole.
-- Recalculate winLossBalance and chancesOfWinning for each golfer across the match.
-- Overwrite any existing data for this hole if it exists.
-- Return ONLY the updated match results as valid JSON in the exact format of the original match results.
-- Do NOT include any explanations or extra text. Return JSON only.
+Instructions:
+- Load the uploaded file to access prior results.
+- Merge the new hole results into the match.
+- Return updated match results as JSON.
+- DO NOT return explanations — only the updated results.
 `;
 
         await openai.beta.threads.messages.create(threadId, {
@@ -59,10 +54,13 @@ Your task:
             content: prompt,
         });
 
-        const run = await openai.beta.assistants.createRun({
-            thread_id: threadId,
+        const run = await openai.beta.threads.runs.create(threadId, {
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
-            additional_files: [file.id], // ✅ this is the CORRECT parameter
+            tool_resources: {
+                code_interpreter: {
+                    file_ids: [uploadedFile.id], 
+                },
+            },
         });
 
         console.log("Polling for run to complete...");
