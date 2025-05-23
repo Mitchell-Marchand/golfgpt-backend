@@ -2,11 +2,15 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
-const OpenAI = require("openai");
 require('dotenv').config();
+const OpenAI = require("openai");
+const fs = require("fs");
+const path = require("path");
+
+// Initialize OpenAI
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const router = express.Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-54-205-4-218.compute-1.amazonaws.com',
@@ -17,24 +21,93 @@ const mariadbPool = mysql.createPool({
     connectionLimit: 10,
 });
 
-async function getMatchMessages(matchId) {
-    const [rows] = await mariadbPool.query(
-        'SELECT * FROM Messages WHERE matchId = ? ORDER BY createdAt ASC',
-        [matchId]
-    );
-    return rows.map((row, idx) => ({
-        role: idx % 2 === 0 ? 'user' : 'assistant',
-        content: row.message,
-    }));
-}
+router.post("/update", authenticateUser, async (req, res) => {
+    try {
+        const { threadId, holeResults, matchId, oldResults } = req.body;
 
-async function storeMessage(matchId, content) {
-    const id = uuidv4();
-    await mariadbPool.query(
-        'INSERT INTO Messages (id, matchId, message) VALUES (?, ?, ?)',
-        [id, matchId, content]
-    );
-}
+        const currentHoleNumber = holeResults[Object.keys(holeResults)[0]].holeNumber;
+        const filePath = path.join(__dirname, "temp_old_results.json");
+        fs.writeFileSync(filePath, JSON.stringify(oldResults));
+
+        const uploadedFile = await openai.files.create({
+            purpose: "assistants",
+            file: fs.createReadStream(filePath),
+        });
+
+        const prompt = `
+You are a golf scoring assistant.
+
+The match history is uploaded as a file attached to this thread. It contains the state of the match before hole ${currentHoleNumber}.
+
+Here are the results for hole ${currentHoleNumber}:
+${JSON.stringify(holeResults, null, 2)}
+
+Instructions:
+- Load the uploaded file to access prior results.
+- Merge the new hole results into the match.
+- Return updated match results as JSON.
+- DO NOT return explanations — only the updated results.
+`;
+
+        await openai.beta.threads.messages.create(threadId, {
+            role: "user",
+            content: prompt,
+        });
+
+        const run = await openai.beta.threads.runs.create(threadId, {
+            assistant_id: process.env.OPENAI_ASSISTANT_ID,
+            tool_resources: {
+                code_interpreter: {
+                    file_ids: [uploadedFile.id], // ✅ attach files here
+                },
+            },
+        });
+
+        console.log("Polling for run to complete...");
+
+        let result;
+        while (true) {
+            result = await openai.beta.threads.runs.retrieve(threadId, run.id);
+            if (result.status === "completed") break;
+            if (result.status === "failed" || result.status === "cancelled") {
+                console.error("Run failed:", result);
+                return res.status(500).json({ error: "GPT Assistant run failed." });
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        console.log("Run completed");
+
+        const messages = await openai.beta.threads.messages.list(threadId);
+        const last = messages.data.find((m) => m.role === "assistant");
+        const content = last?.content?.[0]?.text?.value || "{}";
+
+        let updatedResults;
+
+        try {
+            const cleaned = content
+                .replace(/^```json\s*/i, '')
+                .replace(/```$/, '')
+                .trim();
+
+            updatedResults = JSON.parse(cleaned);
+        } catch (err) {
+            console.error("Failed to parse updated match results:", content);
+            return res.status(400).json({ error: "Invalid JSON returned from GPT." });
+        }
+
+        // Save updated results to DB
+        await mariadbPool.query(
+            `UPDATE Matches SET results = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+            [JSON.stringify(updatedResults), matchId]
+        );
+
+        res.json({ updatedResults });
+    } catch (err) {
+        console.error("Error in /update:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 router.post("/start", authenticateUser, async (req, res) => {
     try {
@@ -46,6 +119,7 @@ router.post("/start", authenticateUser, async (req, res) => {
         const courseName = matchData?.course?.FullName;
         const scorecards = JSON.stringify(matchData?.scorecards);
 
+        // Insert course if not in DB
         const [existing] = await mariadbPool.query(
             "SELECT * FROM Courses WHERE courseId = ?",
             [courseId]
@@ -61,15 +135,17 @@ router.post("/start", authenticateUser, async (req, res) => {
             console.log("Course already created", courseId);
         }
 
-        const matchId = uuidv4();
+        // Create GPT thread
+        const thread = await openai.beta.threads.create();
+        console.log("Thread created", thread.id);
 
-        const systemPrompt =
-            'You are a golf scoring assistant. Respond only with valid JSON. No explanations.';
+        const fullPrompt = `
+You are a golf scoring assistant.
 
-        const userPrompt = `Here is the match data:
+Here is the match data as JSON:
 ${JSON.stringify(matchData, null, 2)}
 
-Here are the rules:
+Here is the user's description of the game rules:
 "${rules}"
 
 You will help calculate results for each golfer on every hole.
@@ -77,30 +153,30 @@ You will help calculate results for each golfer on every hole.
 Return ONLY a valid JSON object with the following structure:
 
 {
-  "gameName": string,
-  "confirmation": string,
+  "gameName": string, // a fun, descriptive name for the match
+  "confirmation": string, // a confirmation that explains your understanding of the format and rules in detail
   "additionalInputs": [
     {
-      "question": string,
-      "answers": string[]
+      "question": string, // a question that needs to be asked after each hole
+      "answers": string[] // possible answers
     }
   ],
   "scorecard": [
     {
       "playerName": string,
       "tees": string,
-      "chancesOfWinning": number,
-      "winLossBalance": number,
+      "chancesOfWinning": 50 // percent chance of the player winning the match based on how things have gone so far
+      "winLossBalance": 0, //amount the user has won/lost in the match. updated as results are given.
       "holes": [
         {
           "holeNumber": number,
           "par": number,
           "yardage": number,
-          "courseHandicap": number,
+          "courseHandicap": number, // the index of the hole (1-18) based on the tee set being played
           "score": null,
           "strokes": number,
           "netScore": null,
-          "moneyWonLost": null
+          "moneyWonLost": null, //Amount of money the golfer won/lost on that hole, which will be updated as scores are posted
         }
       ]
     }
@@ -108,117 +184,97 @@ Return ONLY a valid JSON object with the following structure:
 }
 
 Instructions:
-- Use matchData.selectedTees to determine which tee each golfer is playing.
-- Use matchData.scorecards to get tee-specific hole yardage, par, and allocation.
-- Set courseHandicap to allocation value for each hole.
-- If handicaps are not provided, use strokes = 0.
-- DO NOT return any explanation — JSON only.`;
+- Use the matchData.selectedTees to determine which tee each golfer is playing.
+- Use matchData.scorecards to find the correct tee set and extract:
+  - hole yardage,
+  - par,
+  - and allocation (courseHandicap) for each hole.
+- Set courseHandicap = allocation value from the matching tee set hole.
 
-        console.log("prompts generated");
+**Requirements**:
+- Calculate strokes per hole based on each golfer's course handicap and tee selection.
+- Even if the user has not provided handicaps, return the rest of the structure with \`strokes: 0\`.
+- All holes should be populated using data from the selected course and tees.
+- Do not explain or include anything outside the JSON.
+`;
 
-        const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-            ],
-            temperature: 0,
-            max_tokens: 4000,
+
+        await openai.beta.threads.messages.create(thread.id, {
+            role: "user",
+            content: fullPrompt,
         });
 
-        console.log("chat completions sent");
+        console.log("Prompt sent");
 
-        const reply = response.choices[0].message.content;
-        await storeMessage(matchId, userPrompt);
-        await storeMessage(matchId, reply);
+        // Start Assistant Run (✅ fix applied here)
+        const run = await openai.beta.threads.runs.create(thread.id, {
+            assistant_id: process.env.OPENAI_ASSISTANT_ID,
+        });
 
-        console.log("messages stored");
+        console.log("Polling for completion...");
 
-        let parsed = {};
-        try {
-            parsed = JSON.parse(reply.replace(/^```json\s*/, '').replace(/```$/, '').trim());
-        } catch (err) {
-            return res.status(400).json({ error: 'Invalid JSON from GPT', raw: reply });
+        // Poll until run completes
+        let result;
+        while (true) {
+            result = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+            if (result.status === "completed") break;
+            if (result.status === "failed" || result.status === "cancelled") {
+                console.error("Run failed:", result);
+                return res.status(500).json({ error: "Assistant run failed." });
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 
-        console.log("got response", parsed);
+        console.log("Run completed");
 
+        const messages = await openai.beta.threads.messages.list(thread.id);
+        const last = messages.data.find((m) => m.role === "assistant");
+        const content = last?.content?.[0]?.text?.value || "{}";
+
+        let gameName = 'Untitled Match';
+        let confirmation = '';
+        let additionalInputs = [];
+        let scorecard = [];
+
+        try {
+            const cleaned = content
+                .replace(/^```json\s*/i, '')
+                .replace(/```$/, '')
+                .trim();
+
+            const parsed = JSON.parse(cleaned);
+            gameName = parsed.gameName ?? gameName;
+            confirmation = parsed.confirmation ?? '';
+            additionalInputs = parsed.additionalInputs ?? [];
+            scorecard = parsed.scorecard ?? [];
+        } catch (err) {
+            console.error('Failed to parse GPT response:', content);
+        }
+
+        // Save match to DB
+        const matchId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Matches 
-            (id, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (id, threadId, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 matchId,
-                createdBy,
+                thread.id,
+                matchData.createdBy,
                 JSON.stringify(matchData.selectedTees),
                 courseId,
                 matchData.isPublic ?? true,
-                parsed.gameName ?? 'Untitled Match',
+                gameName,
                 new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
-                JSON.stringify(parsed.scorecard ?? []),
-                JSON.stringify(parsed.additionalInputs ?? [])
+                JSON.stringify(scorecard),
+                JSON.stringify(additionalInputs)
             ]
         );
 
-        console.log("created match");
-
-        const [match] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
-        res.json({ match: match[0], confirmation: parsed.confirmation });
+        const [matches] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
+        res.json({ match: matches[0], confirmation });
     } catch (err) {
         console.error("Error in /start:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-router.post("/update", authenticateUser, async (req, res) => {
-    try {
-        const { matchId, holeResults, oldResults } = req.body;
-        const currentHoleNumber = holeResults[Object.keys(holeResults)[0]].holeNumber;
-
-        const fullResults = oldResults;
-
-        const userPrompt = `You are a golf scoring assistant.
-
-Here are the full match results before hole ${currentHoleNumber}:
-${JSON.stringify(fullResults, null, 2)}
-
-Here are the hole results for hole ${currentHoleNumber}:
-${JSON.stringify(holeResults, null, 2)}
-
-Instructions:
-- Merge the new hole results into the previous results.
-- Update scores, net scores, moneyWonLost, chancesOfWinning, and winLossBalance.
-- Return the full updated match results as valid JSON only. DO NOT explain.`;
-
-        const history = await getMatchMessages(matchId);
-        history.push({ role: 'user', content: userPrompt });
-
-        const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: history,
-            temperature: 0,
-            max_tokens: 4000,
-        });
-
-        const reply = response.choices[0].message.content;
-        await storeMessage(matchId, userPrompt);
-        await storeMessage(matchId, reply);
-
-        let updatedResults;
-        try {
-            updatedResults = JSON.parse(reply.replace(/^```json\s*/i, '').replace(/```$/, '').trim());
-        } catch (err) {
-            return res.status(400).json({ error: 'Invalid JSON returned', raw: reply });
-        }
-
-        await mariadbPool.query(
-            `UPDATE Matches SET results = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-            [JSON.stringify(updatedResults), matchId]
-        );
-
-        res.json({ updatedResults });
-    } catch (err) {
-        console.error("Error in /update:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
