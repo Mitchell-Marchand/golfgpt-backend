@@ -157,7 +157,7 @@ Respond only with JSON:`
         {
           role: "user",
           content: `
-  Here is the match data as JSON:
+  Here is the match data as JSON. it includes the golfers who are playing, what tees and course they're playing from, and the data about the different tees on the course:
   ${JSON.stringify(matchData, null, 2)}
   
   Here is the user's description of the game rules.:
@@ -166,30 +166,30 @@ Respond only with JSON:`
   Return ONLY a valid JSON object with the following structure:
   
   {
-    "gameName": string,
-    "confirmation": string,
-    "additionalInputs": [
+    "gameName": string, //Generate this yourself based on the rules of the game, make it fun
+    "confirmation": string, //Your own words confirming your understanding of the game
+    "additionalInputs": [ //Additional questions you will need to ask the user 
       {
         "question": string,
         "answers": string[]
       }
     ],
-    "scorecard": [
+    "scorecards": [ //Add of these objects in this array for each golfer that is playing
       {
         "playerName": string,
         "tees": string,
-        "chancesOfWinning": number,
-        "winLossBalance": number,
-        "holes": [
+        "chancesOfWinning": number, //Generate this based on the results of the match so far and the format
+        "winLossBalance": number, //How much the golfer is up/down on money overall in the match
+        "holes": [ //Add one of these for each hole
           {
             "holeNumber": number,
-            "par": number,
-            "yardage": number,
-            "courseHandicap": number,
-            "score": null,
-            "strokes": number,
-            "netScore": null,
-            "moneyWonLost": null
+            "par": number,  // Pulled from the "Par" field of the hole given which tees the golfer is playing
+            "yardage": number, // Pulled from the "Length" field of the hole given the tees the golfer is playing
+            "courseHandicap": number, // Pulled from the "Allocation" field of the hole given which tees the golfer is playing
+            "score": null, //This will be filled in by the user as the round is played
+            "strokes": number, //Set this if the rules indicated that certain players have handicaps or need strokes/pops
+            "netScore": null, //Score minus strokes
+            "moneyWonLost": null //Money won/lost for this golfer on this hole based on the rules and the scores of everyone else - you will update this as the user uploads the scores hole by hole
           }
         ]
       }
