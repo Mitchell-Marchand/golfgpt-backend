@@ -137,7 +137,7 @@ You already know the golfers, their tees, and the full scorecard.
 Based only on the rules below, return a JSON object with:
 - "displayName": a creative game title based on format and players
 - "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
-
+- "questions" (array, not required): list of any additional questions needed to be asked per hole, defined as qustion as a string, and options as an array
 Rules:
 ${rules}
 
