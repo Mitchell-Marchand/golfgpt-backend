@@ -109,172 +109,126 @@ Instructions:
 
 router.post("/start", authenticateUser, async (req, res) => {
     try {
-        const { matchData, rules } = req.body;
-        const createdBy = req.user.id;
-        matchData.createdBy = createdBy;
-
-        const courseId = matchData?.course?.CourseID;
-        const courseName = matchData?.course?.FullName;
-        const scorecards = JSON.stringify(matchData?.scorecards);
-
-        // Insert course if not in DB
-        const [existing] = await mariadbPool.query(
-            "SELECT * FROM Courses WHERE courseId = ?",
-            [courseId]
-        );
-
-        if (existing.length === 0) {
-            console.log("Creating course", courseId);
-            await mariadbPool.query(
-                `INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)`,
-                [courseId, courseName, scorecards]
-            );
-        } else {
-            console.log("Course already created", courseId);
-        }
-
-        // Create GPT thread
-        const thread = await openai.beta.threads.create();
-        console.log("Thread created", thread.id);
-
-        const fullPrompt = `
-You are a golf scoring assistant.
-
-Here is the match data as JSON:
-${JSON.stringify(matchData, null, 2)}
-
-Here is the user's description of the game rules:
-"${rules}"
-
-You will help calculate results for each golfer on every hole.
-
-Return ONLY a valid JSON object with the following structure:
-
-{
-  "gameName": string, // a fun, descriptive name for the match
-  "confirmation": string, // a confirmation that explains your understanding of the format and rules in detail
-  "additionalInputs": [
-    {
-      "question": string, // a question that needs to be asked after each hole
-      "answers": string[] // possible answers
-    }
-  ],
-  "scorecard": [
-    {
-      "playerName": string,
-      "tees": string,
-      "chancesOfWinning": 50 // percent chance of the player winning the match based on how things have gone so far
-      "winLossBalance": 0, //amount the user has won/lost in the match. updated as results are given.
-      "holes": [
-        {
-          "holeNumber": number,
-          "par": number,
-          "yardage": number,
-          "courseHandicap": number, // the index of the hole (1-18) based on the tee set being played
-          "score": null,
-          "strokes": number,
-          "netScore": null,
-          "moneyWonLost": null, //Amount of money the golfer won/lost on that hole, which will be updated as scores are posted
-        }
-      ]
-    }
-  ]
-}
-
-Instructions:
-- Use the matchData.selectedTees to determine which tee each golfer is playing.
-- Use matchData.scorecards to find the correct tee set and extract:
-  - hole yardage,
-  - par,
-  - and allocation (courseHandicap) for each hole.
-- Set courseHandicap = allocation value from the matching tee set hole.
-
-**Requirements**:
-- Calculate strokes per hole based on each golfer's course handicap and tee selection.
-- Even if the user has not provided handicaps, return the rest of the structure with \`strokes: 0\`.
-- All holes should be populated using data from the selected course and tees.
-- Do not explain or include anything outside the JSON.
-`;
-
-
-        await openai.beta.threads.messages.create(thread.id, {
-            role: "user",
-            content: fullPrompt,
-        });
-
-        console.log("Prompt sent");
-
-        // Start Assistant Run (✅ fix applied here)
-        const run = await openai.beta.threads.runs.create(thread.id, {
-            assistant_id: process.env.OPENAI_ASSISTANT_ID,
-        });
-
-        console.log("Polling for completion...");
-
-        // Poll until run completes
-        let result;
-        while (true) {
-            result = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-            if (result.status === "completed") break;
-            if (result.status === "failed" || result.status === "cancelled") {
-                console.error("Run failed:", result);
-                return res.status(500).json({ error: "Assistant run failed." });
-            }
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-
-        console.log("Run completed");
-
-        const messages = await openai.beta.threads.messages.list(thread.id);
-        const last = messages.data.find((m) => m.role === "assistant");
-        const content = last?.content?.[0]?.text?.value || "{}";
-
-        let gameName = 'Untitled Match';
-        let confirmation = '';
-        let additionalInputs = [];
-        let scorecard = [];
-
-        try {
-            const cleaned = content
-                .replace(/^```json\s*/i, '')
-                .replace(/```$/, '')
-                .trim();
-
-            const parsed = JSON.parse(cleaned);
-            gameName = parsed.gameName ?? gameName;
-            confirmation = parsed.confirmation ?? '';
-            additionalInputs = parsed.additionalInputs ?? [];
-            scorecard = parsed.scorecard ?? [];
-        } catch (err) {
-            console.error('Failed to parse GPT response:', content);
-        }
-
-        // Save match to DB
-        const matchId = uuidv4();
+      const { matchData, rules } = req.body;
+      const createdBy = req.user.id;
+      matchData.createdBy = createdBy;
+  
+      const courseId = matchData?.course?.CourseID;
+      const courseName = matchData?.course?.FullName;
+      const scorecards = JSON.stringify(matchData?.scorecards);
+  
+      // Ensure course exists
+      const [existing] = await mariadbPool.query(
+        "SELECT * FROM Courses WHERE courseId = ?",
+        [courseId]
+      );
+  
+      if (existing.length === 0) {
+        console.log("Creating course", courseId);
         await mariadbPool.query(
-            `INSERT INTO Matches 
-            (id, threadId, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                matchId,
-                thread.id,
-                matchData.createdBy,
-                JSON.stringify(matchData.selectedTees),
-                courseId,
-                matchData.isPublic ?? true,
-                gameName,
-                new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
-                JSON.stringify(scorecard),
-                JSON.stringify(additionalInputs)
-            ]
+          `INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)`,
+          [courseId, courseName, scorecards]
         );
-
-        const [matches] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
-        res.json({ match: matches[0], confirmation });
+      }
+  
+      // Build the prompt
+      const messages = [
+        {
+          role: "system",
+          content: "You are a golf scoring assistant. Return only valid JSON as described."
+        },
+        {
+          role: "user",
+          content: `
+  Here is the match data as JSON:
+  ${JSON.stringify(matchData, null, 2)}
+  
+  Here is the user's description of the game rules.:
+  "${rules}"
+  
+  Return ONLY a valid JSON object with the following structure:
+  
+  {
+    "gameName": string,
+    "confirmation": string,
+    "additionalInputs": [
+      {
+        "question": string,
+        "answers": string[]
+      }
+    ],
+    "scorecard": [
+      {
+        "playerName": string,
+        "tees": string,
+        "chancesOfWinning": number,
+        "winLossBalance": number,
+        "holes": [
+          {
+            "holeNumber": number,
+            "par": number,
+            "yardage": number,
+            "courseHandicap": number,
+            "score": null,
+            "strokes": number,
+            "netScore": null,
+            "moneyWonLost": null
+          }
+        ]
+      }
+    ]
+  }
+  `
+        }
+      ];
+  
+      const startTime = Date.now();
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages,
+        temperature: 0.7
+      });
+      const duration = Date.now() - startTime;
+      console.log(`GPT response time: ${duration}ms`);
+  
+      const responseText = completion.choices[0]?.message?.content || "{}";
+  
+      let parsed;
+      try {
+        const cleaned = responseText
+          .replace(/^```json\s*/i, '')
+          .replace(/```$/, '')
+          .trim();
+        parsed = JSON.parse(cleaned);
+      } catch (err) {
+        console.error("Failed to parse GPT response:", responseText);
+        return res.status(400).json({ error: "Invalid JSON returned from GPT" });
+      }
+  
+      const matchId = uuidv4();
+      await mariadbPool.query(
+        `INSERT INTO Matches 
+        (id, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          matchId,
+          matchData.createdBy,
+          JSON.stringify(matchData.selectedTees),
+          courseId,
+          matchData.isPublic ?? true,
+          parsed.gameName ?? "Untitled Match",
+          new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
+          JSON.stringify(parsed.scorecard ?? []),
+          JSON.stringify(parsed.additionalInputs ?? [])
+        ]
+      );
+  
+      const [matches] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
+      res.json({ match: matches[0], confirmation: parsed.confirmation });
     } catch (err) {
-        console.error("Error in /start:", err);
-        res.status(500).json({ error: "Internal Server Error" });
+      console.error("Error in /start:", err);
+      res.status(500).json({ error: "Internal Server Error" });
     }
-});
+  });  
 
 module.exports = router;
