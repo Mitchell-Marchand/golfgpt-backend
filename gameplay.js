@@ -135,7 +135,23 @@ router.post("/start", authenticateUser, async (req, res) => {
       const messages = [
         {
           role: "system",
-          content: "You are a golf scoring assistant. Return only valid JSON as described."
+          content: `You are a golf scoring assistant. You understand common formats like:
+
+- **Scotch/Umbrella/Bridge**: Two-player teams. Point for net best ball, combined net team score, birdies or better,  and for *proximity* (closest to the hole in regulation). if a team get's all 4 points, it doubled. each additional birdie from a winning team doubles the hole again. an eagle is worth two birdies. birdies on the other team cancel out other birdies. Additional doubles or presses on top of anything automatic may occur.
+- **Nassau**: 3 bets per round (front, back, overall), match play. Presses allowed.
+- **Skins**: Player wins hole if best score, must beat all others. Ties carry over. Optional bonuses: greenies, sandies, birdies.
+
+When a user describes a format like "Scotch" or "Bridge" or "Umbrella", automatically include post-hole questions like:
+- “Who had proximity (closest to the hole in regulation)?”
+
+You are expected to:
+- Infer implied scoring mechanics (e.g. proximity)
+- Never ask about automatic rules (like auto-doubles)
+- Always return JSON with confirmation and \`additionalInputs\`
+
+All questions must be **past tense** and represent hole-completion data.
+
+Respond only with JSON:`
         },
         {
           role: "user",
