@@ -127,32 +127,17 @@ router.post("/create", authenticateUser, async (req, res) => {
         );
 
         const prompt = `
-Based on the match setup already in this thread (golfers, tees, and course scorecard), and the rules below, respond with a JSON object like this:
-
-{
-  "displayName": string, // creative match title based on game format and players
-  "scorecards": [
-    {
-      "name": string,
-      "tees": string,
-      "handicap": number | null,
-      "holes": [
-        {
-          "holeNumber": number,
-          "par": number,
-          "yardage": number,
-          "strokes": number
-        }
-      ]
-    }
-  ]
-}
-
-Rules description:
-${rules}
-
-Only output valid, minified JSON. Do not include explanations, formatting, or text outside the object.
-`.trim();
+        You already know the golfers, their tees, and the full scorecard.
+        
+        Based only on the rules below, return a JSON object with:
+        - "displayName": a creative game title based on format and players
+        - "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
+        
+        Rules:
+        ${rules}
+        
+        ONLY respond with raw valid JSON. No commentary, labels, or formatting.
+        `.trim();
 
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
