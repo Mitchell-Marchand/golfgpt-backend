@@ -25,17 +25,17 @@ router.post("/begin", authenticateUser, async (req, res) => {
 
     console.log(golfers, course);
 
-    if (!golfers || !Array.isArray(golfers) || !course || !course.courseId) {
+    if (!golfers || !Array.isArray(golfers) || !course || !course.CourseID) {
         return res.status(400).json({ error: "Missing or invalid golfers or course." });
     }
 
     try {
         // Ensure course exists
-        const [existing] = await db.query("SELECT courseId FROM Courses WHERE courseId = ?", [course.courseId]);
+        const [existing] = await db.query("SELECT courseId FROM Courses WHERE courseId = ?", [course.CourseID]);
         if (existing.length === 0) {
             await db.query(
                 "INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)",
-                [course.courseId, course.courseName, JSON.stringify(course.scorecards)]
+                [course.CourseID, course.FullName, JSON.stringify([])]
             );
         }
 
