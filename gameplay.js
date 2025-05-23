@@ -205,7 +205,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         // res.json({ success: true, ...parsed });
 
-        res.json({runId: run.id, threadId});
+        res.json({ success: true, runId: run.id, threadId });
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to finalize match setup." });
@@ -255,7 +255,7 @@ router.get("/status", authenticateUser, async (req, res) => {
             let scorecard = parsed?.scorecards[i];
             scorecard["plusMinus"] = 0;
             scorecard["winningChancee"] = 0.5;
-            
+
         }
 
         res.status(201).json({ success: true, ...parsed });
