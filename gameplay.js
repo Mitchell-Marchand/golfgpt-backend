@@ -23,8 +23,6 @@ router.post("/begin", authenticateUser, async (req, res) => {
     const { golfers, course } = req.body;
     const userId = req.user.id;
 
-    console.log(golfers, course);
-
     if (!golfers || !Array.isArray(golfers) || !course || !course.CourseID) {
         return res.status(400).json({ error: "Missing or invalid golfers or course." });
     }
@@ -78,9 +76,12 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
     try {
         // Look up threadId for match
-        const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT threadId, courseId FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
+        } else {
+            const courseId = rows[0].courseId;
+            await mariadbPool.query("UPDATE Courses set scorecards = ? WHERE id = ?", [JSON.stringify(scorecards), matchId]);
         }
 
         const threadId = rows[0].threadId;
