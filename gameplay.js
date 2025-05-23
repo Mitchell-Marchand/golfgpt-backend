@@ -161,7 +161,7 @@ ONLY respond with raw valid JSON. No commentary, labels, or formatting.
         const maxAttempts = 10;
         for (let i = 0; i < maxAttempts; i++) {
             console.log(`[/create] Polling run status... attempt ${i + 1}`);
-            await new Promise((r) => setTimeout(r, 1500));
+            await new Promise((r) => setTimeout(r, 2500));
             const status = await openai.beta.threads.runs.retrieve(threadId, run.id);
             console.log("[/create] Run status:", status.status);
             if (status.status === "completed") {
