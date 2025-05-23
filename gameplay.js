@@ -23,6 +23,8 @@ router.post("/begin", authenticateUser, async (req, res) => {
     const { golfers, course } = req.body;
     const userId = req.user.id;
 
+    console.log(golfers, course);
+
     if (!golfers || !Array.isArray(golfers) || !course || !course.courseId) {
         return res.status(400).json({ error: "Missing or invalid golfers or course." });
     }
