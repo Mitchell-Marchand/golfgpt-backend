@@ -144,52 +144,27 @@ router.post("/start", authenticateUser, async (req, res) => {
         const messages = [
             {
                 role: "system",
-                content: `
-You are a golf scoring assistant. You understand formats like:
-
-- Scotch/Umbrella: Team games with points for net best ball, team net score, birdies, proximity, and bonuses like automatic doubles for clean sweeps or birdie chains.
-- Nassau: Front, back, overall bets. Presses common.
-- Skins: Best individual score per hole. Bonuses possible.
-
-If players are allowed to manually press, double, or quadruple the bet, always ask a post-hole question.
-
-Only include **post-hole decision inputs** like:
-- Who got proximity?
-- Did anyone double or quadruple the bet?
-
-All questions must be in past tense. Respond ONLY with a valid JSON object in the requested structure.
-`
+                content: `You are a golf scoring assistant and money keeper. The user will provide a JSON object 
+                containing the golfers who are playing, the course they're playing, the tees they're playing, and
+                the hole data for each tee on each hole at that course. The user will also provide a description of
+                the rules of the game and how the money is won/lost throughout the match. This description will most
+                likely contain the name of the game, but not all of the rules. It is up to you to infer the rules and
+                scoring and money logic based on the game if it is not otherwise stated. In every game, a golfer will
+                have a score they make on a hole, but some games require additional information. If the game requires
+                more information that just the score a player made on a hole (closest to the pin, proximity in regulation, 
+                changing the teams in a game like wolf, changing the dollar value, etc.) you'll need to come up with multiple
+                choice questions that the user can answer after each hole to give you that information.`
             },
             {
                 role: "user",
-                content: `
-Here is the match data (course, selected tees, golfers, and holes):
-${JSON.stringify(trimmedMatchData, null, 2)}
-
-Here are the user's game rules:
-"${rules}"
-
-Return a JSON object with:
-
-- "gameName": string
-- "confirmation": string
-- "additionalInputs": array of post-hole questions about manual decisions (like proximity, presses, or bet doubling)
-- "scorecards": array of objects — one per golfer — each with:
-  - playerName
-  - tees
-  - chancesOfWinning
-  - winLossBalance
-  - holes: an array of 18 objects, one per hole, each with:
-    - holeNumber (1–18)
-    - par (from selected tee)
-    - yardage (from selected tee)
-    - courseHandicap (from selected tee's "allocation")
-    - strokes (how many handicap strokes this player receives on that hole)
-    - grossScore (null)
-    - netScore (null)
-    - moneyWonLost (null)
-
-Be thorough and return a complete structure — do this for all 18 holes for every golfer.`
+                content: `Here's a JSON object containing the information you're expecting: ${JSON.stringify(trimmedMatchData)}.
+                Additionally, here are rules about the game we're playing (name of the game, dollar values, special 
+                rules, handicaps, etc.): "${rules}". Return a JSON object that contains two arrays: one with a list of additionalInputs,
+                each of which contains a question and a list of multiple choice options. the other array should be called
+                scorecards, and should contain an object for each player with the following properties: playerName, tees, chances of
+                winning, winLossBalance, and holes - holes should be an array containing the following information for each hole the
+                golfer is going to play: holeNumber, par, yardage, handicap, strokes (if the rules say the player gets strokes on
+                certain holes), grossScore, and moneyWonLost. Return it as a clean JSON object with no further detail.`
             }
         ];
 
