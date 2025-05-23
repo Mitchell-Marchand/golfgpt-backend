@@ -58,7 +58,7 @@ router.post("/begin", authenticateUser, async (req, res) => {
                 thread.id,
                 userId,
                 JSON.stringify(golfers),
-                course.courseId
+                course.CourseID
             ]
         );
 
