@@ -113,7 +113,10 @@ router.post("/create", authenticateUser, async (req, res) => {
     }
 
     try {
+        console.log("[/create] Querying threadId...");
         const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
+        console.log("[/create] threadId retrieved");
+
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -121,38 +124,46 @@ router.post("/create", authenticateUser, async (req, res) => {
         const threadId = rows[0].threadId;
         const formattedTeeTime = formatDateForSQL(teeTime);
 
+        console.log("[/create] Updating teeTime and isPublic...");
         await mariadbPool.query(
             "UPDATE Matches SET teeTime = ?, isPublic = ? WHERE id = ?",
             [formattedTeeTime, isPublic ? 1 : 0, matchId]
         );
+        console.log("[/create] Update complete");
 
         const prompt = `
-        You already know the golfers, their tees, and the full scorecard.
-        
-        Based only on the rules below, return a JSON object with:
-        - "displayName": a creative game title based on format and players
-        - "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
-        
-        Rules:
-        ${rules}
-        
-        ONLY respond with raw valid JSON. No commentary, labels, or formatting.
+You already know the golfers, their tees, and the full scorecard.
+
+Based only on the rules below, return a JSON object with:
+- "displayName": a creative game title based on format and players
+- "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
+
+Rules:
+${rules}
+
+ONLY respond with raw valid JSON. No commentary, labels, or formatting.
         `.trim();
 
+        console.log("[/create] Sending prompt to thread...");
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: prompt,
         });
+        console.log("[/create] Prompt sent");
 
+        console.log("[/create] Creating run...");
         const run = await openai.beta.threads.runs.create(threadId, {
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
         });
+        console.log("[/create] Run created:", run.id);
 
         let completed = false;
         const maxAttempts = 10;
         for (let i = 0; i < maxAttempts; i++) {
+            console.log(`[/create] Polling run status... attempt ${i + 1}`);
             await new Promise((r) => setTimeout(r, 1500));
             const status = await openai.beta.threads.runs.retrieve(threadId, run.id);
+            console.log("[/create] Run status:", status.status);
             if (status.status === "completed") {
                 completed = true;
                 break;
@@ -165,22 +176,25 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Assistant took too long to respond." });
         }
 
+        console.log("[/create] Fetching message from thread...");
         const messages = await openai.beta.threads.messages.list(threadId, { limit: 1 });
+        console.log("[/create] Message fetched");
+
         const assistantMessage = messages.data.find(m => m.role === "assistant");
 
         let parsed = null;
         if (assistantMessage?.content?.[0]?.type === "text") {
             const raw = assistantMessage.content[0].text.value;
+            console.log("[/create] Raw response:", raw);
             try {
                 parsed = JSON.parse(raw);
             } catch (e) {
-                console.warn("Invalid JSON from assistant:", raw);
+                console.warn("[/create] Failed to parse JSON:", raw);
                 return res.status(500).json({ error: "Assistant response was not valid JSON." });
             }
         }
 
         res.json({ success: true, ...parsed });
-
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to finalize match setup." });
