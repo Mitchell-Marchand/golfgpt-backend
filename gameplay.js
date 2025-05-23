@@ -115,43 +115,57 @@ router.post("/create", authenticateUser, async (req, res) => {
     }
 
     try {
-        // Get threadId
         const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const threadId = rows[0].threadId;
-
         const formattedTeeTime = formatDateForSQL(teeTime);
 
-        // Update match with teeTime and isPublic
         await mariadbPool.query(
             "UPDATE Matches SET teeTime = ?, isPublic = ? WHERE id = ?",
             [formattedTeeTime, isPublic ? 1 : 0, matchId]
         );
 
-        // Send rules message to thread
-        const rulesMessage = `Here is a description of the golf game we're playing:\n\n${rules}\n\nPlease reply with a JSON array of any questions you need to ask before you can begin scoring this match. If you have no questions, reply with an empty array.`;
-        console.log("assistant", process.env.OPENAI_ASSISTANT_ID);
-        await openai.beta.threads.messages.create(threadId, {
-            role: "user",
-            content: rulesMessage,
-        });
+        const prompt = `
+Here is a description of the rules for the golf game we're playing:
+
+${rules}
+
+You already know the golfers playing, what tees they are playing from, and the course scorecard. Based on the full context, respond ONLY with a JSON object with the following shape:
+
+{
+  "displayName": string, // a creative and descriptive match name based on the format and players
+  "scorecards": [
+    {
+      "name": string,
+      "tees": string,
+      "handicap": number | null,
+      "holes": [
+        {
+          "holeNumber": number,
+          "par": number,
+          "yardage": number,
+          "strokes": number
+        }
+      ]
+    }
+  ]
+}
+Only include what's requested — no text explanations or comments or summaries.
+        `.trim();
 
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
-            content: "Forget any prior formatting. ONLY respond with a raw JSON array of clarification questions, as instructed."
+            content: prompt,
         });
 
-        // Run the assistant
         const run = await openai.beta.threads.runs.create(threadId, {
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
         });
 
-        // Poll for completion
         let completed = false;
-        let result;
         const maxAttempts = 10;
         for (let i = 0; i < maxAttempts; i++) {
             await new Promise((r) => setTimeout(r, 1500));
@@ -159,7 +173,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             if (status.status === "completed") {
                 completed = true;
                 break;
-            } else if (status.status === "failed" || status.status === "cancelled" || status.status === "expired") {
+            } else if (["failed", "cancelled", "expired"].includes(status.status)) {
                 throw new Error(`Run failed with status: ${status.status}`);
             }
         }
@@ -168,21 +182,21 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Assistant took too long to respond." });
         }
 
-        // Get last assistant message
         const messages = await openai.beta.threads.messages.list(threadId, { limit: 1 });
         const assistantMessage = messages.data.find(m => m.role === "assistant");
 
-        let questions = [];
+        let parsed = null;
         if (assistantMessage?.content?.[0]?.type === "text") {
             const raw = assistantMessage.content[0].text.value;
             try {
-                questions = JSON.parse(raw);
+                parsed = JSON.parse(raw);
             } catch (e) {
-                console.warn("Assistant reply was not valid JSON:", raw);
+                console.warn("Invalid JSON from assistant:", raw);
+                return res.status(500).json({ error: "Assistant response was not valid JSON." });
             }
         }
 
-        res.json({ success: true, questions });
+        res.json({ success: true, ...parsed });
 
     } catch (err) {
         console.error("Error in /create:", err);
