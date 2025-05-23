@@ -81,7 +81,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Match not found." });
         } else {
             const courseId = rows[0].courseId;
-            await mariadbPool.query("UPDATE Courses set scorecards = ? WHERE id = ?", [JSON.stringify(scorecards), matchId]);
+            await mariadbPool.query("UPDATE Courses set scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
         }
 
         const threadId = rows[0].threadId;
