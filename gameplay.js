@@ -4,8 +4,6 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 require('dotenv').config();
 const OpenAI = require("openai");
-const fs = require("fs");
-const path = require("path");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
