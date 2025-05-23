@@ -157,7 +157,7 @@ router.post("/start", authenticateUser, async (req, res) => {
             },
             {
                 role: "user",
-                content: `Here's a JSON object containing the information you're expecting: matchData: ${JSON.stringify(trimmedMatchData)}.
+                content: `Here's a JSON object containing the information you're expecting: **matchData: ${JSON.stringify(trimmedMatchData)}**
                 Additionally, here are rules about the game we're playing (name of the game, dollar values, special 
                 rules, handicaps, etc.): "${rules}". Use the matchData and rules to return a JSON object that contains two arrays: one with a list of additionalInputs,
                 each of which is an object that has a question and a list of multiple choice options. don't ask questions about
@@ -166,7 +166,8 @@ router.post("/start", authenticateUser, async (req, res) => {
                 scorecards, and should contain a scorecard object for each player with the following properties: playerName, tees, chances of
                 winning, winLossBalance, and holes - holes should be an array containing the following information for each hole the
                 golfer is going to play: holeNumber, par, yardage, handicap, strokes (if the rules say the player gets strokes on
-                certain holes), grossScore, and moneyWonLost. Return it as a clean JSON object that i can parse with no further detail.`
+                certain holes), grossScore, and moneyWonLost. the information about par, yardage, and handicap can be found in the matchData.
+                ***Return it as a clean JSON object that i can use JSON.parse with - do not include any further detail.***`
             }
         ];
 
