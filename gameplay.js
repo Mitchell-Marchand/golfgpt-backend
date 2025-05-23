@@ -11,7 +11,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
 
 const mariadbPool = mysql.createPool({
-    host: 'ec2-54-205-4-218.compute-1.amazonaws.com',
+    host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
     user: 'golfuser',
     password: process.env.DB_PASS,
     database: 'golfpicks',
