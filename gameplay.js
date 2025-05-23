@@ -165,23 +165,70 @@ router.post("/create", authenticateUser, async (req, res) => {
         });
         console.log("[/create] Run created:", run.id);
 
-        let completed = false;
-        const maxAttempts = 10;
-        for (let i = 0; i < maxAttempts; i++) {
-            console.log(`[/create] Polling run status... attempt ${i + 1}`);
-            await new Promise((r) => setTimeout(r, 6000));
-            const status = await openai.beta.threads.runs.retrieve(threadId, run.id);
-            console.log("[/create] Run status:", status.status);
-            if (status.status === "completed") {
-                completed = true;
-                break;
-            } else if (["failed", "cancelled", "expired"].includes(status.status)) {
-                throw new Error(`Run failed with status: ${status.status}`);
-            }
+        // let completed = false;
+        // const maxAttempts = 10;
+        // for (let i = 0; i < maxAttempts; i++) {
+        //     console.log(`[/create] Polling run status... attempt ${i + 1}`);
+        //     await new Promise((r) => setTimeout(r, 6000));
+        //     const status = await openai.beta.threads.runs.retrieve(threadId, run.id);
+        //     console.log("[/create] Run status:", status.status);
+        //     if (status.status === "completed") {
+        //         completed = true;
+        //         break;
+        //     } else if (["failed", "cancelled", "expired"].includes(status.status)) {
+        //         throw new Error(`Run failed with status: ${status.status}`);
+        //     }
+        // }
+
+        // if (!completed) {
+        //     return res.status(500).json({ error: "Assistant took too long to respond." });
+        // }
+
+        // console.log("[/create] Fetching message from thread...");
+        // const messages = await openai.beta.threads.messages.list(threadId, { limit: 1 });
+        // console.log("[/create] Message fetched");
+
+        // const assistantMessage = messages.data.find(m => m.role === "assistant");
+
+        // let parsed = null;
+        // if (assistantMessage?.content?.[0]?.type === "text") {
+        //     const raw = assistantMessage.content[0].text.value;
+        //     console.log("[/create] Raw response:", raw);
+        //     try {
+        //         const cleaned = raw.trim().replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+        //         parsed = JSON.parse(cleaned);
+        //     } catch (e) {
+        //         console.warn("[/create] Failed to parse JSON:", raw);
+        //         return res.status(500).json({ error: "Assistant response was not valid JSON." });
+        //     }
+        // }
+
+        // res.json({ success: true, ...parsed });
+
+        res.json({runId: run.id, threadId});
+    } catch (err) {
+        console.error("Error in /create:", err);
+        res.status(500).json({ error: "Failed to finalize match setup." });
+    }
+});
+
+router.get("/status", authenticateUser, async (req, res) => {
+    try {
+        //Get thread and run id
+        const threadId = req.query.threadId;
+        const runId = req.query.runId;
+        const status = await openai.beta.threads.runs.retrieve(threadId, runId);
+
+        console.log("[/create] Run status:", status.status);
+
+        if (status.status === "completed") {
+            completed = true;
+        } else if (["failed", "cancelled", "expired"].includes(status.status)) {
+            throw new Error(`Run failed with status: ${status.status}`);
         }
 
         if (!completed) {
-            return res.status(500).json({ error: "Assistant took too long to respond." });
+            return res.status(200).json({ success: false, error: "Not completed" });
         }
 
         console.log("[/create] Fetching message from thread...");
@@ -203,11 +250,17 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         }
 
-        //Create the filled out results, add to the database
+        //Fill out the results, add them to the database
+        for (let i = 0; i < parsed?.scorecards?.length; i++) {
+            let scorecard = parsed?.scorecards[i];
+            scorecard["plusMinus"] = 0;
+            scorecard["winningChancee"] = 0.5;
+            
+        }
 
-        res.json({ success: true, ...parsed });
+        res.status(201).json({ success: true, ...parsed });
     } catch (err) {
-        console.error("Error in /create:", err);
+        console.error("Error in /status:", err);
         res.status(500).json({ error: "Failed to finalize match setup." });
     }
 });
