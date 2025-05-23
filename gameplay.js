@@ -7,9 +7,7 @@ const OpenAI = require("openai");
 const fs = require("fs");
 const path = require("path");
 
-// Initialize OpenAI
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const router = express.Router();
 
 const mariadbPool = mysql.createPool({
