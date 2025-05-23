@@ -193,7 +193,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             const raw = assistantMessage.content[0].text.value;
             console.log("[/create] Raw response:", raw);
             try {
-                parsed = JSON.parse(raw);
+                const cleaned = raw.trim().replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+                parsed = JSON.parse(cleaned);
             } catch (e) {
                 console.warn("[/create] Failed to parse JSON:", raw);
                 return res.status(500).json({ error: "Assistant response was not valid JSON." });
