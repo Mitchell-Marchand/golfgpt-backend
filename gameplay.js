@@ -170,11 +170,26 @@ Here are the user's game rules:
 "${rules}"
 
 Return a JSON object with:
+
 - "gameName": string
 - "confirmation": string
-- "additionalInputs": question(s) about decisions needed after each hole
-- "scorecards": array of players with hole-by-hole fields for strokes, net score, etc.
-`
+- "additionalInputs": array of post-hole questions about manual decisions (like proximity, presses, or bet doubling)
+- "scorecards": array of objects — one per golfer — each with:
+  - playerName
+  - tees
+  - chancesOfWinning
+  - winLossBalance
+  - holes: an array of 18 objects, one per hole, each with:
+    - holeNumber (1–18)
+    - par (from selected tee)
+    - yardage (from selected tee)
+    - courseHandicap (from selected tee's "allocation")
+    - strokes (how many handicap strokes this player receives on that hole)
+    - grossScore (null)
+    - netScore (null)
+    - moneyWonLost (null)
+
+Be thorough and return a complete structure — do this for all 18 holes for every golfer.`
             }
         ];
 
