@@ -133,10 +133,15 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         // Send rules message to thread
         const rulesMessage = `Here is a description of the golf game we're playing:\n\n${rules}\n\nPlease reply with a JSON array of any questions you need to ask before you can begin scoring this match. If you have no questions, reply with an empty array.`;
-
+        console.log("assistant", process.env.OPENAI_ASSISTANT_ID);
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: rulesMessage,
+        });
+
+        await openai.beta.threads.messages.create(threadId, {
+            role: "user",
+            content: "Forget any prior formatting. ONLY respond with a raw JSON array of clarification questions, as instructed."
         });
 
         // Run the assistant
