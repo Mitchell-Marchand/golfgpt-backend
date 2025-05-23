@@ -266,13 +266,17 @@ router.post("/update", authenticateUser, async (req, res) => {
     }
 
     try {
+        console.log("[/update] Starting update process for matchId:", matchId);
+
         // Step 1: Fetch threadId
+        console.log("[/update] Querying database for threadId...");
         const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
+            console.warn("[/update] No match found for matchId:", matchId);
             return res.status(404).json({ error: "Match not found." });
         }
-
         const threadId = rows[0].threadId;
+        console.log("[/update] threadId found:", threadId);
 
         // Step 2: Send updated rule clarification
         const message = `
@@ -294,23 +298,30 @@ router.post("/update", authenticateUser, async (req, res) => {
         Respond only with valid raw JSON, no extra commentary or formatting.
         `.trim();
 
+        console.log("[/update] Sending updated rules to thread...");
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
             content: message,
         });
+        console.log("[/update] Message sent to thread.");
 
-        // Step 3: Start run
+        // Step 3: Start assistant run
+        console.log("[/update] Starting assistant run...");
         const run = await openai.beta.threads.runs.create(threadId, {
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
         });
+        console.log("[/update] Assistant run started. runId:", run.id);
 
-        // Step 4: Poll every 2 seconds for run completion
+        // Step 4: Poll for completion
         let status;
         const maxAttempts = 15;
+        console.log("[/update] Polling run status...");
         for (let i = 0; i < maxAttempts; i++) {
+            console.log(`[/update] Poll attempt ${i + 1}...`);
             await new Promise((r) => setTimeout(r, 2000));
             const runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
             status = runStatus.status;
+            console.log(`[/update] Run status: ${status}`);
 
             if (status === "completed") break;
             if (["failed", "cancelled", "expired"].includes(status)) {
@@ -319,19 +330,23 @@ router.post("/update", authenticateUser, async (req, res) => {
         }
 
         if (status !== "completed") {
+            console.error("[/update] Run did not complete within polling window.");
             return res.status(500).json({ error: "Assistant run did not complete in time." });
         }
 
-        // Step 5: Get assistant response
+        // Step 5: Parse assistant response
+        console.log("[/update] Fetching assistant message from thread...");
         const messages = await openai.beta.threads.messages.list(threadId, { limit: 1 });
         const assistantMessage = messages.data.find(m => m.role === "assistant");
 
         let parsed = null;
         if (assistantMessage?.content?.[0]?.type === "text") {
             const raw = assistantMessage.content[0].text.value;
+            console.log("[/update] Raw response from assistant:", raw.slice(0, 200) + "...");
             try {
                 const cleaned = raw.trim().replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
                 parsed = JSON.parse(cleaned);
+                console.log("[/update] Assistant response parsed successfully.");
             } catch (e) {
                 console.warn("[/update] Failed to parse JSON:", raw);
                 return res.status(500).json({ error: "Assistant response was not valid JSON." });
