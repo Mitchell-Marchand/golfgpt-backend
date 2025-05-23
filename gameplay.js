@@ -127,14 +127,10 @@ router.post("/create", authenticateUser, async (req, res) => {
         );
 
         const prompt = `
-Here is a description of the rules for the golf game we're playing:
-
-${rules}
-
-You already know the golfers playing, what tees they are playing from, and the course scorecard. Based on the full context, respond ONLY with a JSON object with the following shape:
+Based on the match setup already in this thread (golfers, tees, and course scorecard), and the rules below, respond with a JSON object like this:
 
 {
-  "displayName": string, // a creative and descriptive match name based on the format and players
+  "displayName": string, // creative match title based on game format and players
   "scorecards": [
     {
       "name": string,
@@ -151,8 +147,12 @@ You already know the golfers playing, what tees they are playing from, and the c
     }
   ]
 }
-Only include what's requested — no text explanations or comments or summaries.
-        `.trim();
+
+Rules description:
+${rules}
+
+Only output valid, minified JSON. Do not include explanations, formatting, or text outside the object.
+`.trim();
 
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
