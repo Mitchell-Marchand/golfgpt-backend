@@ -235,7 +235,7 @@ Respond only with JSON:`
           matchData.isPublic ?? true,
           parsed.gameName ?? "Untitled Match",
           new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
-          JSON.stringify(parsed.scorecard ?? []),
+          JSON.stringify(parsed.scorecards ?? []),
           JSON.stringify(parsed.additionalInputs ?? [])
         ]
       );
