@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 
 app.use('/', agenticRoutes);
 app.use('/gpt', golfgptRoutes);
-app.use('/', gamePlayRoutes);
+app.use('/game', gamePlayRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
