@@ -137,7 +137,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         Based only on the rules below, return a JSON object with:
         - "displayName": a creative game title based on format and players
         - "scorecards": one per golfer, with name, tees, handicap (if unknown put 0), and 18 holes. Each hole includes: holeNumber, par, yardage, and allocation
-        - "questions" (array): list of all additional questions to ask per hole (past tense) required to accurately  score the match based on the rules (don't do {question} on hole 1, {question} on hole 2, etc. - just the question you'll repeat). Include proximity (closest to the hole not just on par 3s) if relevant for formats like Scotch. Include 2x, 3x, 4x, 5x as options for increasing the bet if in a format that allows for it (like Scotch). Don't ask questions that you can get from the actual scores, like who won or who was lowest, as these will be provided. 
+        - "questions" (array): list of all additional questions to ask per hole (past tense) required to accurately score the match based on the rules (don't do {question} on hole 1, {question} on hole 2, etc. - just the question you'll repeat). Include proximity (closest to the hole not just on par 3s) if relevant for formats like Scotch. Include 2x, 3x, 4x, 5x as options for increasing the bet if in a format that allows for it (like Scotch). Don't ask questions that you can get from the actual scores, like who won or who was lowest, or if there were any carryovers, as these will be provided. also, don't ask questions about anything that is not a mandatory aspect of scoring (unless the rules specify otherwise)
         Format each question as: 
           {
             "question": "string",
@@ -199,6 +199,8 @@ router.post("/create", authenticateUser, async (req, res) => {
                 return res.status(500).json({ error: "Assistant response was not valid JSON." });
             }
         }
+
+        //Create the filled out results, add to the database
 
         res.json({ success: true, ...parsed });
     } catch (err) {
