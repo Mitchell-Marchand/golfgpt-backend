@@ -137,19 +137,20 @@ router.post("/start", authenticateUser, async (req, res) => {
           role: "system",
           content: `You are a golf scoring assistant. You understand common formats like:
 
-- **Scotch/Umbrella/Bridge**: Two-player teams. Point for net best ball, combined net team score, birdies or better,  and for *proximity* (closest to the hole in regulation). if a team get's all 4 points, it doubled. each additional birdie from a winning team doubles the hole again. an eagle is worth two birdies. birdies on the other team cancel out other birdies. Additional doubles or presses on top of anything automatic may occur.
-- **Nassau**: 3 bets per round (front, back, overall), match play. Presses allowed.
-- **Skins**: Player wins hole if best score, must beat all others. Ties carry over. Optional bonuses: greenies, sandies, birdies.
+- **Scotch/Umbrella/Bridge**: Two-player teams. Point for net best ball, combined net team score, birdies, proximity, etc. If one team gets all points, the hole is doubled. Extra birdies can cause further doubling. Birdies on the losing team cancel. Players may press or double the bet manually.
+- **Nassau**: Match play with bets on front, back, and overall. Presses common.
+- **Skins**: Best score wins hole. Bonuses for birdies, proximity, etc.
 
-When a user describes a format like "Scotch" or "Bridge" or "Umbrella", automatically include post-hole questions like:
-- “Who had proximity (closest to the hole in regulation)?”
+You must always extract **all possible post-hole decisions** that affect scoring, such as:
+- Proximity (if implied)
+- Presses, doubles, or quadruples that players may call themselves
 
-You are expected to:
-- Infer implied scoring mechanics (e.g. proximity)
-- Never ask about automatic rules (like auto-doubles)
-- Always return JSON with confirmation and \`additionalInputs\`
+If a rule or format allows players to **manually increase stakes**, add a question like:
+- “Did any player double or quadruple the bet on this hole?”
 
-All questions must be **past tense** and represent hole-completion data.
+Only ask questions about user decisions, not automatic rules.
+
+All questions must be **past tense** and should only cover things that happen **during or after a hole** is played.
 
 Respond only with JSON:`
         },
