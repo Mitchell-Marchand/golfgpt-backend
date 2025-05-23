@@ -220,6 +220,7 @@ router.get("/status", authenticateUser, async (req, res) => {
         const status = await openai.beta.threads.runs.retrieve(threadId, runId);
 
         console.log("[/status] Run status:", status.status);
+        let completed = false;
 
         if (status.status === "completed") {
             completed = true;
