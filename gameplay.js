@@ -109,143 +109,122 @@ Instructions:
 
 router.post("/start", authenticateUser, async (req, res) => {
     try {
-      const { matchData, rules } = req.body;
-      const createdBy = req.user.id;
-      matchData.createdBy = createdBy;
-  
-      const courseId = matchData?.course?.CourseID;
-      const courseName = matchData?.course?.FullName;
-      const scorecards = JSON.stringify(matchData?.scorecards);
-  
-      // Ensure course exists
-      const [existing] = await mariadbPool.query(
-        "SELECT * FROM Courses WHERE courseId = ?",
-        [courseId]
-      );
-  
-      if (existing.length === 0) {
-        console.log("Creating course", courseId);
-        await mariadbPool.query(
-          `INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)`,
-          [courseId, courseName, scorecards]
+        const { matchData, rules } = req.body;
+        const createdBy = req.user.id;
+        matchData.createdBy = createdBy;
+
+        const courseId = matchData?.course?.CourseID;
+        const courseName = matchData?.course?.FullName;
+        const scorecards = JSON.stringify(matchData?.scorecards);
+
+        // Ensure course exists
+        const [existing] = await mariadbPool.query(
+            "SELECT * FROM Courses WHERE courseId = ?",
+            [courseId]
         );
-      }
-  
-      // Build the prompt
-      const messages = [
-        {
-          role: "system",
-          content: `You are a golf scoring assistant. You understand common formats like:
 
-- **Scotch/Umbrella/Bridge**: Two-player teams. Point for net best ball, combined net team score, birdies, proximity, etc. If one team gets all points, the hole is doubled. Extra birdies can cause further doubling. Birdies on the losing team cancel. Players may press or double the bet manually.
-- **Nassau**: Match play with bets on front, back, and overall. Presses common.
-- **Skins**: Best score wins hole. Bonuses for birdies, proximity, etc.
-
-You must always extract **all possible post-hole decisions** that affect scoring, such as:
-- Proximity (if implied)
-- Presses, doubles, or quadruples that players may call themselves
-
-If a rule or format allows players to **manually increase stakes**, add a question like:
-- “Did any player double or quadruple the bet on this hole?”
-
-Only ask questions about user decisions, not automatic rules.
-
-All questions must be **past tense** and should only cover things that happen **during or after a hole** is played.
-
-Respond only with JSON:`
-        },
-        {
-          role: "user",
-          content: `
-  Here is the match data as JSON. it includes the golfers who are playing, what tees and course they're playing from, and the data about the different tees on the course:
-  ${JSON.stringify(matchData, null, 2)}
-  
-  Here is the user's description of the game rules.:
-  "${rules}"
-  
-  Return ONLY a valid JSON object with the following structure:
-  
-  {
-    "gameName": string, //Generate this yourself based on the rules of the game, make it fun
-    "confirmation": string, //Your own words confirming your understanding of the game
-    "additionalInputs": [ //Additional questions you will need to ask the user 
-      {
-        "question": string,
-        "answers": string[]
-      }
-    ],
-    "scorecards": [ //Add of these objects in this array for each golfer that is playing
-      {
-        "playerName": string,
-        "tees": string,
-        "chancesOfWinning": number, //Generate this based on the results of the match so far and the format
-        "winLossBalance": number, //How much the golfer is up/down on money overall in the match
-        "holes": [ //Add one of these for each hole
-          {
-            "holeNumber": number,
-            "par": number,  // Pulled from the "Par" field of the hole given which tees the golfer is playing
-            "yardage": number, // Pulled from the "Length" field of the hole given the tees the golfer is playing
-            "courseHandicap": number, // Pulled from the "Allocation" field of the hole given which tees the golfer is playing
-            "score": null, //This will be filled in by the user as the round is played
-            "strokes": number, //Set this if the rules indicated that certain players have handicaps or need strokes/pops
-            "netScore": null, //Score minus strokes
-            "moneyWonLost": null //Money won/lost for this golfer on this hole based on the rules and the scores of everyone else - you will update this as the user uploads the scores hole by hole
-          }
-        ]
-      }
-    ]
-  }
-  `
+        if (existing.length === 0) {
+            console.log("Creating course", courseId);
+            await mariadbPool.query(
+                `INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)`,
+                [courseId, courseName, scorecards]
+            );
         }
-      ];
-  
-      const startTime = Date.now();
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages,
-        temperature: 0.7
-      });
-      const duration = Date.now() - startTime;
-      console.log(`GPT response time: ${duration}ms`);
-  
-      const responseText = completion.choices[0]?.message?.content || "{}";
-  
-      let parsed;
-      try {
-        const cleaned = responseText
-          .replace(/^```json\s*/i, '')
-          .replace(/```$/, '')
-          .trim();
-        parsed = JSON.parse(cleaned);
-      } catch (err) {
-        console.error("Failed to parse GPT response:", responseText);
-        return res.status(400).json({ error: "Invalid JSON returned from GPT" });
-      }
-  
-      const matchId = uuidv4();
-      await mariadbPool.query(
-        `INSERT INTO Matches 
+
+        const slimScorecards = {};
+        for (const [playerId, teeName] of Object.entries(matchData.selectedTees)) {
+            slimScorecards[teeName] = matchData.scorecards[teeName];
+        }
+
+        const trimmedMatchData = {
+            ...matchData,
+            scorecards: slimScorecards
+        };
+
+        const messages = [
+            {
+                role: "system",
+                content: `
+You are a golf scoring assistant. You understand formats like:
+
+- Scotch/Umbrella: Team games with points for net best ball, team net score, birdies, proximity, and bonuses like automatic doubles for clean sweeps or birdie chains.
+- Nassau: Front, back, overall bets. Presses common.
+- Skins: Best individual score per hole. Bonuses possible.
+
+If players are allowed to manually press, double, or quadruple the bet, always ask a post-hole question.
+
+Only include **post-hole decision inputs** like:
+- Who got proximity?
+- Did anyone double or quadruple the bet?
+
+All questions must be in past tense. Respond ONLY with a valid JSON object in the requested structure.
+`
+            },
+            {
+                role: "user",
+                content: `
+Here is the match data (course, selected tees, golfers, and holes):
+${JSON.stringify(trimmedMatchData, null, 2)}
+
+Here are the user's game rules:
+"${rules}"
+
+Return a JSON object with:
+- "gameName": string
+- "confirmation": string
+- "additionalInputs": question(s) about decisions needed after each hole
+- "scorecards": array of players with hole-by-hole fields for strokes, net score, etc.
+`
+            }
+        ];
+
+        const startTime = Date.now();
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages,
+            temperature: 0.7
+        });
+        const duration = Date.now() - startTime;
+        console.log(`GPT response time: ${duration}ms`);
+
+        const responseText = completion.choices[0]?.message?.content || "{}";
+
+        let parsed;
+        try {
+            const cleaned = responseText
+                .replace(/^```json\s*/i, '')
+                .replace(/```$/, '')
+                .trim();
+            parsed = JSON.parse(cleaned);
+        } catch (err) {
+            console.error("Failed to parse GPT response:", responseText);
+            return res.status(400).json({ error: "Invalid JSON returned from GPT" });
+        }
+
+        const matchId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Matches 
         (id, createdBy, golfers, courseId, isPublic, displayName, teeTime, results, additionalInputs) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          matchId,
-          matchData.createdBy,
-          JSON.stringify(matchData.selectedTees),
-          courseId,
-          matchData.isPublic ?? true,
-          parsed.gameName ?? "Untitled Match",
-          new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
-          JSON.stringify(parsed.scorecards ?? []),
-          JSON.stringify(parsed.additionalInputs ?? [])
-        ]
-      );
-  
-      const [matches] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
-      res.json({ match: matches[0], confirmation: parsed.confirmation });
+            [
+                matchId,
+                matchData.createdBy,
+                JSON.stringify(matchData.selectedTees),
+                courseId,
+                matchData.isPublic ?? true,
+                parsed.gameName ?? "Untitled Match",
+                new Date(matchData.teeTime).toISOString().slice(0, 19).replace('T', ' '),
+                JSON.stringify(parsed.scorecards ?? []),
+                JSON.stringify(parsed.additionalInputs ?? [])
+            ]
+        );
+
+        const [matches] = await mariadbPool.query('SELECT * FROM Matches WHERE id = ?', [matchId]);
+        res.json({ match: matches[0], confirmation: parsed.confirmation });
     } catch (err) {
-      console.error("Error in /start:", err);
-      res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error in /start:", err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-  });  
+});
 
 module.exports = router;
