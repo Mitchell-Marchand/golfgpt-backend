@@ -31,9 +31,9 @@ router.post("/begin", authenticateUser, async (req, res) => {
 
     try {
         // Ensure course exists
-        const [existing] = await db.query("SELECT courseId FROM Courses WHERE courseId = ?", [course.CourseID]);
+        const [existing] = await mariadbPool.query("SELECT courseId FROM Courses WHERE courseId = ?", [course.CourseID]);
         if (existing.length === 0) {
-            await db.query(
+            await mariadbPool.query(
                 "INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)",
                 [course.CourseID, course.FullName, JSON.stringify([])]
             );
@@ -51,7 +51,7 @@ router.post("/begin", authenticateUser, async (req, res) => {
 
         // Insert match record
         const matchId = uuidv4();
-        await db.query(
+        await mariadbPool.query(
             `INSERT INTO Matches (id, threadId, createdBy, golfers, courseId) VALUES (?, ?, ?, ?, ?)`,
             [
                 matchId,
@@ -78,7 +78,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
     try {
         // Look up threadId for match
-        const [rows] = await db.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -110,7 +110,7 @@ router.post("/create", authenticateUser, async (req, res) => {
   
     try {
       // Get threadId
-      const [rows] = await db.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
+      const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
       if (rows.length === 0) {
         return res.status(404).json({ error: "Match not found." });
       }
@@ -118,7 +118,7 @@ router.post("/create", authenticateUser, async (req, res) => {
       const threadId = rows[0].threadId;
 
       // Update match with teeTime and isPublic
-      await db.query(
+      await mariadbPool.query(
         "UPDATE Matches SET teeTime = ?, isPublic = ? WHERE id = ?",
         [teeTime, isPublic ? 1 : 0, matchId]
       );
