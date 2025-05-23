@@ -25,7 +25,7 @@ function formatAndValidatePhone(input) {
   return /^\d{10}$/.test(normalized) ? normalized : null;
 }
 
-router.get('/gpt/getCode', async (req, res) => {
+router.get('/getCode', async (req, res) => {
   const phone = req.query.phone;
   const formattedPhone = formatAndValidatePhone(phone);
   if (!formattedPhone) {
@@ -44,7 +44,7 @@ router.get('/gpt/getCode', async (req, res) => {
   }
 });
 
-router.post('/gpt/signIn', async (req, res) => {
+router.post('/signIn', async (req, res) => {
   const { phone, code } = req.body;
   const formattedPhone = formatAndValidatePhone(phone);
   if (!formattedPhone || !code) {
@@ -73,7 +73,7 @@ router.post('/gpt/signIn', async (req, res) => {
   }
 })
 
-router.post('/gpt/register', async (req, res) => {
+router.post('/register', async (req, res) => {
   const { phone, firstName, lastName, code } = req.body;
   const formattedPhone = formatAndValidatePhone(phone);
   if (!formattedPhone || !firstName || !lastName) {
@@ -155,7 +155,7 @@ async function getGhinToken() {
   }
 }
 
-router.get("/gpt/ghin/courses", async (req, res) => {
+router.get("/ghin/courses", async (req, res) => {
   const { query } = req.query;
   if (!query) {
     return res.status(400).json({ success: false, message: "Missing query" });
@@ -184,7 +184,7 @@ router.get("/gpt/ghin/courses", async (req, res) => {
   }
 });
 
-router.get("/gpt/ghin/course-details", async (req, res) => {
+router.get("/ghin/course-details", async (req, res) => {
   const { courseId } = req.query;
   if (!courseId) {
     return res.status(400).json({ success: false, message: "Missing courseId" });

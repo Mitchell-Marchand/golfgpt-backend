@@ -23,7 +23,7 @@ app.options(/^\/.*$/, cors(corsOptions));
 app.use(bodyParser.json());
 
 app.use('/', agenticRoutes);
-app.use('/', golfgptRoutes);
+app.use('/gpt', golfgptRoutes);
 app.use('/', gamePlayRoutes);
 
 const PORT = process.env.PORT;
