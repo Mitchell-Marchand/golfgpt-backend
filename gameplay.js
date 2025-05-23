@@ -133,6 +133,8 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const prompt = `
         You already know the golfers, their tees, and the full scorecard.
+
+        Additional golf lingo: hammer/bridge/soup/roll means to double the bet (2x). "re-hammer" or "resoup" to "bowl it" means to hammer a hammer (4x). press means to start an additional match. These are options in certain games.
         
         Based only on the rules below, return a JSON object with:
         - "displayName": a creative game title based on format and players
