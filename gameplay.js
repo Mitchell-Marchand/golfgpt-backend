@@ -132,16 +132,21 @@ router.post("/create", authenticateUser, async (req, res) => {
         console.log("[/create] Update complete");
 
         const prompt = `
-You already know the golfers, their tees, and the full scorecard.
-
-Based only on the rules below, return a JSON object with:
-- "displayName": a creative game title based on format and players
-- "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
-- "questions" (array, not required): list of any additional questions needed to be asked per hole, defined as qustion as a string, and options as an array
-Rules:
-${rules}
-
-ONLY respond with raw valid JSON. No commentary, labels, or formatting.
+        You already know the golfers, their tees, and the full scorecard.
+        
+        Based only on the rules below, return a JSON object with:
+        - "displayName": a creative game title based on format and players
+        - "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
+        - "questions" (array): list of all additional per-hole questions (past tense) required to accurately score the match based on the rules. Include proximity (closest to the pin) if relevant for formats like Scotch. Format each question as: 
+          {
+            "question": "string",
+            "options": ["array", "of", "choices"]
+          }
+        
+        Rules:
+        ${rules}
+        
+        ONLY respond with raw valid JSON. No commentary, labels, or formatting.
         `.trim();
 
         console.log("[/create] Sending prompt to thread...");
