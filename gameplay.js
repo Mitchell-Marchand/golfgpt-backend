@@ -137,7 +137,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         Based only on the rules below, return a JSON object with:
         - "displayName": a creative game title based on format and players
         - "scorecards": one per golfer, with name, tees, handicap (if given), and 18 holes. Each hole includes: holeNumber, par, yardage, and strokes.
-        - "questions" (array): list of all additional per-hole questions (past tense) required to accurately score the match based on the rules. Include proximity (closest to the pin) if relevant for formats like Scotch. Format each question as: 
+        - "questions" (array): list of all additional per-hole questions (past tense) required to accurately score the match based on the rules. Include proximity (closest to the hole in regulation for every hole) if relevant for formats like Scotch. Format each question as: 
           {
             "question": "string",
             "options": ["array", "of", "choices"]
