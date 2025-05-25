@@ -48,13 +48,14 @@ router.post("/begin", authenticateUser, async (req, res) => {
         // Insert match record
         const matchId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Matches (id, threadId, createdBy, golfers, courseId) VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO Matches (id, threadId, createdBy, golfers, courseId, status) VALUES (?, ?, ?, ?, ?)`,
             [
                 matchId,
                 thread.id,
                 userId,
                 JSON.stringify(golfers),
-                course.CourseID
+                course.CourseID,
+                "COURSE_PROVIDED"
             ]
         );
 
@@ -93,6 +94,13 @@ router.post("/tees", authenticateUser, async (req, res) => {
             content: message,
         });
 
+        console.log("[/tees] Updating match status...");
+        await mariadbPool.query(
+            "UPDATE Matches SET status = ? WHERE id = ?",
+            ["TEES_PROVIDED", matchId]
+        );
+        console.log("[/tees] Update complete");
+
         res.json({ success: true });
     } catch (err) {
         console.error("Error in /tees:", err);
@@ -126,15 +134,15 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         console.log("[/create] Updating teeTime and isPublic...");
         await mariadbPool.query(
-            "UPDATE Matches SET teeTime = ?, isPublic = ? WHERE id = ?",
-            [formattedTeeTime, isPublic ? 1 : 0, matchId]
+            "UPDATE Matches SET teeTime = ?, isPublic = ?, status = ? WHERE id = ?",
+            [formattedTeeTime, isPublic ? 1 : 0, "RULES_PROVIDED", matchId]
         );
         console.log("[/create] Update complete");
 
         const prompt = `
         You already know the golfers, their tees, and the full scorecard.
 
-        Additional golf lingo: hammer/bridge/soup/roll means to double the bet (2x). "re-hammer" or "resoup" to "bowl it" means to hammer a hammer (4x). press means to start an additional match. These are options in certain games.
+        Additional golf lingo: hammer/bridge/soup/roll means to double the bet (2x). "re-hammer" or "resoup" to "bowl it" means to hammer a hammer (4x). These are options in certain games.
         
         Based only on the rules below, return a JSON object with:
         - "displayName": a creative game title based on format and players
@@ -152,6 +160,17 @@ router.post("/create", authenticateUser, async (req, res) => {
         ONLY respond with raw valid JSON. No commentary, labels, or formatting.
         `.trim();
 
+        const messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [
+                messageId,
+                threadId,
+                "user",
+                prompt,
+            ]
+        );
+
         console.log("[/create] Sending prompt to thread...");
         await openai.beta.threads.messages.create(threadId, {
             role: "user",
@@ -164,46 +183,6 @@ router.post("/create", authenticateUser, async (req, res) => {
             assistant_id: process.env.OPENAI_ASSISTANT_ID,
         });
         console.log("[/create] Run created:", run.id);
-
-        // let completed = false;
-        // const maxAttempts = 10;
-        // for (let i = 0; i < maxAttempts; i++) {
-        //     console.log(`[/create] Polling run status... attempt ${i + 1}`);
-        //     await new Promise((r) => setTimeout(r, 6000));
-        //     const status = await openai.beta.threads.runs.retrieve(threadId, run.id);
-        //     console.log("[/create] Run status:", status.status);
-        //     if (status.status === "completed") {
-        //         completed = true;
-        //         break;
-        //     } else if (["failed", "cancelled", "expired"].includes(status.status)) {
-        //         throw new Error(`Run failed with status: ${status.status}`);
-        //     }
-        // }
-
-        // if (!completed) {
-        //     return res.status(500).json({ error: "Assistant took too long to respond." });
-        // }
-
-        // console.log("[/create] Fetching message from thread...");
-        // const messages = await openai.beta.threads.messages.list(threadId, { limit: 1 });
-        // console.log("[/create] Message fetched");
-
-        // const assistantMessage = messages.data.find(m => m.role === "assistant");
-
-        // let parsed = null;
-        // if (assistantMessage?.content?.[0]?.type === "text") {
-        //     const raw = assistantMessage.content[0].text.value;
-        //     console.log("[/create] Raw response:", raw);
-        //     try {
-        //         const cleaned = raw.trim().replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-        //         parsed = JSON.parse(cleaned);
-        //     } catch (e) {
-        //         console.warn("[/create] Failed to parse JSON:", raw);
-        //         return res.status(500).json({ error: "Assistant response was not valid JSON." });
-        //     }
-        // }
-
-        // res.json({ success: true, ...parsed });
 
         res.json({ success: true, runId: run.id, threadId });
     } catch (err) {
@@ -257,10 +236,21 @@ router.get("/status", authenticateUser, async (req, res) => {
 
         console.log("[/status] Updating questions, displayName, scorecards...");
         await mariadbPool.query(
-            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ? WHERE id = ?",
-            [parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(parsed?.scorecards), matchId]
+            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            [parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(parsed?.scorecards), "GENERATED", matchId]
         );
         console.log("[/status] Update complete");
+
+        const messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [
+                messageId,
+                threadId,
+                "system",
+                JSON.stringify(parsed),
+            ]
+        );
 
         res.status(201).json({ success: true, ...parsed });
     } catch (err) {
@@ -321,6 +311,17 @@ router.post("/update", authenticateUser, async (req, res) => {
         });
         console.log("[/update] Message sent to thread.");
 
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [
+                messageId,
+                threadId,
+                "user",
+                message,
+            ]
+        );
+
         // Step 3: Start assistant run
         console.log("[/update] Starting assistant run...");
         const run = await openai.beta.threads.runs.create(threadId, {
@@ -376,11 +377,54 @@ router.post("/update", authenticateUser, async (req, res) => {
         );
         console.log("[/update] Update complete");
 
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [
+                messageId,
+                threadId,
+                "system",
+                JSON.stringify(parsed),
+            ]
+        );
+
         res.json({ success: true, ...parsed });
     } catch (err) {
         console.error("Error in /update:", err);
         res.status(500).json({ error: "Failed to update match rules." });
     }
+});
+
+router.post("/confirm", authenticateUser, async (req, res) => {
+    const { matchId, threadId } = req.body;
+
+    console.log("[/confirm] Updating match status...");
+    await mariadbPool.query(
+        "UPDATE Matches SET status = ? WHERE id = ?",
+        ["CONFIRMED", matchId]
+    );
+    console.log("[/confirm] Update complete");
+
+    const prompt = "This looks great. We're beginning the match. Be ready to receive player scores, answers to the questions, and potentially rules input as we play. Your task will be to keep everyone's scores, money, and likihood of winning.";
+    console.log("[/confirm] Confirming setup on thread...");
+    await openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: prompt,
+    });
+    console.log("[/confirm] Message sent to thread.");
+
+    const messageId = uuidv4();
+    await mariadbPool.query(
+        `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+        [
+            messageId,
+            threadId,
+            "user",
+            prompt,
+        ]
+    );
+
+    res.json({ success: true });
 });
 
 module.exports = router;
