@@ -88,6 +88,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
         console.log(teesByGolfer);
         console.log(scorecards);
         res.json({ success: false });
+        return;
 
         //Only pass the tees selected by each golfer
         let teeJSON = [];
