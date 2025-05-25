@@ -217,7 +217,10 @@ router.get("/status", authenticateUser, async (req, res) => {
         //Get thread and run id
         const threadId = req.query.threadId;
         const runId = req.query.runId;
+        const matchId = req.query.matchId;
         const status = await openai.beta.threads.runs.retrieve(threadId, runId);
+
+        //TODO: Verify matchId and threadId
 
         console.log("[/status] Run status:", status.status);
         let completed = false;
