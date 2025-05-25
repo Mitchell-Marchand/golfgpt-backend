@@ -104,21 +104,9 @@ router.post("/tees", authenticateUser, async (req, res) => {
         const threadId = rows[0].threadId;
 
         const filtered = filterMaleScorecardsBySelectedTees(teesByGolfer, scorecards);
-        console.log("scorecards", filtered);
-        res.json({ success: false });
-        return;
-
-        //Only pass the tees selected by each golfer
-        let teeJSON = [];
-        for (let i = 0; i < teesByGolfer?.length; i++) {
-            let golfer = teesByGolfer[i];
-            for (let j = 0; j < scorecards?.length; j++) {
-
-            }
-        }
 
         // Compose message content
-        const message = `Here is the full scorecard for the course, and which tees each golfer is playing:\n\nScorecard:\n${JSON.stringify(scorecards, null, 2)}\n\nTees per golfer:\n${JSON.stringify(teesByGolfer, null, 2)}`;
+        const message = `Here is the full scorecard for the course, and which tees each golfer is playing:\n\nScorecard:\n${JSON.stringify(filtered, null, 2)}\n\nTees per golfer:\n${JSON.stringify(teesByGolfer, null, 2)}`;
 
         // Send to OpenAI thread
         await openai.beta.threads.messages.create(threadId, {
