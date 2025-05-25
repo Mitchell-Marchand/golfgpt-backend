@@ -85,7 +85,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
         const threadId = rows[0].threadId;
 
-        console.log("golfers", teesByGolfer);
+        console.log("golfers", JSON.stringify(teesByGolfer));
         console.log("scorecards", scorecards);
         res.json({ success: false });
         return;
