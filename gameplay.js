@@ -286,13 +286,10 @@ router.post("/update", authenticateUser, async (req, res) => {
         console.log("[/update] threadId found:", threadId);
 
         // Step 2: Send updated rule clarification
-        const message = `Here is a JSON object containing the following information for a golf match: 
+        const message = `In your last mesage, you sent a JSON object containing the following information for a golf match: 
         The match "displayName", "scorecards" data for each golfer, and additional "questions" that will be asked of the user on each hole as they input scores in order to track their golf match. 
         
-        JSON object:
-        ${promptObj}
-        
-        Your task is to use the new input from the user below, your existing knowledge of  
+        Your task is to use the new input below, your existing knowledge of  
         the golfers that are playing, the course they are playing, the tees they are playing from,
         and your knowledge of golf, to **update** the JSON object to suffice the request of the user.
 
