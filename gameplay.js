@@ -251,6 +251,13 @@ router.get("/status", authenticateUser, async (req, res) => {
             }
         }
 
+        console.log("[/status] Updating questions, displayName, scorecards...");
+        await mariadbPool.query(
+            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ?, displayName = ? WHERE id = ?",
+            [parsed?.displayName, parsed?.questions, parsed?.scorecards, matchId]
+        );
+        console.log("[/status] Update complete");
+
         res.status(201).json({ success: true, ...parsed });
     } catch (err) {
         console.error("Error in /status:", err);
@@ -270,32 +277,36 @@ router.post("/update", authenticateUser, async (req, res) => {
 
         // Step 1: Fetch threadId
         console.log("[/update] Querying database for threadId...");
-        const [rows] = await mariadbPool.query("SELECT threadId FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT threadId, questions, scorecards, displayName FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             console.warn("[/update] No match found for matchId:", matchId);
             return res.status(404).json({ error: "Match not found." });
         }
         const threadId = rows[0].threadId;
+        const questions = rows[0].questions;
+        const scorecards = rows[0].scorecards;
+        const displayName = rows[0]?.displayName;
+        const promptObj = JSON.stringify({
+            questions, scorecards, displayName
+        })
         console.log("[/update] threadId found:", threadId);
 
         // Step 2: Send updated rule clarification
-        const message = `
-        The user has updated or clarified the match rules. Use this to revise the questions and scorecards if needed.
+        const message = `Here is a JSON object containing the following information for a golf match: 
+        The match "displayName", "scorecards" data for each golfer, and additional "questions" that will be asked of the user on each hole as they input scores in order to track their golf match. 
+        
+        JSON object:
+        ${promptObj}
+        
+        Your task is to use the new input from the user below, your existing knowledge of  
+        the golfers that are playing, the course they are playing, the tees they are playing from,
+        and your knowledge of golf, to **update** the JSON object to suffice the request of the user.
 
-        New information from user:
+        New Input:
         ${newRules}
 
-        Based on all previous thread context plus this new info, return ONLY updated:
-        - "scorecards": if any handicaps or hole settings change
-        - "questions": if the clarification affects what's asked per hole
-
-        Format:
-        {
-            "scorecards": [...],
-            "questions": [...]
-        }
-
-        Respond only with valid raw JSON, no extra commentary or formatting.
+        Respond only with valid raw JSON, no extra commentary or formatting. 
+        Do NOT add any new or remove any field names from the original JSON. Only alter values.
         `.trim();
 
         console.log("[/update] Sending updated rules to thread...");
@@ -308,7 +319,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         // Step 3: Start assistant run
         console.log("[/update] Starting assistant run...");
         const run = await openai.beta.threads.runs.create(threadId, {
-            assistant_id: process.env.OPENAI_ASSISTANT_ID,
+            assistant_id: process.env.PROV2KEY,
         });
         console.log("[/update] Assistant run started. runId:", run.id);
 
@@ -352,6 +363,13 @@ router.post("/update", authenticateUser, async (req, res) => {
                 return res.status(500).json({ error: "Assistant response was not valid JSON." });
             }
         }
+
+        console.log("[/update] Updating questions, displayName, scorecards...");
+        await mariadbPool.query(
+            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ?, displayName = ? WHERE id = ?",
+            [parsed?.displayName, parsed?.questions, parsed?.scorecards, matchId]
+        );
+        console.log("[/update] Update complete");
 
         res.json({ success: true, ...parsed });
     } catch (err) {
