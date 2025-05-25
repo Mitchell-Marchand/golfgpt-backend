@@ -48,7 +48,7 @@ router.post("/begin", authenticateUser, async (req, res) => {
         // Insert match record
         const matchId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Matches (id, threadId, createdBy, golfers, courseId, status) VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO Matches (id, threadId, createdBy, golfers, courseId, status) VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 matchId,
                 thread.id,
