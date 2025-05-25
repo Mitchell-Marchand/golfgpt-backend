@@ -17,6 +17,24 @@ const mariadbPool = mysql.createPool({
     connectionLimit: 10,
 });
 
+function formatDateForSQL(isoString) {
+    const date = new Date(isoString)
+    return date.toISOString().slice(0, 19).replace('T', ' ')
+}
+
+function filterMaleScorecardsBySelectedTees(teesByGolfer, scorecards) {
+    // Get the unique set of tees selected by golfers
+    const selectedTees = new Set(Object.values(teesByGolfer));
+
+    // Filter the scorecards
+    const filteredScorecards = scorecards.filter(
+        (card) =>
+            card.Gender === 'Male' && selectedTees.has(card.TeeSetRatingName)
+    );
+
+    return filteredScorecards;
+}
+
 router.post("/begin", authenticateUser, async (req, res) => {
     const { golfers, course } = req.body;
     const userId = req.user.id;
@@ -85,8 +103,8 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
         const threadId = rows[0].threadId;
 
-        console.log("golfers", JSON.stringify(teesByGolfer));
-        console.log("scorecards", scorecards);
+        const filtered = filterMaleScorecardsBySelectedTees(teesByGolfer, scorecards);
+        console.log("scorecards", filtered);
         res.json({ success: false });
         return;
 
@@ -95,7 +113,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
         for (let i = 0; i < teesByGolfer?.length; i++) {
             let golfer = teesByGolfer[i];
             for (let j = 0; j < scorecards?.length; j++) {
-                
+
             }
         }
 
@@ -121,11 +139,6 @@ router.post("/tees", authenticateUser, async (req, res) => {
         res.status(500).json({ error: "Failed to send tee info to thread." });
     }
 });
-
-function formatDateForSQL(isoString) {
-    const date = new Date(isoString)
-    return date.toISOString().slice(0, 19).replace('T', ' ')
-}
 
 router.post("/create", authenticateUser, async (req, res) => {
     const { matchId, teeTime, isPublic, rules } = req.body;
