@@ -256,7 +256,7 @@ router.get("/status", authenticateUser, async (req, res) => {
 
         console.log("[/status] Updating questions, displayName, scorecards...");
         await mariadbPool.query(
-            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ?, displayName = ? WHERE id = ?",
+            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ? WHERE id = ?",
             [parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(parsed?.scorecards), matchId]
         );
         console.log("[/status] Update complete");
