@@ -244,10 +244,11 @@ router.get("/status", authenticateUser, async (req, res) => {
         let parsed = null;
         if (assistantMessage?.content?.[0]?.type === "text") {
             const raw = assistantMessage.content[0].text.value;
-            console.log("[/status] Raw response:", raw);
+            //console.log("[/status] Raw response:", raw);
             try {
                 const cleaned = raw.trim().replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
                 parsed = JSON.parse(cleaned);
+                console.log("[/status] Parsed the response");
             } catch (e) {
                 console.warn("[/status] Failed to parse JSON:", raw);
                 return res.status(500).json({ error: "Assistant response was not valid JSON." });
