@@ -39,7 +39,7 @@ router.post("/begin", authenticateUser, async (req, res) => {
         const thread = await openai.beta.threads.create();
 
         // Send intro message
-        const intro = `I'm playing a golf match today. Here are the golfers and course details. More to come.\n\nGolfers:\n${JSON.stringify(golfers, null, 2)}\n\nCourse:\n${JSON.stringify(course, null, 2)}`;
+        const intro = `I'm playing a golf match today. Here are the golfers and course details. More to come.\n\nGolfers:\n${JSON.stringify(golfers, null, 2)}\n\nCourse:\n${course?.FullName}`;
         await openai.beta.threads.messages.create(thread.id, {
             role: "user",
             content: intro,
@@ -84,6 +84,19 @@ router.post("/tees", authenticateUser, async (req, res) => {
         }
 
         const threadId = rows[0].threadId;
+
+        console.log(teesByGolfer);
+        console.log(scorecards);
+        res.json({ success: false });
+
+        //Only pass the tees selected by each golfer
+        let teeJSON = [];
+        for (let i = 0; i < teesByGolfer?.length; i++) {
+            let golfer = teesByGolfer[i];
+            for (let j = 0; j < scorecards?.length; j++) {
+                
+            }
+        }
 
         // Compose message content
         const message = `Here is the full scorecard for the course, and which tees each golfer is playing:\n\nScorecard:\n${JSON.stringify(scorecards, null, 2)}\n\nTees per golfer:\n${JSON.stringify(teesByGolfer, null, 2)}`;
