@@ -310,7 +310,8 @@ router.post("/update", authenticateUser, async (req, res) => {
         ${newRules}
 
         Respond only with valid raw JSON, no extra commentary or formatting. 
-        Do NOT add any new or remove any field names from the original JSON. Only alter values.
+        Here are the **ONLY** updates you are allowed to make:
+        Changing a golfer's handicap, changing a golfer's name, adding a question, removing a question, changing answer options, changing question text.
         `.trim();
 
         console.log("[/update] Sending updated rules to thread...");
