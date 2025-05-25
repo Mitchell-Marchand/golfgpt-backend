@@ -139,26 +139,16 @@ router.post("/create", authenticateUser, async (req, res) => {
         );
         console.log("[/create] Update complete");
 
-        const prompt = `
-        You already know the golfers, their tees, and the full scorecard.
+        const prompt = `Based on the following match rules, generate a JSON object with:
+        - "displayName": creative title
+        - "scorecards": one per golfer, including name, tees, handicap (0 if unknown), and for each hole: holeNumber, par, yardage, allocation
+        - "questions": array of additional questions needed per hole, formatted as:
+        { "question": "string", "options": ["array", "of", "choices"] }
 
-        Additional golf lingo: hammer/bridge/soup/roll means to double the bet (2x). "re-hammer" or "resoup" to "bowl it" means to hammer a hammer (4x). These are options in certain games.
-        
-        Based only on the rules below, return a JSON object with:
-        - "displayName": a creative game title based on format and players
-        - "scorecards": one per golfer, with name, tees, handicap (if unknown put 0), and 18 holes. Each hole includes: holeNumber, par, yardage, and allocation
-        - "questions" (array): list of all additional questions to ask per hole (past tense) required to accurately score the match based on the rules (don't do {question} on hole 1, {question} on hole 2, etc. - just the question you'll repeat). Include proximity (closest to the hole not just on par 3s) if relevant for formats like Scotch. Include 2x, 3x, 4x, 5x as options for increasing the bet if in a format that allows for it (like Scotch). Don't ask questions that you can get from the actual scores, like who won or who was lowest, or if there were any carryovers, as these will be provided. also, don't ask questions about anything that is not a mandatory aspect of scoring (unless the rules and/or game format specify otherwise)
-        Format each question as: 
-          {
-            "question": "string",
-            "options": ["array", "of", "choices"]
-          }
-        
         Rules:
         ${rules}
-        
-        ONLY respond with raw valid JSON. No commentary, labels, or formatting.
-        `.trim();
+
+        Respond ONLY with valid raw JSON.`.trim();
 
         const messageId = uuidv4();
         await mariadbPool.query(
@@ -286,20 +276,12 @@ router.post("/update", authenticateUser, async (req, res) => {
         console.log("[/update] threadId found:", threadId);
 
         // Step 2: Send updated rule clarification
-        const message = `In your last mesage, you sent a JSON object containing the following information for a golf match: 
-        The match "displayName", "scorecards" data for each golfer, and additional "questions" that will be asked of the user on each hole as they input scores in order to track their golf match. 
-        
-        Your task is to use the new input below, and your existing knowledge from the thread of  
-        the golfers that are playing, the course they are playing, the tees they are playing from,
-        and your knowledge of golf, to **update** the JSON object to suffice the request of the user.
-
-        New Input:
+        const message = `New input from the user:
         ${newRules}
 
-        Respond only with valid raw JSON, no extra commentary or formatting. 
-        Here are the **ONLY** updates you are allowed to make based on the new input:
-        Changing the display name, changing a golfer's handicap, changing a golfer's name, adding a question, removing a question, changing answer options, changing question text.
-        `.trim();
+        Update the JSON object you created earlier in this thread to reflect these changes.
+
+        Remember: only return valid raw JSON, no extra commentary.`.trim();
 
         console.log("[/update] Sending updated rules to thread...");
         await openai.beta.threads.messages.create(threadId, {
