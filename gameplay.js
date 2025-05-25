@@ -289,7 +289,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const message = `In your last mesage, you sent a JSON object containing the following information for a golf match: 
         The match "displayName", "scorecards" data for each golfer, and additional "questions" that will be asked of the user on each hole as they input scores in order to track their golf match. 
         
-        Your task is to use the new input below, your existing knowledge of  
+        Your task is to use the new input below, and your existing knowledge from the thread of  
         the golfers that are playing, the course they are playing, the tees they are playing from,
         and your knowledge of golf, to **update** the JSON object to suffice the request of the user.
 
@@ -328,11 +328,11 @@ router.post("/update", authenticateUser, async (req, res) => {
 
         // Step 4: Poll for completion
         let status;
-        const maxAttempts = 15;
+        const maxAttempts = 10;
         console.log("[/update] Polling run status...");
         for (let i = 0; i < maxAttempts; i++) {
             console.log(`[/update] Poll attempt ${i + 1}...`);
-            await new Promise((r) => setTimeout(r, 2000));
+            await new Promise((r) => setTimeout(r, 6000));
             const runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
             status = runStatus.status;
             console.log(`[/update] Run status: ${status}`);
