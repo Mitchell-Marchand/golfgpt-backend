@@ -392,14 +392,7 @@ router.post("/update", authenticateUser, async (req, res) => {
 router.post("/confirm", authenticateUser, async (req, res) => {
     const { matchId, threadId } = req.body;
 
-    console.log("[/confirm] Updating match status...");
-    await mariadbPool.query(
-        "UPDATE Matches SET status = ? WHERE id = ?",
-        ["CONFIRMED", matchId]
-    );
-    console.log("[/confirm] Update complete");
-
-    const prompt = "This looks great. We're beginning the match. Be ready to receive player scores, answers to the questions, and potentially rules input as we play. Your task will be to keep everyone's scores, money, and likihood of winning.";
+    const prompt = "This looks great.";
     console.log("[/confirm] Confirming setup on thread...");
     await openai.beta.threads.messages.create(threadId, {
         role: "user",
@@ -418,7 +411,41 @@ router.post("/confirm", authenticateUser, async (req, res) => {
         ]
     );
 
-    res.json({ success: true });
+    //Fill out scorecard data, update in the db, and start a new thread for scoring
+    const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
+    if (rows.length === 0) {
+        return res.status(404).json({ error: "Match not found." });
+    }
+
+    //Loop through scoreacrds and add required fields
+    const scorecards = rows[0].scorecards;
+    for (let i = 0; i < scorecards?.length; i++) {
+        let scorecard = scorecards[i];
+        scorecard["plusMinus"] = 0;
+        scorecard["winPercent"] = 0.5;
+        let holes = scorecards[i].holes;
+        for (let j = 0; j < holes?.length; j++) {
+            let hole = holes[j];
+            hole["plusMinus"] = 0;
+            hole["score"] = 0;
+            holes[j] = hole;
+        }
+
+        scorecard.holes = holes;
+        scorecards[i] = scorecard;
+    }
+
+    console.log("[/confirm] Updating match status and filled out scorecards...");
+    await mariadbPool.query(
+        "UPDATE Matches SET status = ?, scorecards = ? WHERE id = ?",
+        ["CONFIRMED", JSON.stringify(scorecards), matchId]
+    );
+    console.log("[/confirm] Update complete");
+
+    //Start a gameplay thread with the scorecard data.
+    
+
+    res.json({ success: true, scorecards });
 });
 
 module.exports = router;
