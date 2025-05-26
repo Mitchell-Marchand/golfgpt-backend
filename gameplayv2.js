@@ -430,7 +430,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         res.json({ success: true, scorecards: parsed.scorecards });
     } catch (err) {
         console.error("Error in /score/submit:", err);
-        res.status(500).json({ error: "Failed to submit scores." });
+        res.status(500).json({ error: "Failed to submit scores" });
     }
 });
 
