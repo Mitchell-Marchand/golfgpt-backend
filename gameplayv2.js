@@ -25,6 +25,8 @@ function formatDateForSQL(isoString) {
 function buildScorecards(scorecards, playerTees, strokes) {
     const builtScorecards = [];
 
+    console.log("strokes info", strokes);
+
     for (const playerName in playerTees) {
         const teeName = playerTees[playerName];
 
@@ -194,7 +196,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         console.log("Built a scorecard?", builtScorecards);
 
-        if (buildScorecards?.length === 0) {
+        if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
         }
 
@@ -226,11 +228,12 @@ router.post("/update", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT questions, strokes, displayName, scorecards FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
+        const scorecards = JSOn.parse(rows[0]?.scorecards);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
