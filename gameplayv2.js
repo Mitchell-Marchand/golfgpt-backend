@@ -228,12 +228,12 @@ router.post("/update", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT scorecards, tees FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT courseId, tees FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const scorecards = JSON.parse(rows[0]?.scorecards);
+        const courseId = rows[0]?.courseId;
         const playerTees = JSON.parse(rows[0]?.tees);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
@@ -262,7 +262,19 @@ router.post("/update", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
+        if (rows2.length === 0) {
+            return res.status(404).json({ error: "Course not found." });
+        }
+
+        const scorecards = JSON.parse(rows2[0].scorecards);
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
+
+        console.log("Updated a scorecard?", builtScorecards);
+
+        if (builtScorecards?.length === 0) {
+            return res.status(500).json({ error: "Couldn't build scorecard" });
+        }
 
         await mariadbPool.query(
             "UPDATE Matches SET displayName = ?, questions = ?, strokes = ?, scorecards = ? WHERE id = ?",
