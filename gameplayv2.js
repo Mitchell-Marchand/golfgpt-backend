@@ -52,7 +52,8 @@ function buildScorecards(scorecards, playerTees, strokes) {
                 yardage: hole.Length,
                 par: hole.Par,
                 plusMinus: 0,
-                strokes: pop ? pop.strokes : 0
+                strokes: pop ? pop.strokes : 0,
+                score: 0
             };
         });
 
@@ -236,7 +237,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Here is the current match data:\nDisplay Name: ${rows1[0].displayName}\nQuestions: ${JSON.stringify(rows1[0].questions)}\nStrokes: ${JSON.stringify(rows1[0].strokes)}\n\nNew user input:\n${newRules}\n\nUpdate the JSON object accordingly and return only valid raw JSON.`;
+        const prompt = `Here is the current match data:\nDisplay Name: ${rows1[0].displayName}\nQuestions: ${JSON.stringify(rows1[0].questions, null, 2)}\nStrokes: ${JSON.stringify(rows1[0].strokes, null, 2)}\n\nNew user input:\n${newRules}\n\nUpdate the JSON object accordingly and return only valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates and returns only valid JSON." },
@@ -301,13 +302,16 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Match not found." });
         }
 
+        const scorecards = JSON.parse(rows[0]?.scorecards);
+        const prompt = `Everything looks good, get ready to track the results of the match. Here is the scorecard for each player: ${JSON.stringify(scorecards, null, 2)}`;
+
         const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", "Everything looks good, get ready to track the results of the match"]
+            [messageId, matchId, "user", prompt]
         );
 
-        res.json({ success: true, scorecards: JSON.parse(rows[0]?.scorecards) });
+        res.json({ success: true, scorecards });
     } catch (err) {
         console.error("Error in /confirm:", err);
         res.status(500).json({ error: "Failed to confirm match." });
