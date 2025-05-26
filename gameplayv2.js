@@ -369,6 +369,8 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", feedback]
         );
 
+        console.log("parsed?", parsed);
+
         res.json({ success: true, scorecards: parsed.scorecards });
     } catch (err) {
         console.error("Error in /score/feedback:", err);
