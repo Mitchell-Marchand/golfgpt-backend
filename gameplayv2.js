@@ -48,8 +48,8 @@ router.post("/begin", authenticateUser, async (req, res) => {
 
         const matchId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Matches (id, createdBy, golfers, courseId, status) VALUES (?, ?, ?, ?, ?)`,
-            [matchId, userId, JSON.stringify(golfers), course.CourseID, "COURSE_PROVIDED"]
+            `INSERT INTO Matches (id, createdBy, golfers, courseId, status, threadId) VALUES (?, ?, ?, ?, ?, ?)`,
+            [matchId, userId, JSON.stringify(golfers), course.CourseID, "COURSE_PROVIDED", matchId]
         );
 
         const messageId = uuidv4();
