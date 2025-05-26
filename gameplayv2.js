@@ -318,8 +318,120 @@ router.post("/confirm", authenticateUser, async (req, res) => {
     }
 });
 
-router.post("/score/post", authenticateUser, async (req, res) => {
+router.post("/score/feedback", authenticateUser, async (req, res) => {
+    const { matchId, feedback } = req.body;
 
+    if (!matchId || !feedback) {
+        return res.status(400).json({ error: "Missing matchId or feedback." });
+    }
+
+    try {
+        const [rows] = await mariadbPool.query("SELECT displayName FROM Matches WHERE id = ?", [matchId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
+
+        const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
+        const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
+
+        const prompt = `User provided the following feedback about the current match results:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current scorecards. Respond ONLY with valid JSON containing the updated scorecards array.`;
+
+        const messages = [
+            { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
+            ...pastMessages,
+            { role: "user", content: prompt }
+        ];
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages,
+            temperature: 0
+        });
+
+        const raw = completion.choices[0].message.content.trim();
+        let parsed;
+        try {
+            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+            parsed = JSON.parse(cleaned);
+        } catch (err) {
+            console.error("Failed to parse JSON:", raw);
+            return res.status(500).json({ error: "Model response was not valid JSON." });
+        }
+
+        await mariadbPool.query(
+            "UPDATE Matches SET scorecards = ? WHERE id = ?",
+            [JSON.stringify(parsed.scorecards), matchId]
+        );
+
+        const messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", feedback]
+        );
+
+        res.json({ success: true, scorecards: parsed.scorecards });
+    } catch (err) {
+        console.error("Error in /score/feedback:", err);
+        res.status(500).json({ error: "Failed to process feedback." });
+    }
+});
+
+router.post("/score/submit", authenticateUser, async (req, res) => {
+    const { matchId, holeNumber, par, scores, questionAnswers } = req.body;
+
+    if (!matchId || !holeNumber || !scores) {
+        return res.status(400).json({ error: "Missing required fields." });
+    }
+
+    try {
+        const [rows] = await mariadbPool.query("SELECT displayName FROM Matches WHERE id = ?", [matchId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
+
+        const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
+        const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
+
+        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information to update the match scorecards and return ONLY valid JSON containing the updated scorecards array.`;
+
+        const messages = [
+            { role: "system", content: "You are a golf scoring assistant that updates scorecards based on hole-by-hole results. Always respond ONLY with valid raw JSON." },
+            ...pastMessages,
+            { role: "user", content: prompt }
+        ];
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages,
+            temperature: 0
+        });
+
+        const raw = completion.choices[0].message.content.trim();
+        let parsed;
+        try {
+            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+            parsed = JSON.parse(cleaned);
+        } catch (err) {
+            console.error("Failed to parse JSON:", raw);
+            return res.status(500).json({ error: "Model response was not valid JSON." });
+        }
+
+        await mariadbPool.query(
+            "UPDATE Matches SET scorecards = ? WHERE id = ?",
+            [JSON.stringify(parsed.scorecards), matchId]
+        );
+
+        const messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", `Hole ${holeNumber} results: ${JSON.stringify(scores)} | Questions: ${JSON.stringify(questionAnswers)}`]
+        );
+
+        res.json({ success: true, scorecards: parsed.scorecards });
+    } catch (err) {
+        console.error("Error in /score/submit:", err);
+        res.status(500).json({ error: "Failed to submit scores." });
+    }
 });
 
 module.exports = router;
