@@ -307,12 +307,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", "Everything looks good, get ready to track the results of the match"]
         );
 
-        await mariadbPool.query(
-            "UPDATE Matches SET status = ?, scorecards = ? WHERE id = ?",
-            ["CONFIRMED", JSON.stringify(scorecards), matchId]
-        );
-
-        res.json({ success: true, scorecards });
+        res.json({ success: true, scorecards: rows[0]?.scorecards });
     } catch (err) {
         console.error("Error in /confirm:", err);
         res.status(500).json({ error: "Failed to confirm match." });
