@@ -358,9 +358,11 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        console.log("[feedback] parsed?", parsed);
+
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
-            [JSON.stringify(parsed.scorecards), matchId]
+            [JSON.stringify(parsed), matchId]
         );
 
         const messageId = uuidv4();
@@ -369,9 +371,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", feedback]
         );
 
-        console.log("parsed?", parsed);
-
-        res.json({ success: true, scorecards: parsed.scorecards });
+        res.json({ success: true, scorecards: parsed });
     } catch (err) {
         console.error("Error in /score/feedback:", err);
         res.status(500).json({ error: "Failed to process feedback." });
@@ -418,9 +418,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        console.log("[score/submit] parsed?", parsed);
+
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
-            [JSON.stringify(parsed.scorecards), matchId]
+            [JSON.stringify(parsed), matchId]
         );
 
         const messageId = uuidv4();
@@ -429,7 +431,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", `Hole ${holeNumber} results: ${JSON.stringify(scores)} | Questions: ${JSON.stringify(questionAnswers)}`]
         );
 
-        res.json({ success: true, scorecards: parsed.scorecards });
+        res.json({ success: true, scorecards: parsed });
     } catch (err) {
         console.error("Error in /score/submit:", err);
         res.status(500).json({ error: "Failed to submit scores" });
