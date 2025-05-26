@@ -25,8 +25,6 @@ function formatDateForSQL(isoString) {
 function buildScorecards(scorecards, playerTees, strokes) {
     const builtScorecards = [];
 
-    console.log("strokes info", JSON.stringify(strokes));
-
     for (const playerName in playerTees) {
         const teeName = playerTees[playerName];
 
@@ -270,7 +268,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const scorecards = JSON.parse(rows2[0].scorecards);
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
 
-        console.log("Updated a scorecard?", builtScorecards);
+        console.log("Updated a scorecard?", JSON.stringify(builtScorecards));
 
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
