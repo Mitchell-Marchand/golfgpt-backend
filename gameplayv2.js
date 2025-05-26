@@ -166,8 +166,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        //TODO: Extract stroke information, not full scorecard data, and create real scorecard
-        const prompt = `Based on the following match rules, generate a JSON object with:\n- \"displayName\": creative title\n- \"questions\": array of additional questions needed per hole, formatted as { \"question\": \"string\", \"options\": [\"array\", \"of\", \"choices\"] }\n\"strokes\": array with golferName and pops as an array of strokes the golfer gets each hole based on their handicap and the hole handicap/allocation, e.g. {"golfer: "Mitch", "pops": [{"allocation": 1, "strokes": 1}, {"alloaction": 2, "strokes": 1}, ..., {"allocation": 18, "strokes": 0}] \n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
+        const prompt = `Based on the following match rules, generate a JSON object with:\n- \"displayName\": creative title\n- \"questions\": array of additional questions needed per hole, formatted as { \"question\": \"string\", \"options\": [\"array\", \"of\", \"choices\"] } (don't ever ask questions about player's scores or strokes)\n\"strokes\": array with golferName and pops as an array of strokes the golfer gets each hole based on their handicap and the hole handicap/allocation, e.g. {"name": "Mitch", "pops": [{"allocation": 1, "strokes": 1}, {"alloaction": 2, "strokes": 1}, ..., {"allocation": 18, "strokes": 0}] \n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that returns only valid JSON." },
@@ -194,6 +193,10 @@ router.post("/create", authenticateUser, async (req, res) => {
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
 
         console.log("Built a scorecard?", builtScorecards);
+
+        if (buildScorecards?.length === 0) {
+            return res.status(500).json({ error: "Couldn't build scorecard" });
+        }
 
         const formattedTeeTime = formatDateForSQL(teeTime);
 
