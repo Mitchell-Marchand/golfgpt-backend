@@ -22,11 +22,54 @@ function formatDateForSQL(isoString) {
     return date.toISOString().slice(0, 19).replace('T', ' ');
 }
 
-function filterMaleScorecardsBySelectedTees(teesByGolfer, scorecards) {
-    const selectedTees = new Set(Object.values(teesByGolfer));
-    return scorecards.filter(
-        (card) => card.Gender === 'Male' && selectedTees.has(card.TeeSetRatingName)
-    );
+function buildScorecards(scorecards, playerTees, strokes) {
+    const builtScorecards = [];
+
+    for (const playerName in playerTees) {
+        const teeName = playerTees[playerName];
+
+        // Find the matching scorecard (by TeeSetRatingName)
+        const scorecard = scorecards.find(sc => sc.TeeSetRatingName === teeName);
+        if (!scorecard) {
+            console.warn(`No scorecard found for tee: ${teeName}`);
+            continue;
+        }
+
+        // Find the strokes data for this player
+        const playerStrokes = strokes.find(s => s.name === playerName);
+        if (!playerStrokes) {
+            console.warn(`No strokes data found for player: ${playerName}`);
+            continue;
+        }
+
+        // Build the holes array
+        const holes = scorecard.Holes.map(hole => {
+            // Find matching pop (based on allocation)
+            const pop = playerStrokes.pops.find(p => p.allocation === hole.Allocation);
+            return {
+                holeNumber: hole.Number,
+                allocation: hole.Allocation,
+                yardage: hole.Length,
+                par: hole.Par,
+                plusMinus: 0,
+                strokes: pop ? pop.strokes : 0
+            };
+        });
+
+        // Sum total strokes (handicap)
+        const handicap = playerStrokes.pops.reduce((sum, p) => sum + p.strokes, 0);
+
+        builtScorecards.push({
+            name: playerName,
+            tees: teeName,
+            handicap,
+            plusMinus: 0,
+            winPercent: 0.5,
+            holes
+        });
+    }
+
+    return builtScorecards;
 }
 
 router.post("/begin", authenticateUser, async (req, res) => {
@@ -68,27 +111,28 @@ router.post("/begin", authenticateUser, async (req, res) => {
 router.post("/tees", authenticateUser, async (req, res) => {
     const { matchId, scorecards, teesByGolfer } = req.body;
 
-    if (!matchId || !scorecards || !teesByGolfer) {
+    if (!matchId || !teesByGolfer) {
         return res.status(400).json({ error: "Missing required data." });
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT courseId FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT courseId, scorecards FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
+        } else {
+            const matchId = rows[0].matchId;
+            const hasScorecards = rows[0].scorecards;
+            if (!hasScorecards) {
+                await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE id = ?", [JSON.stringify(scorecards), matchId]);
+            }
         }
 
-        const courseId = rows[0].courseId;
-        await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
-
-        const filtered = filterMaleScorecardsBySelectedTees(teesByGolfer, scorecards);
-
-        await mariadbPool.query("UPDATE Matches SET status = ? WHERE id = ?", ["TEES_PROVIDED", matchId]);
+        await mariadbPool.query("UPDATE Matches SET status = ?, tees = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(teesByGolfer), matchId]);
 
         const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", `Filtered scorecards: ${JSON.stringify(filtered)} | Tees by golfer: ${JSON.stringify(teesByGolfer)}`]
+            [messageId, matchId, "user", `Tees by golfer: ${JSON.stringify(teesByGolfer)}`]
         );
 
         res.json({ success: true });
@@ -106,23 +150,24 @@ router.post("/create", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT golfers, courseId FROM Matches WHERE id = ?", [matchId]);
-        if (rows.length === 0) {
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees FROM Matches WHERE id = ?", [matchId]);
+        if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const golfers = JSON.parse(rows[0].golfers);
-        const formattedTeeTime = formatDateForSQL(teeTime);
+        const courseId = rows1[0].courseId;
+        const playerTees = JSON.parse(rows1[0].tees);
+        const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
+        if (rows2.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
 
-        await mariadbPool.query(
-            "UPDATE Matches SET teeTime = ?, isPublic = ?, status = ? WHERE id = ?",
-            [formattedTeeTime, isPublic ? 1 : 0, "RULES_PROVIDED", matchId]
-        );
-
+        const scorecards = JSON.parse(rows2[0].scorecards);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Based on the following match rules, generate a JSON object with:\n- \"displayName\": creative title\n- \"scorecards\": one per golfer, including name, tees, handicap (0 if unknown), and for each hole: holeNumber, par, yardage, allocation\n- \"questions\": array of additional questions needed per hole, formatted as { \"question\": \"string\", \"options\": [\"array\", \"of\", \"choices\"] }\n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
+        //TODO: Extract stroke information, not full scorecard data, and create real scorecard
+        const prompt = `Based on the following match rules, generate a JSON object with:\n- \"displayName\": creative title\n- \"questions\": array of additional questions needed per hole, formatted as { \"question\": \"string\", \"options\": [\"array\", \"of\", \"choices\"] }\n\"strokes\": array with golferName and pops as an array of strokes the golfer gets each hole based on their handicap and the hole handicap/allocation, e.g. {"golfer: "Mitch", "pops": [{"allocation": 1, "strokes": 1}, {"alloaction": 2, "strokes": 1}, ..., {"allocation": 18, "strokes": 0}] \n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that returns only valid JSON." },
@@ -146,9 +191,15 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
+
+        console.log("Built a scorecard?", builtScorecards);
+
+        const formattedTeeTime = formatDateForSQL(teeTime);
+
         await mariadbPool.query(
-            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
-            [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed.scorecards), "GENERATED", matchId]
+            "UPDATE Matches SET strokes = ?, teeTime = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
         const messageId = uuidv4();
@@ -157,7 +208,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             [messageId, matchId, "system", JSON.stringify(parsed)]
         );
 
-        res.status(201).json({ success: true, threadId: matchId, ...parsed });
+        res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to generate match setup." });
@@ -172,7 +223,7 @@ router.post("/update", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT questions, scorecards, displayName FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT questions, strokes, displayName, scorecards FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -180,7 +231,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Here is the current match data:\nDisplay Name: ${rows[0].displayName}\nQuestions: ${rows[0].questions}\nScorecards: ${rows[0].scorecards}\n\nNew user input:\n${newRules}\n\nUpdate the JSON object accordingly and return only valid raw JSON.`;
+        const prompt = `Here is the current match data:\nDisplay Name: ${rows[0].displayName}\nQuestions: ${rows[0].questions}\nStrokes: ${rows[0].strokes}\n\nNew user input:\n${newRules}\n\nUpdate the JSON object accordingly and return only valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates and returns only valid JSON." },
@@ -204,9 +255,11 @@ router.post("/update", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
+
         await mariadbPool.query(
-            "UPDATE Matches SET displayName = ?, questions = ?, scorecards = ? WHERE id = ?",
-            [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed.scorecards), matchId]
+            "UPDATE Matches SET displayName = ?, questions = ?, strokes = ?, scorecards = ? WHERE id = ?",
+            [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
         );
 
         const messageId = uuidv4();
@@ -215,7 +268,7 @@ router.post("/update", authenticateUser, async (req, res) => {
             [messageId, matchId, "system", JSON.stringify(parsed)]
         );
 
-        res.json({ success: true, ...parsed });
+        res.json({ success: true, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /update:", err);
         res.status(500).json({ error: "Failed to update match." });
@@ -231,15 +284,11 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const scorecards = JSON.parse(rows[0].scorecards);
-        for (let i = 0; i < scorecards.length; i++) {
-            scorecards[i].plusMinus = 0;
-            scorecards[i].winPercent = 0.5;
-            for (let j = 0; j < scorecards[i].holes.length; j++) {
-                scorecards[i].holes[j].plusMinus = 0;
-                scorecards[i].holes[j].score = 0;
-            }
-        }
+        const messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", "Everything looks good, get ready to track the results of the match"]
+        );
 
         await mariadbPool.query(
             "UPDATE Matches SET status = ?, scorecards = ? WHERE id = ?",
@@ -251,6 +300,10 @@ router.post("/confirm", authenticateUser, async (req, res) => {
         console.error("Error in /confirm:", err);
         res.status(500).json({ error: "Failed to confirm match." });
     }
+});
+
+router.post("/score/post", authenticateUser, async (req, res) => {
+
 });
 
 module.exports = router;
