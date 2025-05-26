@@ -192,7 +192,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
 
-        console.log("Built a scorecard?", builtScorecards);
+        console.log("Built a scorecard");
 
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
@@ -268,7 +268,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const scorecards = JSON.parse(rows2[0].scorecards);
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
 
-        console.log("Updated a scorecard?", JSON.stringify(builtScorecards));
+        console.log("Updated a scorecard");
 
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
