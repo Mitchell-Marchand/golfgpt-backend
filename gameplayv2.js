@@ -233,7 +233,7 @@ router.post("/update", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const scorecards = JSOn.parse(rows[0]?.scorecards);
+        const scorecards = JSON.parse(rows[0]?.scorecards);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
