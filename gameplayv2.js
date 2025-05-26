@@ -228,17 +228,17 @@ router.post("/update", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT courseId, tees FROM Matches WHERE id = ?", [matchId]);
-        if (rows.length === 0) {
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, questions, strokes FROM Matches WHERE id = ?", [matchId]);
+        if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const courseId = rows[0]?.courseId;
-        const playerTees = JSON.parse(rows[0]?.tees);
+        const courseId = rows1[0]?.courseId;
+        const playerTees = JSON.parse(rows1[0]?.tees);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Here is the current match data:\nDisplay Name: ${rows[0].displayName}\nQuestions: ${rows[0].questions}\nStrokes: ${rows[0].strokes}\n\nNew user input:\n${newRules}\n\nUpdate the JSON object accordingly and return only valid raw JSON.`;
+        const prompt = `Here is the current match data:\nDisplay Name: ${rows1[0].displayName}\nQuestions: ${JSON.stringify(rows1[0].questions)}\nStrokes: ${JSON.stringify(rows1[0].strokes)}\n\nNew user input:\n${newRules}\n\nUpdate the JSON object accordingly and return only valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates and returns only valid JSON." },
