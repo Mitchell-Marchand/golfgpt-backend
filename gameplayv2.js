@@ -25,7 +25,7 @@ function formatDateForSQL(isoString) {
 function buildScorecards(scorecards, playerTees, strokes) {
     const builtScorecards = [];
 
-    console.log("strokes info", strokes);
+    console.log("strokes info", JSON.stringify(strokes));
 
     for (const playerName in playerTees) {
         const teeName = playerTees[playerName];
