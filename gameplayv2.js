@@ -358,8 +358,6 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
-        console.log("[feedback] parsed?", parsed);
-
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
             [JSON.stringify(parsed), matchId]
