@@ -307,7 +307,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", "Everything looks good, get ready to track the results of the match"]
         );
 
-        res.json({ success: true, scorecards: rows[0]?.scorecards });
+        res.json({ success: true, scorecards: JSON.parse(rows[0]?.scorecards) });
     } catch (err) {
         console.error("Error in /confirm:", err);
         res.status(500).json({ error: "Failed to confirm match." });
