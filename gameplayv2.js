@@ -336,7 +336,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
 
         //TODO: Better prompt. 
         //Generate new strokes (if applicable) and ask for a new plusMinus for each golfer on each played hole based on new input
-        const prompt = `User provided the following feedback about the current match results:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current scorecards for each golfer. Respond with the full scorecard - DO NOT - omit any holes that haven't been played. ONLY respond with valid JSON containing the updated scorecards array.`;
+        const prompt = `User provided the following feedback about the current match results:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current scorecards strokes and plusMinus information for each golfer. Respond with the full scorecard - DO NOT omit any holes that haven't been played. ONLY respond with valid JSON containing the updated scorecards array.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
