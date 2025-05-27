@@ -326,17 +326,30 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT displayName FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
+        const scorecards = JSON.parse(rows[0].scorecards);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
+        let holesToAdjust = [];
+        for (let i = 0; i < scorecards.length; i++) {
+            for (let j = 0; j < scorecards[i].holes.length; j++) {
+                if (scorecards[i].holes[j].holeNumber === holeNumber) {
+                    holesToAdjust.push({
+                        name: scorecards[i].name,
+                        hole: scorecards[i].holes[j]
+                    });
+                }
+            }
+        }
+
         //TODO: Better prompt. 
         //Generate new strokes (if applicable) and ask for a new plusMinus for each golfer on each played hole based on new input
-        const prompt = `User provided the following feedback about the current match results on holeNumber ${holeNumber}:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current strokes and plusMinus information for each golfer on this hole. Respond with the full scorecard - DO NOT omit any holes that haven't been played. ONLY respond with valid JSON containing the updated scorecards array.`;
+        const prompt = `User provided the following feedback about the current match results on holeNumber ${holeNumber}:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current results for each golfer on this hole:\nHole Info: ${JSON.stringify(holesToAdjust, null, 2)}. ONLY respond with valid JSON containing the updated hole info.`; 
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
@@ -360,12 +373,45 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
-        //TODO: Apply the new strokes and plusMinus data to the scorecards and return it (update scorecards and strokes in db)
         console.log("[score/feedback] raw", raw);
+
+        for (let i = 0; i < scorecards?.length; i++) {
+            let scorecard = scorecards[i];
+
+            for (let j = 0; j < parsed?.length; j++) {
+                if (parsed[j].name === scorecard.name) {
+                    for (let k = 0; k < scorecard.holes.length; k++) {
+                        if (scorecard.holes[k].holeNumber === holeNumber) {
+                            scorecard.holes[k].plusMinus = parsed[j].plusMinus;
+                            scorecard.holes[k].score = parsed[j].score;
+                            scorecard.holes[k].strokes = parsed[j].strokes;
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            scorecards[i] = scorecard;
+        }
+
+        //Update the overall plusMinus and handicap for each golfer
+        for (let i = 0; i < scorecards.length; j++) {
+            let plusMinus = 0;
+            let handicap = 0;
+            for (let j = 0; j < scorecards[i].holes.length; j++) {
+                plusMinus += scorecards[i].holes[j].plusMinus;
+                handicap += scorecards[i].holes[j].strokes;
+            }
+
+            scorecards[i].plusMinus = plusMinus;
+            scorecards[i].handicap = handicap;
+        }
 
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
-            [JSON.stringify(parsed), matchId]
+            [JSON.stringify(scorecards), matchId]
         );
 
         const messageId = uuidv4();
@@ -374,7 +420,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", feedback]
         );
 
-        res.json({ success: true, scorecards: parsed });
+        res.json({ success: true, scorecards });
     } catch (err) {
         console.error("Error in /score/feedback:", err);
         res.status(500).json({ error: "Failed to process feedback." });
@@ -443,6 +489,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 }
             }
 
+            scorecard.plusMinus = plusMinus;
             scorecards[i] = scorecard;
         }
 
