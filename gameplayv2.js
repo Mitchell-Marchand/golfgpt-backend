@@ -361,6 +361,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
         }
 
         //TODO: Apply the new strokes and plusMinus data to the scorecards and return it (update scorecards and strokes in db)
+        console.log("[score/feedback] raw", raw);
 
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
