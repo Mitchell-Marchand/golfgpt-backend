@@ -334,7 +334,9 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `User provided the following feedback about the current match results:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current scorecards. Respond ONLY with valid JSON containing the updated scorecards array.`;
+        //TODO: Better prompt. 
+        //Generate new strokes (if applicable) and ask for a new plusMinus for each golfer on each played hole based on new input
+        const prompt = `User provided the following feedback about the current match results:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current scorecards for each golfer. Respond with the full scorecard - DO NOT - omit any holes that haven't been played. ONLY respond with valid JSON containing the updated scorecards array.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
@@ -357,6 +359,8 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             console.error("Failed to parse JSON:", raw);
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
+
+        //TODO: Apply the new strokes and plusMinus data to the scorecards and return it (update scorecards and strokes in db)
 
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
@@ -384,15 +388,17 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT displayName FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
+        const scorecards = JSON.parse(rows[0].scoreacrds);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information to update the match scorecards and return ONLY valid JSON containing the updated scorecards array.`;
+        //TODO: Better prompt
+        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information, the rules of the game, and the holes played so far to return ONLY a valid JSON array containing the following data for each player: "name" as the name of the player, "score" for the score of the player on that hole, and "plusMinus" as a number for the money that the player won/lost on that hole.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on hole-by-hole results. Always respond ONLY with valid raw JSON." },
@@ -416,11 +422,34 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
-        console.log("[score/submit] parsed?", parsed);
+        //Use the plusMinus info and posted scores to populate the scorecards and return it (update in the db)
+        for (let i = 0; i < scorecards?.length; i++) {
+            let scorecard = scorecards[i];
+            let plusMinus = scorecard.plusMinus;
+
+            for (let j = 0; j < parsed?.length; j++) {
+                if (parsed[j].name === scorecard.name) {
+                    plusMinus += parsed[j].plusMinus;
+                    for (let k = 0; k < scorecard.holes.length; k++) {
+                        if (scorecard.holes[k].holeNumber === holeNumber) {
+                            scorecard.holes[k].plusMinus = parsed[j].plusMinus;
+                            scorecard.holes[k].score = parsed[j].score;
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            scorecards[i] = scorecard;
+        }
+
+        console.log("[score/submit] parsed", parsed);
 
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
-            [JSON.stringify(parsed), matchId]
+            [JSON.stringify(scorecards), matchId]
         );
 
         const messageId = uuidv4();
@@ -429,7 +458,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", `Hole ${holeNumber} results: ${JSON.stringify(scores)} | Questions: ${JSON.stringify(questionAnswers)}`]
         );
 
-        res.json({ success: true, scorecards: parsed });
+        res.json({ success: true, scorecards });
     } catch (err) {
         console.error("Error in /score/submit:", err);
         res.status(500).json({ error: "Failed to submit scores" });
