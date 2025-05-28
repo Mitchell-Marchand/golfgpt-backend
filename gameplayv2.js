@@ -175,6 +175,12 @@ router.post("/create", authenticateUser, async (req, res) => {
             { role: "user", content: prompt }
         ];
 
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", prompt]
+        );
+
         const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages,
@@ -206,10 +212,10 @@ router.post("/create", authenticateUser, async (req, res) => {
             [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
-        const messageId = uuidv4();
+        messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "system", JSON.stringify(parsed)]
+            [messageId, matchId, "system", raw]
         );
 
         res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
@@ -244,6 +250,12 @@ router.post("/update", authenticateUser, async (req, res) => {
             ...pastMessages,
             { role: "user", content: prompt }
         ];
+
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", prompt]
+        );
 
         const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
@@ -280,10 +292,10 @@ router.post("/update", authenticateUser, async (req, res) => {
             [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
         );
 
-        const messageId = uuidv4();
+        messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "system", JSON.stringify(parsed)]
+            [messageId, matchId, "system", raw]
         );
 
         res.json({ success: true, ...parsed, scorecards: builtScorecards });
@@ -357,6 +369,12 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             { role: "user", content: prompt }
         ];
 
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", prompt]
+        );
+
         const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages,
@@ -412,10 +430,10 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             [JSON.stringify(scorecards), matchId]
         );
 
-        const messageId = uuidv4();
+        messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", feedback]
+            [messageId, matchId, "system", raw]
         );
 
         res.json({ success: true, scorecards });
@@ -443,7 +461,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
         //TODO: Better prompt
-        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information, the rules of the game, and the holes played so far to return ONLY a valid JSON array containing the following data for each player: "name" as the name of the player, "score" for the score of the player on that hole, and "plusMinus" as a number for the money that the player won/lost on that hole.`;
+        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information, the rules of the game, and the holes played so far to return ONLY a valid JSON array containing the following data for each player: "name" as the name of the player, "score" for the score of the player on that hole, and "plusMinus" as a number for the dollar amount that the player won or lost on that hole, positive for wins, negative for losses.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on hole-by-hole results. Always respond ONLY with valid raw JSON." },
@@ -456,6 +474,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             messages,
             temperature: 0
         });
+
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", prompt]
+        );
 
         const raw = completion.choices[0].message.content.trim();
         let parsed;
@@ -498,10 +522,10 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [JSON.stringify(scorecards), matchId]
         );
 
-        const messageId = uuidv4();
+        messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", `Hole ${holeNumber} results: ${JSON.stringify(scores)} | Questions: ${JSON.stringify(questionAnswers)}`]
+            [messageId, matchId, "system", raw]
         );
 
         res.json({ success: true, scorecards });
