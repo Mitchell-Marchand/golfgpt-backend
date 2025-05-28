@@ -269,7 +269,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const scorecards = JSON.parse(rows2[0].scorecards);
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
 
-        console.log("Updated a scorecard", parsed);
+        console.log("Updated a scorecard", raw);
 
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
