@@ -395,7 +395,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             scorecards[i] = scorecard;
         }
 
-        console.log("updated scorecards?", scorecards);
+        console.log("updated scorecards?", JSON.stringify(scorecards, null, 2));
 
         //Update the overall plusMinus and handicap for each golfer
         for (let i = 0; i < scorecards.length; j++) {
