@@ -254,7 +254,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         let messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", prompt]
+            [messageId, matchId, "user", newRules]
         );
 
         const completion = await openai.chat.completions.create({
@@ -372,7 +372,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
         let messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", prompt]
+            [messageId, matchId, "user", feedback]
         );
 
         const completion = await openai.chat.completions.create({
