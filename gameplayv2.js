@@ -380,10 +380,9 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
 
             for (let j = 0; j < parsed?.length; j++) {
                 if (parsed[j].name === scorecard.name) {
-                    console.log("WOOHOO!");
                     for (let k = 0; k < scorecard.holes.length; k++) {
                         if (scorecard.holes[k].holeNumber === holeNumber) {
-                            
+                            console.log("WOOHOO!");
                             scorecard.holes[k].plusMinus = parsed[j].plusMinus;
                             break;
                         }
@@ -396,13 +395,11 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             scorecards[i] = scorecard;
         }
 
-        console.log(`updated scorecards for hole ${holeNumber}`, JSON.stringify(scorecards, null, 2));
-
         //Update the overall plusMinus and handicap for each golfer
-        for (let i = 0; i < scorecards.length; j++) {
+        for (i = 0; i < scorecards.length; j++) {
             let plusMinus = 0;
             let handicap = 0;
-            for (let j = 0; j < scorecards[i].holes.length; j++) {
+            for (j = 0; j < scorecards[i].holes.length; j++) {
                 plusMinus += scorecards[i].holes[j].plusMinus;
                 handicap += scorecards[i].holes[j].strokes;
             }
