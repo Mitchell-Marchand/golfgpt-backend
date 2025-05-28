@@ -395,7 +395,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
         }
 
         //Update the overall plusMinus and handicap for each golfer
-        for (i = 0; i < scorecards.length; j++) {
+        for (i = 0; i < scorecards.length; i++) {
             let plusMinus = 0;
             let handicap = 0;
             for (j = 0; j < scorecards[i].holes.length; j++) {
