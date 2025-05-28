@@ -182,7 +182,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         );
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx",
             messages,
             temperature: 0
         });
