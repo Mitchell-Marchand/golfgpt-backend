@@ -380,9 +380,10 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
 
             for (let j = 0; j < parsed?.length; j++) {
                 if (parsed[j].name === scorecard.name) {
+                    console.log("WOOHOO!");
                     for (let k = 0; k < scorecard.holes.length; k++) {
                         if (scorecard.holes[k].holeNumber === holeNumber) {
-                            console.log("WOOHOO!");
+                            
                             scorecard.holes[k].plusMinus = parsed[j].plusMinus;
                             break;
                         }
