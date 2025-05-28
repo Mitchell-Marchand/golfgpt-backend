@@ -461,7 +461,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
         //TODO: Better prompt
-        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information, the rules of the game, and the holes played so far to return ONLY a valid JSON array containing the following data for each player: "name" as the name of the player, "score" for the score of the player on that hole, and "plusMinus" as a number for the dollar amount that the player won or lost on that hole, positive for wins, negative for losses.`;
+        const prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nPlease use this information, the rules of the game, and the holes played so far to return ONLY a valid JSON array containing the following data for each player: "name" as the name of the player, "score" for the score of the player on that hole, and "plusMinus" as a number for the dollar amount that the player won or lost on that hole, positive for wins, negative for losses. The sum of the plusMinus of all golfers combined NEEDs to be 0 on every hole.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on hole-by-hole results. Always respond ONLY with valid raw JSON." },
