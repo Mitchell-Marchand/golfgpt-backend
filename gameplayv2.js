@@ -373,7 +373,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
-        console.log("[score/feedback] raw", raw);
+        console.log("[score/feedback] parsed", parsed);
 
         for (let i = 0; i < scorecards?.length; i++) {
             let scorecard = scorecards[i];
@@ -382,9 +382,8 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
                 if (parsed[j].name === scorecard.name) {
                     for (let k = 0; k < scorecard.holes.length; k++) {
                         if (scorecard.holes[k].holeNumber === holeNumber) {
+                            console.log("WOOHOO!");
                             scorecard.holes[k].plusMinus = parsed[j].plusMinus;
-                            scorecard.holes[k].score = parsed[j].score;
-                            scorecard.holes[k].strokes = parsed[j].strokes;
                             break;
                         }
                     }
@@ -395,6 +394,8 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
 
             scorecards[i] = scorecard;
         }
+
+        console.log("updated scorecards?", scorecards);
 
         //Update the overall plusMinus and handicap for each golfer
         for (let i = 0; i < scorecards.length; j++) {
