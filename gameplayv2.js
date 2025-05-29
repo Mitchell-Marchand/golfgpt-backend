@@ -212,12 +212,6 @@ router.post("/create", authenticateUser, async (req, res) => {
             [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
-        messageId = uuidv4();
-        await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "system", raw]
-        );
-
         res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /create:", err);
@@ -290,12 +284,6 @@ router.post("/update", authenticateUser, async (req, res) => {
         await mariadbPool.query(
             "UPDATE Matches SET displayName = ?, questions = ?, strokes = ?, scorecards = ? WHERE id = ?",
             [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
-        );
-
-        messageId = uuidv4();
-        await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "system", raw]
         );
 
         res.json({ success: true, ...parsed, scorecards: builtScorecards });
@@ -430,12 +418,6 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             [JSON.stringify(scorecards), matchId]
         );
 
-        messageId = uuidv4();
-        await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "system", raw]
-        );
-
         res.json({ success: true, scorecards });
     } catch (err) {
         console.error("Error in /score/feedback:", err);
@@ -520,12 +502,6 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ? WHERE id = ?",
             [JSON.stringify(scorecards), matchId]
-        );
-
-        messageId = uuidv4();
-        await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "system", raw]
         );
 
         res.json({ success: true, scorecards });
