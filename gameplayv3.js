@@ -9,8 +9,8 @@ require('dotenv').config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
 
-//const model = "gpt-3.5-turbo"
-const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
+const model = "gpt-3.5-turbo"
+//const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
 //const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
 
 const mariadbPool = mysql.createPool({
