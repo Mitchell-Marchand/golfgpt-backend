@@ -43,7 +43,7 @@ function countTokensForMessages(messages) {
     return totalTokens;
 }
 
-function buildScorecards(scorecards, playerTees, strokes) {
+function buildScorecards(scorecards, playerTees, strokes = []) {
     const builtScorecards = [];
 
     for (const playerName in playerTees) {
@@ -56,17 +56,12 @@ function buildScorecards(scorecards, playerTees, strokes) {
             continue;
         }
 
-        // Find the strokes data for this player
-        const playerStrokes = strokes.find(s => s.name === playerName);
-        if (!playerStrokes) {
-            console.warn(`No strokes data found for player: ${playerName}`);
-            continue;
-        }
+        // Find the strokes data for this player (fallback to empty pops)
+        const playerStrokes = strokes.find(s => s.name === playerName) || { pops: [] };
 
         // Build the holes array
         const holes = scorecard.Holes.map(hole => {
-            // Find matching pop (based on allocation)
-            const pop = playerStrokes.pops.find(p => p.allocation === hole.Allocation);
+            const pop = playerStrokes.pops.find(p => p.allocation === hole.Allocation || p.hole === hole.holeNumber);
             return {
                 holeNumber: hole.Number,
                 allocation: hole.Allocation,
@@ -78,8 +73,8 @@ function buildScorecards(scorecards, playerTees, strokes) {
             };
         });
 
-        // Sum total strokes (handicap)
-        const handicap = playerStrokes.pops.reduce((sum, p) => sum + p.strokes, 0);
+        // Sum total strokes (handicap) safely
+        const handicap = playerStrokes.pops.reduce((sum, p) => sum + (p.strokes || 0), 0);
 
         builtScorecards.push({
             name: playerName,
