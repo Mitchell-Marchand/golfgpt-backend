@@ -163,7 +163,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
 router.post("/create", authenticateUser, async (req, res) => {
     const { matchId, teeTime, isPublic, rules, expected } = req.body;
 
-    if (!matchId || !teeTime || typeof isPublic === 'undefined' || !rules) {
+    if (!matchId || !teeTime || typeof isPublic === 'undefined') {
         return res.status(400).json({ error: "Missing required data." });
     }
 
@@ -184,7 +184,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the info needed to score it.\n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
+        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the info needed to score it.\n\nRules:\n${rules || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that returns only valid JSON." },
