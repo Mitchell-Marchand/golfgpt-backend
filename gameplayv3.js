@@ -340,12 +340,10 @@ router.post("/update", authenticateUser, async (req, res) => {
 
             const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes);
 
-            res.status(201).json({ success: true, threadId: matchId, ...expected, scorecards: correctScorecards });
+            res.status(201).json({ success: true, ...expected, scorecards: correctScorecards });
         } else {
-            res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
+            res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
         }
-
-        res.json({ success: true, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /update:", err);
         res.status(500).json({ error: "Failed to update match." });
