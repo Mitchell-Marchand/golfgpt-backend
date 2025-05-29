@@ -144,7 +144,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
 });
 
 router.post("/create", authenticateUser, async (req, res) => {
-    const { matchId, teeTime, isPublic, rules } = req.body;
+    const { matchId, teeTime, isPublic, rules, expected } = req.body;
 
     if (!matchId || !teeTime || typeof isPublic === 'undefined' || !rules) {
         return res.status(400).json({ error: "Missing required data." });
@@ -212,7 +212,19 @@ router.post("/create", authenticateUser, async (req, res) => {
             [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
-        res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
+        if (expected) {
+            messageId = uuidv4();
+            await mariadbPool.query(
+                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
+            );
+
+            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes);
+
+            res.status(201).json({ success: true, threadId: matchId, ...expected, scorecards: correctScorecards });
+        } else {
+            res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
+        }
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to generate match setup." });
@@ -220,7 +232,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 });
 
 router.post("/update", authenticateUser, async (req, res) => {
-    const { matchId, newRules } = req.body;
+    const { matchId, newRules, expected } = req.body;
 
     if (!matchId || !newRules) {
         return res.status(400).json({ error: "Missing matchId or newRules." });
@@ -286,6 +298,20 @@ router.post("/update", authenticateUser, async (req, res) => {
             [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
         );
 
+        if (expected) {
+            messageId = uuidv4();
+            await mariadbPool.query(
+                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
+            );
+
+            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes);
+
+            res.status(201).json({ success: true, threadId: matchId, ...expected, scorecards: correctScorecards });
+        } else {
+            res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
+        }
+
         res.json({ success: true, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /update:", err);
@@ -303,7 +329,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
         }
 
         const scorecards = JSON.parse(rows[0]?.scorecards);
-        const prompt = `Everything looks good, get ready to track the results of the match. Here is the scorecard for each player: ${JSON.stringify(scorecards, null, 2)}`;
+        const prompt = `Everything looks good, get ready to track the results of the match. Here is the scorecard: ${JSON.stringify(scorecards, null, 2)}`;
 
         const messageId = uuidv4();
         await mariadbPool.query(
@@ -318,115 +344,8 @@ router.post("/confirm", authenticateUser, async (req, res) => {
     }
 });
 
-router.post("/score/feedback", authenticateUser, async (req, res) => {
-    const { matchId, feedback, holeNumber } = req.body;
-
-    if (!matchId || !feedback) {
-        return res.status(400).json({ error: "Missing matchId or feedback." });
-    }
-
-    try {
-        const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: "Match not found." });
-        }
-
-        const scorecards = JSON.parse(rows[0].scorecards);
-        const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
-        const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
-
-        let holesToAdjust = [];
-        for (let i = 0; i < scorecards.length; i++) {
-            for (let j = 0; j < scorecards[i].holes.length; j++) {
-                if (scorecards[i].holes[j].holeNumber === holeNumber) {
-                    holesToAdjust.push({
-                        name: scorecards[i].name,
-                        hole: scorecards[i].holes[j]
-                    });
-                }
-            }
-        }
-
-        //TODO: Better prompt. 
-        //Generate new strokes (if applicable) and ask for a new plusMinus for each golfer on each played hole based on new input
-        const prompt = `User provided the following feedback about the current match results on holeNumber ${holeNumber}:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current results for each golfer on this hole:\nHole Info: ${JSON.stringify(holesToAdjust, null, 2)}. ONLY respond with a valid JSON array containing the updated the provided hole info {"name", "plusMinus"}.`; 
-
-        const messages = [
-            { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
-            ...pastMessages,
-            { role: "user", content: prompt }
-        ];
-
-        let messageId = uuidv4();
-        await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", feedback]
-        );
-
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages,
-            temperature: 0
-        });
-
-        const raw = completion.choices[0].message.content.trim();
-        let parsed;
-        try {
-            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-            parsed = JSON.parse(cleaned);
-        } catch (err) {
-            console.error("Failed to parse JSON:", raw);
-            return res.status(500).json({ error: "Model response was not valid JSON." });
-        }
-
-        console.log("[score/feedback] parsed", parsed);
-
-        for (let i = 0; i < scorecards?.length; i++) {
-            let scorecard = scorecards[i];
-
-            for (let j = 0; j < parsed?.length; j++) {
-                if (parsed[j].name === scorecard.name) {
-                    for (let k = 0; k < scorecard.holes.length; k++) {
-                        if (scorecard.holes[k].holeNumber === holeNumber) {
-                            scorecard.holes[k].plusMinus = parsed[j].plusMinus;
-                            break;
-                        }
-                    }
-
-                    break;
-                }
-            }
-
-            scorecards[i] = scorecard;
-        }
-
-        //Update the overall plusMinus and handicap for each golfer
-        for (i = 0; i < scorecards.length; i++) {
-            let plusMinus = 0;
-            let handicap = 0;
-            for (j = 0; j < scorecards[i].holes.length; j++) {
-                plusMinus += scorecards[i].holes[j].plusMinus;
-                handicap += scorecards[i].holes[j].strokes;
-            }
-
-            scorecards[i].plusMinus = plusMinus;
-            scorecards[i].handicap = handicap;
-        }
-
-        await mariadbPool.query(
-            "UPDATE Matches SET scorecards = ? WHERE id = ?",
-            [JSON.stringify(scorecards), matchId]
-        );
-
-        res.json({ success: true, scorecards });
-    } catch (err) {
-        console.error("Error in /score/feedback:", err);
-        res.status(500).json({ error: "Failed to process feedback." });
-    }
-});
-
 router.post("/score/submit", authenticateUser, async (req, res) => {
-    const { matchId, holeNumber, par, scores, questionAnswers } = req.body;
+    const { matchId, holeNumber, par, scores, questionAnswers, expected } = req.body;
 
     if (!matchId || !holeNumber || !scores) {
         return res.status(400).json({ error: "Missing required fields." });
@@ -473,6 +392,10 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        if (expected) {
+            parsed = expected;
+        }
+
         //Use the plusMinus info and posted scores to populate the scorecards and return it (update in the db)
         for (let i = 0; i < scorecards?.length; i++) {
             let scorecard = scorecards[i];
@@ -504,10 +427,137 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [JSON.stringify(scorecards), matchId]
         );
 
+        if (expected) {
+            messageId = uuidv4();
+            await mariadbPool.query(
+                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
+            );
+        } 
+
         res.json({ success: true, scorecards });
     } catch (err) {
         console.error("Error in /score/submit:", err);
         res.status(500).json({ error: "Failed to submit scores" });
+    }
+});
+
+router.post("/score/feedback", authenticateUser, async (req, res) => {
+    const { matchId, feedback, holeNumber, expected } = req.body;
+
+    if (!matchId || !feedback) {
+        return res.status(400).json({ error: "Missing matchId or feedback." });
+    }
+
+    try {
+        const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
+
+        const scorecards = JSON.parse(rows[0].scorecards);
+        const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
+        const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
+
+        let holesToAdjust = [];
+        for (let i = 0; i < scorecards.length; i++) {
+            for (let j = 0; j < scorecards[i].holes.length; j++) {
+                if (scorecards[i].holes[j].holeNumber === holeNumber) {
+                    holesToAdjust.push({
+                        name: scorecards[i].name,
+                        hole: scorecards[i].holes[j]
+                    });
+                }
+            }
+        }
+
+        //TODO: Better prompt. 
+        //Generate new strokes (if applicable) and ask for a new plusMinus for each golfer on each played hole based on new input
+        const prompt = `User provided the following feedback about the current match results on holeNumber ${holeNumber}:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current results for each golfer on this hole:\nHole Info: ${JSON.stringify(holesToAdjust, null, 2)}. ONLY respond with a valid JSON array containing the updated the provided hole info {"name", "plusMinus"}.`;
+
+        const messages = [
+            { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
+            ...pastMessages,
+            { role: "user", content: prompt }
+        ];
+
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", feedback]
+        );
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages,
+            temperature: 0
+        });
+
+        const raw = completion.choices[0].message.content.trim();
+        let parsed;
+        try {
+            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+            parsed = JSON.parse(cleaned);
+        } catch (err) {
+            console.error("Failed to parse JSON:", raw);
+            return res.status(500).json({ error: "Model response was not valid JSON." });
+        }
+
+        if (expected) {
+            parsed = expected;
+        }
+
+        console.log("[score/feedback] parsed", parsed);
+
+        for (let i = 0; i < scorecards?.length; i++) {
+            let scorecard = scorecards[i];
+
+            for (let j = 0; j < parsed?.length; j++) {
+                if (parsed[j].name === scorecard.name) {
+                    for (let k = 0; k < scorecard.holes.length; k++) {
+                        if (scorecard.holes[k].holeNumber === holeNumber) {
+                            scorecard.holes[k].plusMinus = parsed[j].plusMinus;
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            scorecards[i] = scorecard;
+        }
+
+        //Update the overall plusMinus and handicap for each golfer
+        for (i = 0; i < scorecards.length; i++) {
+            let plusMinus = 0;
+            let handicap = 0;
+            for (j = 0; j < scorecards[i].holes.length; j++) {
+                plusMinus += scorecards[i].holes[j].plusMinus;
+                handicap += scorecards[i].holes[j].strokes;
+            }
+
+            scorecards[i].plusMinus = plusMinus;
+            scorecards[i].handicap = handicap;
+        }
+
+        await mariadbPool.query(
+            "UPDATE Matches SET scorecards = ? WHERE id = ?",
+            [JSON.stringify(scorecards), matchId]
+        );
+
+        if (expected) {
+            messageId = uuidv4();
+            await mariadbPool.query(
+                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
+            );
+        } 
+
+        res.json({ success: true, scorecards });
+    } catch (err) {
+        console.error("Error in /score/feedback:", err);
+        res.status(500).json({ error: "Failed to process feedback." });
     }
 });
 
