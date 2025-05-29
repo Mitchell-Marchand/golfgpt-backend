@@ -8,6 +8,10 @@ const OpenAI = require("openai");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
 
+//const model = "gpt-3.5-turbo"
+//const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
+const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
+
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
     user: 'golfuser',
@@ -167,7 +171,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with a unique, creative display name, a list of multiple choice questions that will need to be asked each hole for scoring, and a list of which holes each golfer gets any strokes on based on allocation.\n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
+        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the info needed to score it.\n\nRules:\n${rules}\n\nRespond ONLY with valid raw JSON.`;
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that returns only valid JSON." },
@@ -182,7 +186,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         );
 
         const completion = await openai.chat.completions.create({
-            model: "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx",
+            model,
             messages,
             temperature: 0
         });
@@ -264,7 +268,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         );
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model,
             messages,
             temperature: 0
         });
@@ -385,7 +389,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         ];
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model,
             messages,
             temperature: 0
         });
@@ -501,7 +505,7 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
         );
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model,
             messages,
             temperature: 0
         });
