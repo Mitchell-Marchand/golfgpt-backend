@@ -2,15 +2,16 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
-require('dotenv').config();
 const OpenAI = require("openai");
+const { encoding_for_model } = require("tiktoken");
+require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
 
 //const model = "gpt-3.5-turbo"
-//const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
-const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
+const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
+//const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
@@ -24,6 +25,22 @@ const mariadbPool = mysql.createPool({
 function formatDateForSQL(isoString) {
     const date = new Date(isoString);
     return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function countTokensForMessages(messages) {
+    const enc = encoding_for_model(model);
+    let totalTokens = 0;
+
+    for (const message of messages) {
+        totalTokens += enc.encode(message.role).length;
+        totalTokens += enc.encode(message.content).length;
+        // Add ~4 tokens per message (OpenAI overhead estimate)
+        totalTokens += 4;
+    }
+    // Add priming tokens (per OpenAI docs)
+    totalTokens += 2;
+    enc.free();
+    return totalTokens;
 }
 
 function buildScorecards(scorecards, playerTees, strokes) {
@@ -185,6 +202,9 @@ router.post("/create", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", prompt]
         );
 
+        const tokenCount = countTokensForMessages(messages);
+        console.log(`Sending ${tokenCount} tokens to OpenAI.`);
+
         const completion = await openai.chat.completions.create({
             model,
             messages,
@@ -270,6 +290,9 @@ router.post("/update", authenticateUser, async (req, res) => {
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
             [messageId, matchId, "user", newRules]
         );
+
+        const tokenCount = countTokensForMessages(messages);
+        console.log(`Sending ${tokenCount} tokens to OpenAI.`);
 
         const completion = await openai.chat.completions.create({
             model,
@@ -396,6 +419,9 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             { role: "user", content: prompt }
         ];
 
+        const tokenCount = countTokensForMessages(messages);
+        console.log(`Sending ${tokenCount} tokens to OpenAI.`);
+
         const completion = await openai.chat.completions.create({
             model,
             messages,
@@ -511,6 +537,9 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
             [messageId, matchId, "user", feedback]
         );
+
+        const tokenCount = countTokensForMessages(messages);
+        console.log(`Sending ${tokenCount} tokens to OpenAI.`);
 
         const completion = await openai.chat.completions.create({
             model,
