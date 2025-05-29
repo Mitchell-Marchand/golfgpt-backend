@@ -221,6 +221,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        console.log("Expected", JSON.stringify(expected));
+
         if (expected) {
             parsed = expected;
         }
