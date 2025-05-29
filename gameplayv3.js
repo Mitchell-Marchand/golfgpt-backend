@@ -201,6 +201,10 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Model response was not valid JSON." });
         }
 
+        if (expected) {
+            parsed = expected;
+        }
+
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
 
         console.log("Built a scorecard");
@@ -286,6 +290,10 @@ router.post("/update", authenticateUser, async (req, res) => {
         const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
             return res.status(404).json({ error: "Course not found." });
+        }
+
+        if (expected) {
+            parsed = expected;
         }
 
         const scorecards = JSON.parse(rows2[0].scorecards);
