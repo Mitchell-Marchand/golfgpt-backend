@@ -69,7 +69,8 @@ function buildScorecards(scorecards, playerTees, strokes = []) {
                 par: hole.Par,
                 plusMinus: 0,
                 strokes: pop ? pop.strokes : 0,
-                score: 0
+                score: 0,
+                point: 0
             };
         });
 
@@ -246,9 +247,9 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes);
 
-            res.status(201).json({ success: true, threadId: matchId, ...expected, scorecards: correctScorecards });
+            res.status(201).json({ success: true, ...expected, scorecards: correctScorecards });
         } else {
-            res.status(201).json({ success: true, threadId: matchId, ...parsed, scorecards: builtScorecards });
+            res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
         }
     } catch (err) {
         console.error("Error in /create:", err);
