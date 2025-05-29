@@ -8,7 +8,8 @@ console.log('✅ Loaded PORT:', process.env.PORT);
 const agenticRoutes = require('./agentic');
 const golfgptRoutes = require('./golfgpt');
 //const gamePlayRoutes = require('./gameplay');
-const gamePlayRoutes = require('./gameplayv2');
+//const gamePlayRoutes = require('./gameplayv2');
+const gamePlayRoutes = require('./gameplayv3');
 
 const app = express();
 
