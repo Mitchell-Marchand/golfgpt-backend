@@ -61,7 +61,7 @@ function buildScorecards(scorecards, playerTees, strokes = []) {
 
         // Build the holes array
         const holes = scorecard.Holes.map(hole => {
-            const pop = playerStrokes.pops.find(p => p.allocation === hole.Allocation || p.hole === hole.holeNumber);
+            const pop = playerStrokes.pops.find(p => p.allocation === hole.Allocation || p.hole === hole.Number);
             return {
                 holeNumber: hole.Number,
                 allocation: hole.Allocation,
