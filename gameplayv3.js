@@ -496,13 +496,17 @@ router.get("/matches", authenticateUser, async (req, res) => {
             [userId]
         );
 
-        res.json({ success: true, matches: rows });
+        const parsedMatches = rows.map(match => ({
+            ...match,
+            golfers: match.golfers ? JSON.parse(match.golfers) : [],
+            scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
+        }));
+
+        res.json({ success: true, matches: parsedMatches });
     } catch (err) {
         console.error("Error in /matches:", err);
         res.status(500).json({ error: "Failed to fetch user matches." });
     }
 });
-
-
 
 module.exports = router;
