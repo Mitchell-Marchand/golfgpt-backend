@@ -368,6 +368,11 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             [messageId, matchId, "user", prompt]
         );
 
+        await mariadbPool.query(
+            "UPDATE Matches SET status = ? WHERE id = ?",
+            ["READY_TO_START", matchId]
+        );
+
         res.json({ success: true, scorecards });
     } catch (err) {
         console.error("Error in /confirm:", err);
@@ -450,26 +455,42 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }
 
         //Loop through scorecards and update plusMinus and handicap
+        let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
             let plusMinus = 0;
             let handicap = 0;
             let points = 0;
+            let golferPlayedAllHoles = true;
+
             for (j = 0; j < scorecards[i].holes.length; j++) {
                 plusMinus += scorecards[i].holes[j].plusMinus;
                 handicap += scorecards[i].holes[j].strokes;
                 points += scorecards[i].holes[j].points;
+
+                if (scorecards[i].holes[j].score === 0) {
+                    golferPlayedAllHoles = false;
+                }
             }
 
             scorecards[i].plusMinus = plusMinus;
             scorecards[i].handicap = handicap;
             scorecards[i].points = points;
+
+            if (allHolesPlayed && !golferPlayedAllHoles) {
+                allHolesPlayed = false;
+            }
         }
 
         console.log("[score/submit] scorecard updated");
 
+        let status = "IN_PROGRESS";
+        if (allHolesPlayed) {
+            status = "COMPLETED";
+        }
+
         await mariadbPool.query(
-            "UPDATE Matches SET scorecards = ?, summary = ? WHERE id = ?",
-            [JSON.stringify(scorecards), parsed?.status, matchId]
+            "UPDATE Matches SET scorecards = ?, summary = ?, status = ? WHERE id = ?",
+            [JSON.stringify(scorecards), parsed?.status, status, matchId]
         );
 
         if (expected) {
