@@ -513,20 +513,32 @@ router.get("/matches", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT id, displayName, golfers, status, isPublic, questions, strokes, summary, teeTime, scorecards, updatedAt 
-             FROM Matches 
-             WHERE createdBy = ? 
-               AND status IN ('RULES_PROVIDED', 'READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
-             ORDER BY updatedAt DESC`,
+            `SELECT m.id, m.displayName, m.golfers, m.status, m.isPublic, m.questions, m.strokes, m.summary, m.teeTime, m.scorecards, m.updatedAt, m.courseId,
+                    c.courseId AS courseId, c.courseName AS courseName
+             FROM Matches m
+             LEFT JOIN Courses c ON m.courseId = c.courseId
+             WHERE m.createdBy = ? 
+               AND m.status IN ('RULES_PROVIDED', 'READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
+             ORDER BY m.updatedAt DESC`,
             [userId]
         );
 
         const parsedMatches = rows.map(match => ({
-            ...match,
+            id: match.id,
+            displayName: match.displayName,
             golfers: match.golfers ? JSON.parse(match.golfers) : [],
             scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
             questions: match.questions ? JSON.parse(match.questions) : [],
             strokes: match.strokes ? JSON.parse(match.strokes) : [],
+            isPublic: match.isPublic,
+            summary: match.summary,
+            status: match.status,
+            teeTime: match.teeTime,
+            updatedAt: match.updatedAt,
+            course: match.courseId ? {
+                courseId: match.courseId,
+                courseName: match.courseName
+            } : null
         }));
 
         res.json({ success: true, matches: parsedMatches });
