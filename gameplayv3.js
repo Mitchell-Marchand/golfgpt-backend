@@ -465,7 +465,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             for (j = 0; j < scorecards[i].holes.length; j++) {
                 plusMinus += scorecards[i].holes[j].plusMinus;
                 handicap += scorecards[i].holes[j].strokes;
-                points += scorecards[i].holes[j].points;
+                points += scorecards[i].holes[j].point;
 
                 if (scorecards[i].holes[j].score === 0) {
                     golferPlayedAllHoles = false;
