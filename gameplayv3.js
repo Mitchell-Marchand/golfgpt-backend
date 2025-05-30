@@ -525,6 +525,8 @@ router.get("/matches", authenticateUser, async (req, res) => {
             ...match,
             golfers: match.golfers ? JSON.parse(match.golfers) : [],
             scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
+            questions: match.questions ? JSON.parse(match.questions) : [],
+            strokes: match.strokes ? JSON.parse(match.strokes) : [],
         }));
 
         res.json({ success: true, matches: parsedMatches });
