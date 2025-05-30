@@ -430,11 +430,9 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         //Use the plusMinus info and posted scores to populate the scorecards and return it (update in the db)
         for (let i = 0; i < scorecards?.length; i++) {
             let scorecard = scorecards[i];
-            let plusMinus = scorecard.plusMinus;
 
             for (let j = 0; j < parsed?.results?.length; j++) {
                 if (parsed?.results[j].name === scorecard.name) {
-                    plusMinus += parsed?.results[j].plusMinus;
                     for (let k = 0; k < scorecard.holes.length; k++) {
                         if (scorecard.holes[k].holeNumber === holeNumber) {
                             scorecard.holes[k].plusMinus = parsed?.results[j].plusMinus;
@@ -448,8 +446,20 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 }
             }
 
-            scorecard.plusMinus = plusMinus;
             scorecards[i] = scorecard;
+        }
+
+        //Loop through scorecards and update plusMinus and handicap
+        for (i = 0; i < scorecards.length; i++) {
+            let plusMinus = 0;
+            let handicap = 0;
+            for (j = 0; j < scorecards[i].holes.length; j++) {
+                plusMinus += scorecards[i].holes[j].plusMinus;
+                handicap += scorecards[i].holes[j].strokes;
+            }
+
+            scorecards[i].plusMinus = plusMinus;
+            scorecards[i].handicap = handicap;
         }
 
         console.log("[score/submit] scorecard updated");
