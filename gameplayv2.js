@@ -563,4 +563,126 @@ router.post("/score/feedback", authenticateUser, async (req, res) => {
     }
 });
 
+//Stored from gameplayv3
+// router.post("/score/feedback", authenticateUser, async (req, res) => {
+//     const { matchId, feedback, holeNumber, expected } = req.body;
+
+//     if (!matchId || !feedback) {
+//         return res.status(400).json({ error: "Missing matchId or feedback." });
+//     }
+
+//     try {
+//         const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
+//         if (rows.length === 0) {
+//             return res.status(404).json({ error: "Match not found." });
+//         }
+
+//         const scorecards = JSON.parse(rows[0].scorecards);
+//         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
+//         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
+
+//         let holesToAdjust = [];
+//         for (let i = 0; i < scorecards.length; i++) {
+//             for (let j = 0; j < scorecards[i].holes.length; j++) {
+//                 if (scorecards[i].holes[j].holeNumber === holeNumber) {
+//                     holesToAdjust.push({
+//                         name: scorecards[i].name,
+//                         hole: scorecards[i].holes[j]
+//                     });
+//                 }
+//             }
+//         }
+
+//         const prompt = `User provided the following feedback about the current match results on holeNumber ${holeNumber}:\n"${feedback}"\n\nPlease use this feedback to correct or improve the current results for each golfer on this hole:\nHole Info: ${JSON.stringify(holesToAdjust, null, 2)}\n\nONLY respond with a valid JSON object containing the updated hole info.`;
+
+//         const messages = [
+//             { role: "system", content: "You are a golf scoring assistant that updates scorecards based on user feedback. Always respond ONLY with valid raw JSON." },
+//             ...pastMessages,
+//             { role: "user", content: prompt }
+//         ];
+
+//         let messageId = uuidv4();
+//         await mariadbPool.query(
+//             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+//             [messageId, matchId, "user", feedback]
+//         );
+
+//         const tokenCount = countTokensForMessages(messages);
+//         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
+
+//         const completion = await openai.chat.completions.create({
+//             model,
+//             messages,
+//             temperature: 0
+//         });
+
+//         const raw = completion.choices[0].message.content.trim();
+//         let parsed;
+//         try {
+//             const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+//             parsed = JSON.parse(cleaned);
+//         } catch (err) {
+//             console.error("Failed to parse JSON:", raw);
+//             return res.status(500).json({ error: "Model response was not valid JSON." });
+//         }
+
+//         if (expected) {
+//             parsed = expected;
+//         }
+
+//         console.log("[score/feedback] parsed", parsed);
+
+//         for (let i = 0; i < scorecards?.length; i++) {
+//             let scorecard = scorecards[i];
+
+//             for (let j = 0; j < parsed?.results?.length; j++) {
+//                 if (parsed?.results[j].name === scorecard.name) {
+//                     for (let k = 0; k < scorecard.holes.length; k++) {
+//                         if (scorecard.holes[k].holeNumber === holeNumber) {
+//                             scorecard.holes[k].plusMinus = parsed?.results[j].plusMinus;
+//                             scorecard.holes[k].point = parsed?.results[j].point;
+//                             break;
+//                         }
+//                     }
+
+//                     break;
+//                 }
+//             }
+
+//             scorecards[i] = scorecard;
+//         }
+
+//         //Update the overall plusMinus and handicap for each golfer
+//         for (i = 0; i < scorecards.length; i++) {
+//             let plusMinus = 0;
+//             let handicap = 0;
+//             for (j = 0; j < scorecards[i].holes.length; j++) {
+//                 plusMinus += scorecards[i].holes[j].plusMinus;
+//                 handicap += scorecards[i].holes[j].strokes;
+//             }
+
+//             scorecards[i].plusMinus = plusMinus;
+//             scorecards[i].handicap = handicap;
+//         }
+
+//         await mariadbPool.query(
+//             "UPDATE Matches SET scorecards = ?, summary = ? WHERE id = ?",
+//             [JSON.stringify(scorecards), parsed?.status, matchId]
+//         );
+
+//         if (expected) {
+//             messageId = uuidv4();
+//             await mariadbPool.query(
+//                 `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+//                 [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
+//             );
+//         } 
+
+//         res.json({ success: true, scorecards });
+//     } catch (err) {
+//         console.error("Error in /score/feedback:", err);
+//         res.status(500).json({ error: "Failed to process feedback." });
+//     }
+// });
+
 module.exports = router;

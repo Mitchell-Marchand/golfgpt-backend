@@ -453,13 +453,16 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         for (i = 0; i < scorecards.length; i++) {
             let plusMinus = 0;
             let handicap = 0;
+            let points = 0;
             for (j = 0; j < scorecards[i].holes.length; j++) {
                 plusMinus += scorecards[i].holes[j].plusMinus;
                 handicap += scorecards[i].holes[j].strokes;
+                points += scorecards[i].holes[j].points;
             }
 
             scorecards[i].plusMinus = plusMinus;
             scorecards[i].handicap = handicap;
+            scorecards[i].points = points;
         }
 
         console.log("[score/submit] scorecard updated");
