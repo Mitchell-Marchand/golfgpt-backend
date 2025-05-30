@@ -376,7 +376,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
 });
 
 router.post("/score/submit", authenticateUser, async (req, res) => {
-    const { matchId, holeNumber, par, scores, questionAnswers, expected } = req.body;
+    const { matchId, holeNumber, scores, answeredQuestions, expected } = req.body;
 
     if (!matchId || !holeNumber || !scores) {
         return res.status(400).json({ error: "Missing required fields." });
@@ -387,30 +387,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
-
         
         const scorecards = JSON.parse(rows[0].scorecards);
-        let newScore = true;
-        let prompt = `Here are the hole results:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}\n\nReturn status of the match, and results of the hole for each golfer with name, score, plusMinus (money won or lost), and point (if match play)`;
-
-        for (let i = 0; i < scorecards?.length; i++) {
-            for (let j = 0; j < scorecards[i]?.holes?.length; j++) {
-                if (scorecards[i].holes[j].holeNumber === holeNumber && scorecards[i].holes[j].score > 0) {
-                    prompt = `Here are updated scores and question inputs:\nHole Number: ${holeNumber}\nPar: ${par}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(questionAnswers, null, 2)}`;
-                    newScore = false;
-                    break;
-                }
-            }
-
-            if (!newScore) {
-                break;
-            }
-        }
-
+        const prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
         const messages = [
-            { role: "system", content: "You are a golf scoring assistant that updates scorecards based on hole-by-hole results. Always respond ONLY with valid raw JSON." },
+            { role: "system", content: "You are a golf scoring assistant that updates scorecards based on hole-by-hole results and your understanding of the rules. Always respond ONLY with valid raw JSON." },
             ...pastMessages,
             { role: "user", content: prompt }
         ];
@@ -469,7 +452,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             scorecards[i] = scorecard;
         }
 
-        console.log("[score/submit] scorecard updated",);
+        console.log("[score/submit] scorecard updated");
 
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ?, summary = ? WHERE id = ?",
@@ -484,7 +467,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             );
         } 
 
-        res.json({ success: true, scorecards });
+        res.json({ success: true, scorecards, status: parsed?.status });
     } catch (err) {
         console.error("Error in /score/submit:", err);
         res.status(500).json({ error: "Failed to submit scores" });
