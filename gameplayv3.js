@@ -492,7 +492,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            "SELECT id, displayName, status, summary, teeTime, scorecards, createdAt, updatedAt FROM Matches WHERE createdBy = ? ORDER BY updatedAt DESC",
+            "SELECT id, displayName, golfers, status, summary, teeTime, scorecards, updatedAt FROM Matches WHERE createdBy = ? ORDER BY updatedAt DESC",
             [userId]
         );
 
