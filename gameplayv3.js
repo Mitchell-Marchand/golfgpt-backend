@@ -56,11 +56,25 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
             continue;
         }
 
-        // Find the strokes data for this player (fallback to empty pops)
+        const isFront = teeName.includes("(Front 9)");
+        const isBack = teeName.includes("(Back 9)");
+
+        let filteredHoles = scorecard.Holes;
+
+        if (holes === 9) {
+            if (isFront) {
+                filteredHoles = scorecard.Holes.filter(h => h.Number >= 1 && h.Number <= 9);
+            } else if (isBack) {
+                filteredHoles = scorecard.Holes.filter(h => h.Number >= 10 && h.Number <= 18);
+            } else {
+                console.warn(`Tee name "${teeName}" missing "(Front 9)" or "(Back 9)" label on 9-hole course.`);
+                filteredHoles = []; // or default to front9/back9
+            }
+        }
+
         const playerStrokes = strokes.find(s => s.name === playerName) || { pops: [] };
 
-        // Build the holes array
-        const holes = scorecard.Holes.map(hole => {
+        const holeObjects = filteredHoles.map(hole => {
             const pop = playerStrokes.pops.find(p => p.allocation === hole.Allocation || p.hole === hole.Number);
             return {
                 holeNumber: hole.Number,
@@ -74,7 +88,6 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
             };
         });
 
-        // Sum total strokes (handicap) safely
         const handicap = playerStrokes.pops.reduce((sum, p) => sum + (p.strokes || 0), 0);
 
         builtScorecards.push({
@@ -83,7 +96,7 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
             handicap,
             plusMinus: 0,
             winPercent: 0.5,
-            holes
+            holes: holeObjects
         });
     }
 
