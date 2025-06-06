@@ -392,7 +392,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
-        
+
         const scorecards = JSON.parse(rows[0].scorecards);
         const prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
@@ -499,7 +499,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
                 [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
             );
-        } 
+        }
 
         res.json({ success: true, scorecards, status: parsed?.status });
     } catch (err) {
@@ -568,9 +568,31 @@ router.get("/golfers", authenticateUser, async (req, res) => {
             }
         }
 
-        console.log(golfers);
-
         res.json({ success: true, golfers });
+    } catch (err) {
+        console.error("Error in /matches:", err);
+        res.status(500).json({ error: "Failed to fetch user matches." });
+    }
+});
+
+router.get("/courses", authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const [courses] = await mariadbPool.query(
+            `SELECT c.*
+                FROM Courses c
+                JOIN (
+                    SELECT DISTINCT courseId
+                    FROM Matches
+                    WHERE createdBy = ?
+                    ORDER BY updatedAt DESC
+                    LIMIT 10
+                ) m ON c.courseId = m.courseId;`,
+            [userId]
+        );
+
+        res.json({ success: true, courses });
     } catch (err) {
         console.error("Error in /matches:", err);
         res.status(500).json({ error: "Failed to fetch user matches." });
