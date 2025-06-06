@@ -127,7 +127,9 @@ router.post("/begin", authenticateUser, async (req, res) => {
 });
 
 router.post("/tees", authenticateUser, async (req, res) => {
-    const { matchId, scorecards, teesByGolfer } = req.body;
+    const { matchId, scorecards, teesByGolfer, holes } = req.body;
+
+    console.log({ matchId, scorecards, teesByGolfer, holes });
 
     if (!matchId || !teesByGolfer) {
         return res.status(400).json({ error: "Missing required data." });
