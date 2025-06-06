@@ -43,7 +43,7 @@ function countTokensForMessages(messages) {
     return totalTokens;
 }
 
-function buildScorecards(scorecards, playerTees, strokes = []) {
+function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     const builtScorecards = [];
 
     for (const playerName in playerTees) {
@@ -129,67 +129,28 @@ router.post("/begin", authenticateUser, async (req, res) => {
 router.post("/tees", authenticateUser, async (req, res) => {
     const { matchId, scorecards, teesByGolfer, holes } = req.body;
 
-    if (!matchId || !teesByGolfer || !holes) {
+    if (!matchId || !teesByGolfer) {
         return res.status(400).json({ error: "Missing required data." });
     }
 
     try {
-        const [matchRows] = await mariadbPool.query("SELECT courseId, scorecards FROM Matches WHERE id = ?", [matchId]);
-        if (matchRows.length === 0) {
+        const [rows] = await mariadbPool.query("SELECT courseId, scorecards FROM Matches WHERE id = ?", [matchId]);
+        if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
-        }
-
-        const courseId = matchRows[0].courseId;
-        const hasScorecards = matchRows[0].scorecards;
-
-        const [courseRows] = await mariadbPool.query("SELECT data FROM Courses WHERE courseId = ?", [courseId]);
-        if (courseRows.length === 0) {
-            return res.status(404).json({ error: "Course not found." });
-        }
-
-        const courseData = JSON.parse(courseRows[0].data); // includes TeeSets with Holes
-
-        const updatedTeesByGolfer = {};
-
-        Object.entries(teesByGolfer).forEach(([golfer, teeName]) => {
-            const tee = courseData.TeeSets.find(t => t.TeeSetRatingName === teeName);
-            if (!tee) return;
-
-            const isFront = teeName.includes("(Front 9)");
-            const isBack = teeName.includes("(Back 9)");
-
-            let filteredHoles = tee.Holes;
-            if (holes === 9) {
-                filteredHoles = tee.Holes.filter(h =>
-                    isFront ? h.Number <= 9 : isBack ? h.Number >= 10 : false
-                );
+        } else {
+            const courseId = rows[0].courseId;
+            const hasScorecards = rows[0].scorecards;
+            if (!hasScorecards) {
+                await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
             }
-
-            const totalYardage = filteredHoles.reduce((sum, h) => sum + h.Length, 0);
-
-            updatedTeesByGolfer[golfer] = {
-                teeName,
-                yardage: totalYardage,
-                _nineType: isFront ? "front" : isBack ? "back" : "full",
-            };
-        });
-
-        if (!hasScorecards) {
-            await mariadbPool.query(
-                "UPDATE Courses SET scorecards = ? WHERE courseId = ?",
-                [JSON.stringify(scorecards), courseId]
-            );
         }
 
-        await mariadbPool.query(
-            "UPDATE Matches SET status = ?, tees = ? WHERE id = ?",
-            ["TEES_PROVIDED", JSON.stringify(updatedTeesByGolfer), matchId]
-        );
+        await mariadbPool.query("UPDATE Matches SET status = ?, tees = ?, holeCount = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(teesByGolfer), holes, matchId]);
 
         const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", `Tees by golfer: ${JSON.stringify(updatedTeesByGolfer)}`]
+            [messageId, matchId, "user", `Tees by golfer: ${JSON.stringify(teesByGolfer)}`]
         );
 
         res.json({ success: true });
@@ -207,13 +168,14 @@ router.post("/create", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows1] = await mariadbPool.query("SELECT courseId, tees FROM Matches WHERE id = ?", [matchId]);
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees, holeCount FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const courseId = rows1[0].courseId;
         const playerTees = JSON.parse(rows1[0].tees);
+        const holes = rows1[0].holeCount;
         const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
             return res.status(404).json({ error: "Match not found." });
@@ -262,7 +224,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             parsed = expected;
         }
 
-        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
+        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes, holes);
 
         console.log("Built a scorecard");
 
@@ -284,7 +246,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
             );
 
-            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes);
+            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes, holes);
 
             res.status(201).json({ success: true, ...expected, scorecards: correctScorecards });
         } else {
@@ -304,13 +266,14 @@ router.post("/update", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, questions, strokes FROM Matches WHERE id = ?", [matchId]);
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, questions, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const courseId = rows1[0]?.courseId;
         const playerTees = JSON.parse(rows1[0]?.tees);
+        const holes = rows1[0].holeCount;
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
@@ -357,7 +320,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         }
 
         const scorecards = JSON.parse(rows2[0].scorecards);
-        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes);
+        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes, holes);
 
         console.log("Updated a scorecard");
 
@@ -377,7 +340,7 @@ router.post("/update", authenticateUser, async (req, res) => {
                 [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
             );
 
-            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes);
+            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes, holes);
 
             res.status(201).json({ success: true, ...expected, scorecards: correctScorecards });
         } else {
