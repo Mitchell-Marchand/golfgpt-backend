@@ -548,4 +548,31 @@ router.get("/matches", authenticateUser, async (req, res) => {
     }
 });
 
+router.get("/golfers", authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `SELECT golfers from Matches where userId = ? 
+             ORDER BY m.updatedAt DESC LIMIT 10`,
+            [userId]
+        );
+
+        let golfers = [];
+        for (let i = 0; i < rows.length; i++) {
+            let matchGs = JSON.parse(rows[i].golfers);
+            for (let j = 0; j < matchGs.length; j++) {
+                if (!golfers.includes(matchGs[j])) {
+                    golfers.push(matchGs[j]);
+                }
+            }
+        }
+
+        res.json({ success: true, golfers });
+    } catch (err) {
+        console.error("Error in /matches:", err);
+        res.status(500).json({ error: "Failed to fetch user matches." });
+    }
+});
+
 module.exports = router;
