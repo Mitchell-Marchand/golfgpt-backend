@@ -568,6 +568,8 @@ router.get("/golfers", authenticateUser, async (req, res) => {
             }
         }
 
+        console.log(golfers);
+
         res.json({ success: true, golfers });
     } catch (err) {
         console.error("Error in /matches:", err);
