@@ -129,30 +129,67 @@ router.post("/begin", authenticateUser, async (req, res) => {
 router.post("/tees", authenticateUser, async (req, res) => {
     const { matchId, scorecards, teesByGolfer, holes } = req.body;
 
-    console.log({ matchId, scorecards, teesByGolfer, holes });
-
-    if (!matchId || !teesByGolfer) {
+    if (!matchId || !teesByGolfer || !holes) {
         return res.status(400).json({ error: "Missing required data." });
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT courseId, scorecards FROM Matches WHERE id = ?", [matchId]);
-        if (rows.length === 0) {
+        const [matchRows] = await mariadbPool.query("SELECT courseId, scorecards FROM Matches WHERE id = ?", [matchId]);
+        if (matchRows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
-        } else {
-            const courseId = rows[0].courseId;
-            const hasScorecards = rows[0].scorecards;
-            if (!hasScorecards) {
-                await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
-            }
         }
 
-        await mariadbPool.query("UPDATE Matches SET status = ?, tees = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(teesByGolfer), matchId]);
+        const courseId = matchRows[0].courseId;
+        const hasScorecards = matchRows[0].scorecards;
+
+        const [courseRows] = await mariadbPool.query("SELECT data FROM Courses WHERE courseId = ?", [courseId]);
+        if (courseRows.length === 0) {
+            return res.status(404).json({ error: "Course not found." });
+        }
+
+        const courseData = JSON.parse(courseRows[0].data); // includes TeeSets with Holes
+
+        const updatedTeesByGolfer = {};
+
+        Object.entries(teesByGolfer).forEach(([golfer, teeName]) => {
+            const tee = courseData.TeeSets.find(t => t.TeeSetRatingName === teeName);
+            if (!tee) return;
+
+            const isFront = teeName.includes("(Front 9)");
+            const isBack = teeName.includes("(Back 9)");
+
+            let filteredHoles = tee.Holes;
+            if (holes === 9) {
+                filteredHoles = tee.Holes.filter(h =>
+                    isFront ? h.Number <= 9 : isBack ? h.Number >= 10 : false
+                );
+            }
+
+            const totalYardage = filteredHoles.reduce((sum, h) => sum + h.Length, 0);
+
+            updatedTeesByGolfer[golfer] = {
+                teeName,
+                yardage: totalYardage,
+                _nineType: isFront ? "front" : isBack ? "back" : "full",
+            };
+        });
+
+        if (!hasScorecards) {
+            await mariadbPool.query(
+                "UPDATE Courses SET scorecards = ? WHERE courseId = ?",
+                [JSON.stringify(scorecards), courseId]
+            );
+        }
+
+        await mariadbPool.query(
+            "UPDATE Matches SET status = ?, tees = ? WHERE id = ?",
+            ["TEES_PROVIDED", JSON.stringify(updatedTeesByGolfer), matchId]
+        );
 
         const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-            [messageId, matchId, "user", `Tees by golfer: ${JSON.stringify(teesByGolfer)}`]
+            [messageId, matchId, "user", `Tees by golfer: ${JSON.stringify(updatedTeesByGolfer)}`]
         );
 
         res.json({ success: true });
