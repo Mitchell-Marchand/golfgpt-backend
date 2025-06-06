@@ -597,6 +597,8 @@ router.get("/courses", authenticateUser, async (req, res) => {
             courses.push(rows[i]);
         }
 
+        console.log(courses);
+
         res.json({ success: true, courses });
     } catch (err) {
         console.error("Error in /matches:", err);
