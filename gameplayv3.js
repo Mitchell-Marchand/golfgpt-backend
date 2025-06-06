@@ -579,7 +579,7 @@ router.get("/courses", authenticateUser, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const [courses] = await mariadbPool.query(
+        const [rows] = await mariadbPool.query(
             `SELECT c.*
                 FROM Courses c
                 JOIN (
@@ -591,6 +591,11 @@ router.get("/courses", authenticateUser, async (req, res) => {
                 ) m ON c.courseId = m.courseId;`,
             [userId]
         );
+
+        let courses = [];
+        for (let i = 0; i < rows?.length; i++) {
+            courses.push(rows[i]);
+        }
 
         res.json({ success: true, courses });
     } catch (err) {
