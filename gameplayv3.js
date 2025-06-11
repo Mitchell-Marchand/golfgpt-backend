@@ -103,6 +103,53 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     return builtScorecards;
 }
 
+function generateSummary(scorecards) {
+    if (!Array.isArray(scorecards) || scorecards.length === 0) return ""
+
+    // 1. Count total holes played (i.e., at least one golfer has non-zero score)
+    const holesPlayed = scorecards[0].holes.filter(hole =>
+        scorecards.some(g => {
+            const h = g.holes.find(x => x.holeNumber === hole.holeNumber)
+            return h?.score && h.score !== 0
+        })
+    ).length
+
+    if (holesPlayed === 0) return ""
+
+    // 2. Check plusMinus standings
+    const maxPlusMinus = Math.max(...scorecards.map(g => g.plusMinus))
+    const leaders = scorecards.filter(g => g.plusMinus === maxPlusMinus)
+
+    if (maxPlusMinus !== 0 && leaders.length < scorecards.length) {
+        const names = leaders.map(g => g.name)
+        const joined = names.length === 1
+            ? names[0]
+            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
+        return `${joined} ${names.length === 1 ? "is" : "are"} up $${maxPlusMinus} through ${holesPlayed}`
+    }
+
+    // 3. Check points if money is tied
+    const maxPoints = Math.max(...scorecards.map(g =>
+        g.holes.reduce((sum, h) => sum + (h.point || 0), 0)
+    ))
+
+    if (maxPoints > 0) {
+        const pointLeaders = scorecards.filter(g =>
+            g.holes.reduce((sum, h) => sum + (h.point || 0), 0) === maxPoints
+        )
+
+        const names = pointLeaders.map(g => g.name)
+        const joined = names.length === 1
+            ? names[0]
+            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
+
+        return `${joined} ${names.length === 1 ? "is" : "are"} up ${maxPoints} through ${holesPlayed}`
+    }
+
+    // 4. Everything tied
+    return `Tied through ${holesPlayed}`
+}
+
 router.post("/begin", authenticateUser, async (req, res) => {
     const { golfers, course } = req.body;
     const userId = req.user.id;
@@ -494,9 +541,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             status = "COMPLETED";
         }
 
+        const summary = generateSummary(scorecards);
+
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ?, summary = ?, status = ? WHERE id = ?",
-            [JSON.stringify(scorecards), parsed?.status, status, matchId]
+            [JSON.stringify(scorecards), summary, status, matchId]
         );
 
         messageId = uuidv4();
@@ -505,7 +554,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [messageId, matchId, "assistant", JSON.stringify(parsed, null, 2)]
         );
 
-        res.json({ success: true, scorecards, status: parsed?.status });
+        res.json({ success: true, scorecards, status: summary });
     } catch (err) {
         console.error("Error in /score/submit:", err);
         res.status(500).json({ error: "Failed to submit scores" });
