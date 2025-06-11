@@ -215,25 +215,26 @@ router.post("/create", authenticateUser, async (req, res) => {
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
 
-        const completion = await openai.chat.completions.create({
-            model,
-            messages,
-            temperature: 0
-        });
-
-        const raw = completion.choices[0].message.content.trim();
         let parsed;
-        try {
-            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-            parsed = JSON.parse(cleaned);
-        } catch (err) {
-            console.error("Failed to parse JSON:", raw);
-            return res.status(500).json({ error: "Model response was not valid JSON." });
-        }
+        if (!expected) {
+            const completion = await openai.chat.completions.create({
+                model,
+                messages,
+                temperature: 0
+            });
 
-        console.log("Expected", JSON.stringify(expected));
+            const raw = completion.choices[0].message.content.trim();
 
-        if (expected) {
+            try {
+                const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+                parsed = JSON.parse(cleaned);
+            } catch (err) {
+                console.error("Failed to parse JSON:", raw);
+                return res.status(500).json({ error: "Model response was not valid JSON." });
+            }
+
+            console.log("Expected", JSON.stringify(expected));
+        } else {
             parsed = expected;
         }
 
@@ -252,19 +253,13 @@ router.post("/create", authenticateUser, async (req, res) => {
             [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
-        if (expected) {
-            messageId = uuidv4();
-            await mariadbPool.query(
-                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
-            );
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", JSON.stringify(parsed, null, 2)]
+        );
 
-            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes, holes);
-
-            res.status(201).json({ success: true, ...expected, scorecards: correctScorecards });
-        } else {
-            res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
-        }
+        res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to generate match setup." });
@@ -290,6 +285,11 @@ router.post("/update", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
+        const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
+        if (rows2.length === 0) {
+            return res.status(404).json({ error: "Course not found." });
+        }
+
         const prompt = `New user input:\n${newRules}\n\nUpdate the displayName, questions, and strokes info accordingly and return only valid raw JSON.`;
 
         const messages = [
@@ -307,28 +307,24 @@ router.post("/update", authenticateUser, async (req, res) => {
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
 
-        const completion = await openai.chat.completions.create({
-            model,
-            messages,
-            temperature: 0
-        });
-
-        const raw = completion.choices[0].message.content.trim();
         let parsed;
-        try {
-            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-            parsed = JSON.parse(cleaned);
-        } catch (err) {
-            console.error("Failed to parse JSON:", raw);
-            return res.status(500).json({ error: "Model response was not valid JSON." });
-        }
+        if (!expected) {
+            const completion = await openai.chat.completions.create({
+                model,
+                messages,
+                temperature: 0
+            });
 
-        const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
-        if (rows2.length === 0) {
-            return res.status(404).json({ error: "Course not found." });
-        }
+            const raw = completion.choices[0].message.content.trim();
 
-        if (expected) {
+            try {
+                const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+                parsed = JSON.parse(cleaned);
+            } catch (err) {
+                console.error("Failed to parse JSON:", raw);
+                return res.status(500).json({ error: "Model response was not valid JSON." });
+            }
+        } else {
             parsed = expected;
         }
 
@@ -346,19 +342,13 @@ router.post("/update", authenticateUser, async (req, res) => {
             [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
         );
 
-        if (expected) {
-            messageId = uuidv4();
-            await mariadbPool.query(
-                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
-            );
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", JSON.stringify(parsed, null, 2)]
+        );
 
-            const correctScorecards = buildScorecards(scorecards, playerTees, expected?.strokes, holes);
-
-            res.status(201).json({ success: true, ...expected, scorecards: correctScorecards });
-        } else {
-            res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
-        }
+        res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
     } catch (err) {
         console.error("Error in /update:", err);
         res.status(500).json({ error: "Failed to update match." });
@@ -421,29 +411,30 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
 
-        const completion = await openai.chat.completions.create({
-            model,
-            messages,
-            temperature: 0
-        });
-
         let messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
             [messageId, matchId, "user", prompt]
         );
 
-        const raw = completion.choices[0].message.content.trim();
         let parsed;
-        try {
-            const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-            parsed = JSON.parse(cleaned);
-        } catch (err) {
-            console.error("Failed to parse JSON:", raw);
-            return res.status(500).json({ error: "Model response was not valid JSON." });
-        }
+        if (!expected) {
+            const completion = await openai.chat.completions.create({
+                model,
+                messages,
+                temperature: 0
+            });
 
-        if (expected) {
+            const raw = completion.choices[0].message.content.trim();
+
+            try {
+                const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+                parsed = JSON.parse(cleaned);
+            } catch (err) {
+                console.error("Failed to parse JSON:", raw);
+                return res.status(500).json({ error: "Model response was not valid JSON." });
+            }
+        } else {
             parsed = expected;
         }
 
@@ -508,13 +499,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [JSON.stringify(scorecards), parsed?.status, status, matchId]
         );
 
-        if (expected) {
-            messageId = uuidv4();
-            await mariadbPool.query(
-                `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
-                [messageId, matchId, "assistant", JSON.stringify(expected, null, 2)]
-            );
-        }
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", JSON.stringify(parsed, null, 2)]
+        );
 
         res.json({ success: true, scorecards, status: parsed?.status });
     } catch (err) {
