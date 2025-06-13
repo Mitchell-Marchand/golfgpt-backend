@@ -83,7 +83,7 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
                 filteredHoles = scorecard.Holes.filter(h => h.Number >= 10 && h.Number <= 18);
             } else {
                 console.warn(`Tee name "${teeName}" missing "(Front 9)" or "(Back 9)" label on 9-hole course.`);
-                filteredHoles = []; // or default to front9/back9
+                filteredHoles = scorecard.Holes.filter(h => h.Number >= 1 && h.Number <= 9);
             }
         }
 
