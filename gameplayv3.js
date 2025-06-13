@@ -312,7 +312,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const formattedTeeTime = formatDateForSQL(teeTime);
 
         await mariadbPool.query(
-            "UPDATE Matches SET strokes = ?, teeTime = ?, isPublic = ?, displayName = ?, questions = ?, answers = [], scorecards = ?, status = ? WHERE id = ?",
+            "UPDATE Matches SET strokes = ?, teeTime = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
             [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
