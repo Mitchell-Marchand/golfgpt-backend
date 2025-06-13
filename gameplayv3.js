@@ -175,7 +175,7 @@ router.post("/begin", authenticateUser, async (req, res) => {
 
         const messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(golfers)} | Course: ${course.FullName}`]
         );
 
@@ -209,7 +209,7 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
         const messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup", `Tees by golfer: ${JSON.stringify(teesByGolfer)}`]
         );
 
@@ -255,7 +255,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup", prompt]
         );
 
@@ -302,7 +302,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
         );
 
@@ -348,7 +348,7 @@ router.post("/update", authenticateUser, async (req, res) => {
 
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup", newRules]
         );
 
@@ -392,7 +392,7 @@ router.post("/update", authenticateUser, async (req, res) => {
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
         );
 
@@ -419,7 +419,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
 
             const messageId = uuidv4();
             await mariadbPool.query(
-                `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+                `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
                 [messageId, matchId, "user", "setup", prompt]
             );
         }
@@ -518,7 +518,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", prompt]
         );
 
@@ -610,7 +610,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
         );
 
