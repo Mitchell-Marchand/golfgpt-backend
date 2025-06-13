@@ -47,9 +47,9 @@ function blankAnswers(scorecards) {
     let answers = [];
 
     if (scorecards[0]) {
-        for (let i = 0; i < scorecards[0]?.holes?.length; i++) {
+        for (let i = 0; i < scorecards[0].holes?.length; i++) {
             answers.push({
-                hole: scorecards[0]?.holeNumber,
+                hole: scorecards[0].holes[i].holeNumber,
                 answers: []
             });
         }
