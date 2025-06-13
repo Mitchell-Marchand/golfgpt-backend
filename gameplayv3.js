@@ -43,6 +43,21 @@ function countTokensForMessages(messages) {
     return totalTokens;
 }
 
+function blankAnswers(scorecards) {
+    let answers = [];
+
+    if (scorecards[0]) {
+        for (let i = 0; i < scorecards[0]?.holes?.length; i++) {
+            answers.push({
+                hole: scorecards[0]?.holeNumber,
+                answers: []
+            });
+        }
+    }
+
+    return JSON.stringify(answers);
+}
+
 function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     const builtScorecards = [];
 
@@ -297,7 +312,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const formattedTeeTime = formatDateForSQL(teeTime);
 
         await mariadbPool.query(
-            "UPDATE Matches SET strokes = ?, teeTime = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            "UPDATE Matches SET strokes = ?, teeTime = ?, isPublic = ?, displayName = ?, questions = ?, answers = [], scorecards = ?, status = ? WHERE id = ?",
             [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
@@ -426,8 +441,8 @@ router.post("/confirm", authenticateUser, async (req, res) => {
         }
 
         await mariadbPool.query(
-            "UPDATE Matches SET status = ? WHERE id = ?",
-            ["READY_TO_START", matchId]
+            "UPDATE Matches SET status = ?, answers = ? WHERE id = ?",
+            ["READY_TO_START", blankAnswers(scorecards), matchId]
         );
 
         res.json({ success: true, scorecards });
@@ -445,12 +460,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT scorecards, setup FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards, setup, answers FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const scorecards = JSON.parse(rows[0].scorecards);
+        const answers = JSON.parse(rows[0].answers);
         let summaryResponse = rows[0].setup;
         let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with the data for this hole and any other hole this score affects.`;
 
@@ -608,6 +624,15 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         console.log("[score/submit] scorecard updated");
 
+        for (let i = 0; i < answers?.length; i++) {
+            if (answers.hole === holeNumber) {
+                answers.answers = [];
+                for (let j = 0; j < answeredQuestions?.length; j++) {
+                    answers.answers.push(answeredQuestions[j]);
+                }
+            }
+        }
+
         let status = "IN_PROGRESS";
         if (allHolesPlayed) {
             status = "COMPLETED";
@@ -616,8 +641,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const summary = generateSummary(scorecards);
 
         await mariadbPool.query(
-            "UPDATE Matches SET scorecards = ?, summary = ?, status = ? WHERE id = ?",
-            [JSON.stringify(scorecards), summary, status, matchId]
+            "UPDATE Matches SET scorecards = ?, summary = ?, answers = ?, status = ? WHERE id = ?",
+            [JSON.stringify(scorecards), summary, JSON.stringify(answers), status, matchId]
         );
 
         messageId = uuidv4();
