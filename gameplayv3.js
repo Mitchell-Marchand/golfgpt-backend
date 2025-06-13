@@ -663,7 +663,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT m.id, m.displayName, m.golfers, m.status, m.isPublic, m.questions, m.strokes, m.summary, m.teeTime, m.scorecards, m.updatedAt, m.courseId,
+            `SELECT m.id, m.displayName, m.golfers, m.status, m.isPublic, m.questions, m.answers, m.strokes, m.summary, m.teeTime, m.scorecards, m.updatedAt, m.courseId,
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
@@ -679,6 +679,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
             golfers: match.golfers ? JSON.parse(match.golfers) : [],
             scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
             questions: match.questions ? JSON.parse(match.questions) : [],
+            answers: match.answers ? JSON.parse(match.answers) : [],
             strokes: match.strokes ? JSON.parse(match.strokes) : [],
             isPublic: match.isPublic,
             summary: match.summary,
