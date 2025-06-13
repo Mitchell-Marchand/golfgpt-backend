@@ -95,6 +95,7 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
             tees: teeName,
             handicap,
             plusMinus: 0,
+            points: 0,
             winPercent: 0.5,
             holes: holeObjects
         });
