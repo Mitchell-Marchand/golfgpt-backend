@@ -498,10 +498,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 temperature: 0.2,
             });
 
-            await mariadbPool.query(
-                "UPDATE Matches SET setup = ? WHERE id = ?",
-                [summaryResponse, matchId]
-            );
+            if (summaryResponse.choices[0].message.content) {
+                await mariadbPool.query(
+                    "UPDATE Matches SET setup = ? WHERE id = ?",
+                    [summaryResponse.choices[0].message.content, matchId]
+                );
+            }
         }
 
         const messages = [
