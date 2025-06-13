@@ -503,6 +503,10 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                     "UPDATE Matches SET setup = ? WHERE id = ?",
                     [summaryResponse.choices[0].message.content, matchId]
                 );
+
+                summaryResponse = summaryResponse.choices[0].message.content;
+            } else {
+                summaryResponse = "No summary available.";
             }
         }
 
@@ -514,7 +518,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             },
             {
                 role: "system",
-                content: summaryResponse.choices[0].message.content || "No summary available."
+                content: summaryResponse || "No summary available."
             },
             ...scoreContent,
             { role: "user", content: prompt }
