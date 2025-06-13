@@ -444,12 +444,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT scorecards FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards, setup FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const scorecards = JSON.parse(rows[0].scorecards);
+        let summaryResponse = rows[0].setup;
         let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with the data for this hole and any other hole this score affects.`;
 
         let playedHole = false;
@@ -483,18 +484,20 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             .filter(msg => msg.type === 'score')
             .map(msg => ({ role: "user", content: msg.content }));
 
-        const summaryResponse = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: `You're assisting in summarizing a golf match setup for a scoring assistant. Return a single concise paragraph describing who is playing, any strokes given, and any provided rules of the golf match.`
-                },
-                ...setupContent,
-                { role: "user", content: "Summarize this match setup clearly and concisely." }
-            ],
-            temperature: 0.2,
-        });
+        if (!summaryResponse) {
+            summaryResponse = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: `You're assisting in summarizing a golf match setup for a scoring assistant. Return a single concise paragraph describing who is playing, any strokes given, and any provided rules of the golf match.`
+                    },
+                    ...setupContent,
+                    { role: "user", content: "Summarize this match setup clearly and concisely." }
+                ],
+                temperature: 0.2,
+            });
+        }
 
         const messages = [
             {
