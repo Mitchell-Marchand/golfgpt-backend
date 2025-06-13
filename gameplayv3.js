@@ -625,10 +625,10 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         console.log("[score/submit] scorecard updated");
 
         for (let i = 0; i < answers?.length; i++) {
-            if (answers.hole === holeNumber) {
-                answers.answers = [];
+            if (answers[i].hole === holeNumber) {
+                answers[i].answers = [];
                 for (let j = 0; j < answeredQuestions?.length; j++) {
-                    answers.answers.push(answeredQuestions[j]);
+                    answers[i].answers.push(answeredQuestions[j]);
                 }
             }
         }
