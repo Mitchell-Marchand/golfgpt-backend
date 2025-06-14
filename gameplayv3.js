@@ -150,13 +150,15 @@ router.post("/tees", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT courseId, scorecards, nineScorecards FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT courseId FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         } else {
             const courseId = rows[0].courseId;
-            const fullScorecards = rows[0].scorecards;
-            const nineScorecards = rows[0].nineScorecards;
+            const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
+            const fullScorecards = rows2[0].scorecards;
+            const nineScorecards = rows2[0].nineScorecards;
+
             if (!fullScorecards && holes === 18) {
                 await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
             } else if (!nineScorecards && holes === 9) {
