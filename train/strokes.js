@@ -2,8 +2,8 @@ import { getRandomInt } from "./utils";
 import { getHoleList } from "./utils";
 
 export function getStrokes(names, holes) {
-    const type = getRandomInt(6);
-    const verbeage = getRandomInt(13);
+    const strokeType = getRandomInt(6);
+    const verbeage = getRandomInt(8);
 
     let popStroke = "stroke";
     if (verbeage > 7 && verbeage <= 10) {
@@ -21,7 +21,7 @@ export function getStrokes(names, holes) {
         pops: []
     }));
 
-    if (type < 4) {
+    if (strokeType <= 2) {
         //No strokes for anyone or empty
         const pType = getRandomInt(10);
         let prompt = "";
@@ -40,7 +40,7 @@ export function getStrokes(names, holes) {
             strokes,
             prompt
         };
-    } else if (type === 4) {
+    } else if (strokeType <= 4) {
         //Randomly generate strokes for each golfer by hole number and generate prompt
         let prompts = [];
 
@@ -127,7 +127,7 @@ export function getStrokes(names, holes) {
 
                 let prompt = ``;
 
-                const idx = getRandomInt(20);
+                const idx = getRandomInt(50);
                 const halfPops = pops.filter(p => p.strokes === 0.5).length;
                 const fullPops = pops.filter(p => p.strokes === 1).length;
                 const doublePops = pops.filter(p => p.strokes === 2).length;
@@ -135,16 +135,120 @@ export function getStrokes(names, holes) {
 
                 if (negPops > 0) {
                     if (idx <= 5) {
-                        prompt += `${strokes[i].name} gives one back on holes ${getHoleList(pops, -1)}`;
+                        prompt = `${strokes[i].name} gives one back on holes ${getHoleList(pops, -1)}`;
                     } else if (idx < 10) {
-                        prompt += `${strokes[i].name} gives a ${popStroke} back on holes ${getHoleList(pops, -1)}`;
-                    } else if (idx < 15) {
-                        prompt += `${strokes[i].name} loses a ${popStroke} on holes ${getHoleList(pops, -1)}`;
-                    } else {
-                        prompt += `${strokes[i].name} loses one on holes ${getHoleList(pops, -1)}`;
+                        prompt = `${strokes[i].name} gives a ${popStroke} back on holes ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 15) {
+                        prompt = `${strokes[i].name} loses a ${popStroke} on holes ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 20) {
+                        prompt = `${strokes[i].name} loses one on holes ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 25) {
+                        prompt = `${strokes[i].name} gives one back on ${getHoleList(pops, -1)}`;
+                    } else if (idx < 30) {
+                        prompt = `${strokes[i].name} gives a ${popStroke} back on ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 35) {
+                        prompt = `${strokes[i].name} loses a ${popStroke} on ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 40) {
+                        prompt = `${strokes[i].name} loses one on ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 45) {
+                        prompt = `-1 ${popStroke}s for ${strokes[i].name} on ${getHoleList(pops, -1)}`;
+                    } else if (idx <= 50) {
+                        prompt = `-1 ${popStroke}s for ${strokes[i].name} on holes ${getHoleList(pops, -1)}`;
                     }
-                } else if (doublePops > 0) {
+                } else {
+                    if (fullPops > 0) {
+                        if (idx <= 5) {
+                            prompt = `${strokes[i].name} gets one on holes ${getHoleList(pops, 1)}`;
+                        } else if (idx < 10) {
+                            prompt = `${strokes[i].name} gets a ${popStroke} on holes ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 15) {
+                            prompt = `${strokes[i].name} ${popStroke}s on holes ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 20) {
+                            prompt = `${strokes[i].name} needs a ${popStroke} on holes ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 25) {
+                            prompt = `${strokes[i].name} gets one on ${getHoleList(pops, 1)}`;
+                        } else if (idx < 30) {
+                            prompt = `${strokes[i].name} gets a ${popStroke} on ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 35) {
+                            prompt = `${strokes[i].name} ${popStroke}s on ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 40) {
+                            prompt = `${strokes[i].name} needs a ${popStroke} on ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 45) {
+                            prompt = `${popStroke}s for ${strokes[i].name} on ${getHoleList(pops, 1)}`;
+                        } else if (idx <= 50) {
+                            prompt = `${popStroke}s for ${strokes[i].name} on holes ${getHoleList(pops, 1)}`;
+                        }
+                    }
 
+                    if (doublePops > 0) {
+                        if (!prompt) {
+                            if (idx <= 5) {
+                                prompt = `${strokes[i].name} gets two on holes ${getHoleList(pops, 2)}`;
+                            } else if (idx < 10) {
+                                prompt = `${strokes[i].name} gets two ${popStroke}s on holes ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 15) {
+                                prompt = `${strokes[i].name} double ${popStroke}s on holes ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 20) {
+                                prompt = `${strokes[i].name} needs two ${popStroke} on holes ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 25) {
+                                prompt = `${strokes[i].name} gets two on ${getHoleList(pops, 2)}`;
+                            } else if (idx < 30) {
+                                prompt = `${strokes[i].name} gets two ${popStroke}s on ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 35) {
+                                prompt = `${strokes[i].name} double ${popStroke}s on ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 40) {
+                                prompt = `${strokes[i].name} needs two ${popStroke} on ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 45) {
+                                prompt = `2 ${popStroke}s for ${strokes[i].name} on ${getHoleList(pops, 2)}`;
+                            } else if (idx <= 50) {
+                                prompt = `2 ${popStroke}s for ${strokes[i].name} on holes ${getHoleList(pops, 2)}`;
+                            }
+                        } else {
+                            if (idx <= 25) {
+                                prompt += ` and two on holes ${getHoleList(pops, 2)}`;
+                            } else {
+                                prompt += ` and two on ${getHoleList(pops, 2)}`;
+                            }
+                        }
+                    }
+
+                    if (halfPops > 0) {
+                        if (!prompt) {
+                            if (idx <= 5) {
+                                prompt = `${strokes[i].name} gets a half ${popStroke} on holes ${getHoleList(pops, 0.5)}`;
+                            } else if (idx < 10) {
+                                prompt = `${strokes[i].name} gets half a ${popStroke} on holes ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 15) {
+                                prompt = `${strokes[i].name} half ${popStroke}s on holes ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 20) {
+                                prompt = `${strokes[i].name} needs half a ${popStroke} on holes ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 25) {
+                                prompt = `${strokes[i].name} gets a half on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx < 30) {
+                                prompt = `${strokes[i].name} gets half a ${popStroke} on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 35) {
+                                prompt = `${strokes[i].name} half ${popStroke}s on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 40) {
+                                prompt = `${strokes[i].name} needs half a ${popStroke} on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 45) {
+                                prompt = `1/2 ${popStroke} for ${strokes[i].name} on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 50) {
+                                prompt = `1/2 ${popStroke} for ${strokes[i].name} on holes ${getHoleList(pops, 0.5)}`;
+                            }
+                        } else {
+                            if (idx <= 10) {
+                                prompt += ` and a half on holes ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 20) {
+                                prompt += ` and 1/2 on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 30) {
+                                prompt += ` and a half ${popStroke} on ${getHoleList(pops, 0.5)}`;
+                            } else if (idx <= 40) {
+                                prompt += ` and 1/2 a ${popStroke} on ${getHoleList(pops, 0.5)}`;
+                            } else {
+                                prompt += ` and half ${popStroke}s on ${getHoleList(pops, 0.5)}`;
+                            }
+                        }
+                    }
                 }
 
                 if (prompt) {
@@ -159,21 +263,128 @@ export function getStrokes(names, holes) {
         const delineator = getRandomInt(3);
         return {
             strokes,
-            prompt: prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ")
+            prompt: prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : ""
+        };
+    } else if (strokeType <= 8) {
+        let prompts = [];
+
+        for (let i = 0; i < strokes?.length; i++) {
+            let pops = strokes[i].pops;
+            let type = getRandomInt(12);
+            let prompt = ``;
+
+            if (type <= 3) {
+                //giving back
+                let index = getRandomInt(5);
+
+                for (let j = 0; j < holes?.length; j++) {
+                    if (type === 3 && holes[j].allocation <= index) {
+                        pops.push({
+                            hole: null,
+                            allocation: holes[j].allocation,
+                            strokes: -1
+                        });
+                    } else if (holes[j].allocation >= holes?.length - index) {
+                        pops.push({
+                            hole: null,
+                            allocation: holes[j].allocation,
+                            strokes: -1
+                        });
+                    }
+                }
+
+                let prompt = ``;
+                let idx = getRandomInt(2);
+
+                if (type === 1) {
+                    if (idx === 1) {
+                        prompt = `${strokes[i].name} gives ${index} back`;
+                    } else if (idx === 2) {
+                        prompt = `${strokes[i].name} gives ${index} ${index === 1 ? popStroke : `${popStroke}s`} back`;
+                    }
+                } else if (type === 2) {
+                    if (idx === 1) {
+                        prompt = `${strokes[i].name} gives one back on the ${index} easiest holes`;
+                    } else if (idx === 2) {
+                        prompt = `${strokes[i].name} gives a ${popStroke} back on the ${index} easiest holes`;
+                    }
+                } else if (type === 3) {
+                    if (idx === 1) {
+                        prompt = `${strokes[i].name} gives one back on the ${index} hardest holes`;
+                    } else if (idx === 2) {
+                        prompt = `${strokes[i].name} gives a ${popStroke} back on the ${index} hardest holes`;
+                    }
+                } 
+            } else if (type <= 9) {
+                // regular strokes
+                let index = getRandomInt(14);
+
+                for (let j = 0; j < holes?.length; j++) {
+                    if (type === 4 && holes[j].allocation >= holes?.length - index) {
+                        pops.push({
+                            hole: null,
+                            allocation: holes[j].allocation,
+                            strokes: 1
+                        });
+                    } else if (holes[j].allocation <= index) {
+                        pops.push({
+                            hole: null,
+                            allocation: holes[j].allocation,
+                            strokes: 1
+                        });
+                    }
+                }
+
+                let idx = getRandomInt(2);
+
+                if (type === 4) {
+                    if (idx === 1) {
+                        prompt = `${strokes[i].name} gets one on the ${index} easiest holes`;
+                    } else if (idx === 2) {
+                        prompt = `${strokes[i].name} gets a ${popStroke} on the ${index} easiest holes`;
+                    } 
+                } else if (type <= 5) {
+                    if (idx === 1) {
+                        prompt = `${strokes[i].name} gets one on the ${index} hardest holes`;
+                    } else if (idx === 2) {
+                        prompt = `${strokes[i].name} gets a ${popStroke} on the ${index} hardest holes`;
+                    }
+                } else {
+                    if (idx === 1) {
+                        prompt = `${strokes[i].name} gets ${index}`;
+                    } else if (idx === 2) {
+                        prompt = `${strokes[i].name} gets ${index} ${index === 1 ? popStroke : `${popStroke}s`}`;
+                    }
+                }
+            } else if (type === 10) {
+                //Stroke ahole, half a hole, 2 a hole etc.
+            } else {
+                //Handicaps off the high or low
+            }
+
+            if (prompt) {
+                prompts.push(prompt);
+            }
+
+            strokes[i].pops === pops;
+        }
+
+        const delineator = getRandomInt(3);
+        return {
+            strokes,
+            prompt: prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : ""
         };
     }
 
-    //2. By hole
-    //Giving one back
-    //Half stroke
-    //Regular stroke
+
+
     //3. By allocation
     //Giving one back
     //Half stroke
     //Regular stroke
     //Easiest
     //Hardest
-    //4. By total handicap
+    //4. By total handicap (mark is a 6, mitch is a 3, etc.)
     //All strokes
     //Off the low
 
