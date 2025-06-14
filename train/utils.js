@@ -1,8 +1,8 @@
-export function getRandomInt(max) {
+function getRandomInt(max) {
     return Math.floor(Math.random() * max) + 1;
 }
 
-export function getHoleList(pops, num) {
+function getHoleList(pops, num) {
     const holes = pops
         .filter(p => p.strokes === num)
         .map(p => p.hole);
@@ -20,7 +20,7 @@ export function getHoleList(pops, num) {
     return holeList
 }
 
-export function buildScorecards(scorecards, playerTees, strokes = [], holes) {
+function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     const builtScorecards = [];
 
     for (const playerName in playerTees) {
@@ -79,4 +79,10 @@ export function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     }
 
     return builtScorecards;
+}
+
+module.exports = {
+    getRandomInt,
+    buildScorecards,
+    getHoleList
 }

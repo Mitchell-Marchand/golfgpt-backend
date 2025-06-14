@@ -1,8 +1,8 @@
-import { getCourse } from "../course";
-import { getPlayerNames } from "../players";
-import { getTees } from "../tees";
-import { buildScorecards, getRandomInt } from "../utils";
-import { getStrokes } from "../strokes";
+const { getCourse } = require('../course');
+const { getPlayerNames } = require('../players');
+const { getTees } = require('../tees');
+const { buildScorecards, getRandomInt } = require('../utils');
+const { getStrokes } = require('../strokes');
 
 const mysql = require('mysql2/promise');
 require('dotenv').config();

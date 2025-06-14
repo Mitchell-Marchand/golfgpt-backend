@@ -1,4 +1,4 @@
-export function getTees(golfers, allScorecards, holes) {
+function getTees(golfers, allScorecards, holes) {
     const unique = new Map();
     allScorecards.forEach(tee => {
         if (tee.Gender !== 'Female' && !unique.has(tee.TeeSetRatingName)) {
@@ -29,4 +29,8 @@ export function getTees(golfers, allScorecards, holes) {
     });
 
     return teesByGolfer;
+}
+
+module.exports = {
+    getTees
 }

@@ -1,7 +1,7 @@
 import { getRandomInt } from "./utils";
 import { getHoleList } from "./utils";
 
-export function getStrokes(names, holes) {
+function getStrokes(names, holes) {
     const strokeType = getRandomInt(6);
     const verbeage = getRandomInt(13);
 
@@ -556,4 +556,8 @@ export function getStrokes(names, holes) {
         strokes,
         prompt: ""
     }
+}
+
+module.exports = {
+    getStrokes
 }

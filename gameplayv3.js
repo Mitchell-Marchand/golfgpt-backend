@@ -5,8 +5,7 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 const { encoding_for_model } = require("tiktoken");
 require('dotenv').config();
-
-import { buildScorecards } from './train/utils';
+const { buildScorecards } = require('./train/utils')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
