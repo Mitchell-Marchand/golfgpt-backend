@@ -21,8 +21,55 @@ export function getStrokes(names, holes) {
         pops: []
     }));
 
-    //TODO: x a side, x on fromt y on back
-    //TODO: Off the low, off the high
+    //x a side, x on front y on back
+    if (holes?.length === 18 && getRandomInt(10) === 1) {
+        let prompts = [];
+
+        for (let i = 0; i < strokes?.length; i++) {
+            let pops = strokes[i].pops;
+            let front = getRandomInt(5) - 1;
+            let back = front + (getRandomInt(3) - 2);
+
+            for (let j = 0; j < holes?.length; j++) {
+                if (holes[j].holeNumber <= 9 && holes[j].allocation <= front * 2) {
+                    pops.push({
+                        hole: null,
+                        allocation: holes[j].allocation,
+                        strokes: 1
+                    });
+                } else if (holes[j].holeNumber > 9 && holes[j].allocation <= back * 2) {
+                    pops.push({
+                        hole: null,
+                        allocation: holes[j].allocation,
+                        strokes: 1
+                    });
+                }
+            }
+
+            const idx = getRandomInt(2);
+            if (idx === 1) {
+                if (front === back) {
+                    prompts.push(`${strokes[i].name} gets ${front} a side`);
+                } else {
+                    prompts.push(`${strokes[i].name} gets ${front} on the front and ${back} on the back`);
+                }
+            } else if (idx === 2) {
+                if (front === back) {
+                    prompts.push(`${strokes[i].name} gets ${front} ${popStroke}${front === 1 ? "" : "s"} a side`);
+                } else {
+                    prompts.push(`${strokes[i].name} gets ${front} ${popStroke}${front === 1 ? "" : "s"} on the front and ${back} ${popStroke}${back === 1 ? "" : "s"} on the back`);
+                }
+            }
+
+            strokes[i].pops = pops;
+        }
+
+        const delineator = getRandomInt(3);
+        return {
+            strokes,
+            prompt: prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : ""
+        };
+    }
 
     if (strokeType <= 2) {
         //No strokes for anyone or empty
@@ -437,34 +484,76 @@ export function getStrokes(names, holes) {
             strokes,
             prompt: prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : ""
         };
+    } else if (strokeType === 9) {
+        //Off the low or straight index
+        let prompts = [];
+        let idxs = [];
+        let low;
+        let lowName = "";
+        let offLow = getRandomInt(2) === 1;
+
+        for (let i = 0; i < strokes?.length; i++) {
+            const idx = getRandomInt(14);
+            idxs.push(idx);
+
+            if (!low || idx < low) {
+                low = idx;
+                lowName = strokes[i].name;
+            }
+        }
+
+        for (let i = 0; i < strokes?.length; i++) {
+            let pops = strokes[i].pops;
+            let handicap = offLow ? idxs[i] - low : idxs[i];
+
+            for (let j = 0; j < holes?.length; j++) {
+                if (holes[j].allocation <= handicap) {
+                    pops.push({
+                        hole: null,
+                        allocation: holes[j].allocation,
+                        strokes: 1
+                    });
+                }
+            }
+
+            const type = getRandomInt(3);
+            let prompt = ``;
+            if (type === 1) {
+                prompt = `${strokes[i].name} is a ${idxs[i]}`;
+            } else if (type === 2) {
+                prompt = `${strokes[i].name} is a ${idxs[i]} handicap`;
+            } else if (type === 3) {
+                prompt = `${strokes[i].name} is a ${idxs[i]} index`;
+            }
+
+            prompts.push(prompt);
+            strokes[i] = pops;
+        }
+
+        let pString = prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : "";
+        let type = getRandomInt(4);
+
+        if (pString !== "" && offLow) {
+            if (type === 1) {
+                pString += ". Playing off the low";
+            } else if (type === 2) {
+                pString += `. Playing off of ${lowName}`;
+            } else if (type === 3) {
+                pString += ". Playing off the low handicap";
+            } else {
+                pString += ". Playing off the low index"
+            }
+        }
+
+        const delineator = getRandomInt(3);
+        return {
+            strokes,
+            prompt: pString
+        };
     }
 
-
-
-    //3. By allocation
-    //Giving one back
-    //Half stroke
-    //Regular stroke
-    //Easiest
-    //Hardest
-    //4. By total handicap (mark is a 6, mitch is a 3, etc.)
-    //All strokes
-    //Off the low
-
-
-    //Prompts
-    /*
-        player a gets x strokes/pops on holes x and y
-        player a gets x strokes/pops on x and y handicap
-        player a gets x strokes/pops
-        player a gets x strokes/pops on the y hardest holes
-        player a gets x strokes/pops on the y easiest holes
-        player a gets strokes/pops a hole
-        player a gets a half stroke/pop a hole
-        gives x back
-        gives x back on the y easiest holes
-        gives x back on the y hardest holes
-        player a is a x, player b is a y
-        (no input)
-    */
+    return {
+        strokes,
+        prompt: ""
+    }
 }
