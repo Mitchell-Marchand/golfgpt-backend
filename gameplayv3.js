@@ -243,7 +243,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes, holes);
 
-        console.log("Built a scorecard");
+        console.log("Built a scorecard with", scorecards, playerTees, [], holes);
 
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });

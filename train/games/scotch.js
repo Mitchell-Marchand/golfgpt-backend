@@ -23,7 +23,7 @@ async function runScotchGame() {
     const allScorecards = JSON.parse(course.scorecards);
     const tees = getTees(names, allScorecards, holeCount);
     const scorecards = buildScorecards(allScorecards, tees, [], holeCount);
-    
+
     let holes = [];
 
     if (scorecards?.length > 0) {
@@ -39,8 +39,8 @@ async function runScotchGame() {
     }
     
     const strokes = getStrokes(names, holes);
-    console.log("Prompt", strokes.prompt);
-    console.log("Strokes", JSON.stringify(strokes.strokes, null, 2));
+    console.log("Prompt:", strokes.prompt);
+    console.log("Strokes:", JSON.stringify(strokes.strokes, null, 2));
 }
 
 //TODO: Do this on a loop
