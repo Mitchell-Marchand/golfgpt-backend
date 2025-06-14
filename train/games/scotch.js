@@ -21,7 +21,7 @@ function runScotchGame() {
     const names = getPlayerNames(4);
     const course = getCourse(mariadbPool);
 
-    console.lof(holeCount, names, course);
+    console.log(holeCount, names, course);
 
     const tees = getTees(names, course.scorecards, holeCount);
 
