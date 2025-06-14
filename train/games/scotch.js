@@ -5,7 +5,7 @@ const { buildScorecards, getRandomInt } = require('../utils');
 const { getStrokes } = require('../strokes');
 
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
