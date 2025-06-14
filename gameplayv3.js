@@ -118,8 +118,8 @@ router.post("/begin", authenticateUser, async (req, res) => {
         const [existing] = await mariadbPool.query("SELECT courseId FROM Courses WHERE courseId = ?", [course.CourseID]);
         if (existing.length === 0) {
             await mariadbPool.query(
-                "INSERT INTO Courses (courseId, courseName, scorecards) VALUES (?, ?, ?)",
-                [course.CourseID, course.FullName, JSON.stringify([])]
+                "INSERT INTO Courses (courseId, courseName, scorecards, nineScorecards) VALUES (?, ?, ?, ?)",
+                [course.CourseID, course.FullName, JSON.stringify([]), JSON.stringify([])]
             );
         }
 
@@ -159,9 +159,9 @@ router.post("/tees", authenticateUser, async (req, res) => {
             const fullScorecards = rows2[0].scorecards;
             const nineScorecards = rows2[0].nineScorecards;
 
-            if (!fullScorecards && holes === 18) {
+            if (fullScorecards === "[]" && holes === 18) {
                 await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
-            } else if (!nineScorecards && holes === 9) {
+            } else if (nineScorecards === "[]" && holes === 9) {
                 await mariadbPool.query("UPDATE Courses SET nineScorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
             }
         }
