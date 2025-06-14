@@ -150,14 +150,17 @@ router.post("/tees", authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query("SELECT courseId, scorecards FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT courseId, scorecards, nineScorecards FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         } else {
             const courseId = rows[0].courseId;
-            const hasScorecards = rows[0].scorecards;
-            if (!hasScorecards) {
+            const fullScorecards = rows[0].scorecards;
+            const nineScorecards = rows[0].nineScorecards;
+            if (!fullScorecards && holes === 18) {
                 await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
+            } else if (!nineScorecards && holes === 9) {
+                await mariadbPool.query("UPDATE Courses SET nineScorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), courseId]);
             }
         }
 
@@ -192,12 +195,13 @@ router.post("/create", authenticateUser, async (req, res) => {
         const courseId = rows1[0].courseId;
         const playerTees = JSON.parse(rows1[0].tees);
         const holes = rows1[0].holeCount;
-        const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
+        const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const scorecards = JSON.parse(rows2[0].scorecards);
+        const nineScorecards = JSON.parse(rows2[0].nineScorecards);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
@@ -241,7 +245,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             parsed = expected;
         }
 
-        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes, holes);
+        const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, parsed?.strokes, holes);
 
         console.log("Built a scorecard with", scorecards, playerTees, [], holes);
 
@@ -289,7 +293,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
 
-        const [rows2] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [courseId]);
+        const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
             return res.status(404).json({ error: "Course not found." });
         }
@@ -333,7 +337,8 @@ router.post("/update", authenticateUser, async (req, res) => {
         }
 
         const scorecards = JSON.parse(rows2[0].scorecards);
-        const builtScorecards = buildScorecards(scorecards, playerTees, parsed?.strokes, holes);
+        const nineScorecards = JSON.parse(rows2[0].nineScorecards);
+        const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, parsed?.strokes, holes);
 
         console.log("Updated a scorecard");
 
