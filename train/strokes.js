@@ -3,7 +3,7 @@ import { getHoleList } from "./utils";
 
 export function getStrokes(names, holes) {
     const strokeType = getRandomInt(6);
-    const verbeage = getRandomInt(8);
+    const verbeage = getRandomInt(13);
 
     let popStroke = "stroke";
     if (verbeage > 7 && verbeage <= 10) {
@@ -20,6 +20,9 @@ export function getStrokes(names, holes) {
         name,
         pops: []
     }));
+
+    //TODO: x a side, x on fromt y on back
+    //TODO: Off the low, off the high
 
     if (strokeType <= 2) {
         //No strokes for anyone or empty
@@ -314,7 +317,7 @@ export function getStrokes(names, holes) {
                     } else if (idx === 2) {
                         prompt = `${strokes[i].name} gives a ${popStroke} back on the ${index} hardest holes`;
                     }
-                } 
+                }
             } else if (type <= 9) {
                 // regular strokes
                 let index = getRandomInt(14);
@@ -342,7 +345,7 @@ export function getStrokes(names, holes) {
                         prompt = `${strokes[i].name} gets one on the ${index} easiest holes`;
                     } else if (idx === 2) {
                         prompt = `${strokes[i].name} gets a ${popStroke} on the ${index} easiest holes`;
-                    } 
+                    }
                 } else if (type <= 5) {
                     if (idx === 1) {
                         prompt = `${strokes[i].name} gets one on the ${index} hardest holes`;
@@ -357,9 +360,69 @@ export function getStrokes(names, holes) {
                     }
                 }
             } else if (type === 10) {
-                //Stroke ahole, half a hole, 2 a hole etc.
+                //Stroke a hole, half a hole, 2 a hole etc.
+                const idx = getRandomInt(4);
+                let strks = idx === 1 ? 1 : idx === 2 ? 0.5 : idx === 3 ? -1 : 2;
+                for (let j = 0; j < holes?.length; j++) {
+                    pops.push({
+                        hole: null,
+                        allocation: holes[j].allocation,
+                        strokes: strks
+                    });
+                }
+
+                if (idx === 1) {
+                    if (getRandomInt(2) === 1) {
+                        prompts.push(`${strokes[i].name} gets a ${popStroke} a hole`);
+                    } else {
+                        prompts.push(`${strokes[i].name} gets one a hole`);
+                    }
+                } else if (idx === 2) {
+                    if (getRandomInt(2) === 1) {
+                        prompts.push(`${strokes[i].name} gets half a ${popStroke} a hole`);
+                    } else {
+                        prompts.push(`${strokes[i].name} gets a half a hole`);
+                    }
+                } else if (idx === 3) {
+                    if (getRandomInt(2) === 1) {
+                        prompts.push(`${strokes[i].name} gives one ${popStroke} a hole`);
+                    } else {
+                        prompts.push(`${strokes[i].name} loses one ${popStroke} a hole`);
+                    }
+                } else if (idx === 4) {
+                    if (getRandomInt(2) === 1) {
+                        prompts.push(`${strokes[i].name} gets 2 ${popStroke}s a hole`);
+                    } else {
+                        prompts.push(`${strokes[i].name} gets a two a hole`);
+                    }
+                }
             } else {
-                //Handicaps off the high or low
+                //Wraparound to double pops
+                const index = getRandomInt(6);
+                for (let j = 0; j < holes?.length; j++) {
+                    if (holes[j].allocation <= index) {
+                        pops.push({
+                            hole: null,
+                            allocation: holes[j].allocation,
+                            strokes: 2
+                        });
+                    } else {
+                        pops.push({
+                            hole: null,
+                            allocation: holes[j].allocation,
+                            strokes: 1
+                        });
+                    }
+                }
+
+                const idx = getRandomInt(3);
+                if (idx === 1) {
+                    prompts.push(`${strokes[i].name} is a ${index + 18}`);
+                } else if (idx === 2) {
+                    prompts.push(`${strokes[i].name} gets ${index + 18}`);
+                } else if (idx === 3) {
+                    prompts.push(`${strokes[i].name} gets ${index + 18} ${popStroke}s`);
+                }
             }
 
             if (prompt) {
