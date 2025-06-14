@@ -1,5 +1,4 @@
-import { getRandomInt } from "./utils";
-import { getHoleList } from "./utils";
+const { getRandomInt, getHoleList } = require('./utils');
 
 function getStrokes(names, holes) {
     const strokeType = getRandomInt(6);
