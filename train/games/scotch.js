@@ -16,10 +16,10 @@ const mariadbPool = mysql.createPool({
     connectionLimit: 10,
 });
 
-function runScotchGame() {
+async function runScotchGame() {
     const holeCount = getRandomInt(3) === 1 ? 9 : 18; 
     const names = getPlayerNames(4);
-    const course = getCourse(mariadbPool);
+    const course = await getCourse(mariadbPool);
 
     console.log(holeCount, names, course);
 
