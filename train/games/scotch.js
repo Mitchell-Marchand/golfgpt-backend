@@ -20,6 +20,9 @@ function runScotchGame() {
     const holeCount = getRandomInt(3) === 1 ? 9 : 18; 
     const names = getPlayerNames(4);
     const course = getCourse(mariadbPool);
+
+    console.lof(holeCount, names, course);
+
     const tees = getTees(names, course.scorecards, holeCount);
 
     const scorecards = buildScorecards(course.scorecards, tees, [], holeCount);
