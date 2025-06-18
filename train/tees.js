@@ -1,4 +1,4 @@
-function getTees(golfers, allScorecards, holes) {
+function getTees(golfers, allScorecards) {
     const unique = new Map();
     allScorecards.forEach(tee => {
         if (tee.Gender !== 'Female' && !unique.has(tee.TeeSetRatingName)) {
@@ -16,12 +16,7 @@ function getTees(golfers, allScorecards, holes) {
             ? options[Math.floor(Math.random() * options.length)]
             : sortedTees[0];
 
-    let finalTeeName = baseTee ? baseTee.TeeSetRatingName : '';
-
-    if (holes === 9) {
-        const nineType = Math.random() < 0.5 ? 'Front 9' : 'Back 9';
-        finalTeeName += ` (${nineType})`;
-    }
+    const finalTeeName = baseTee ? baseTee.TeeSetRatingName : '';
 
     const teesByGolfer = {};
     golfers.forEach(golfer => {
