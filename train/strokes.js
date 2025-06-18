@@ -319,7 +319,7 @@ function getStrokes(names, holes) {
 
         for (let i = 0; i < strokes?.length; i++) {
             let pops = strokes[i].pops;
-            let type = getRandomInt(11);
+            let type = getRandomInt(15);
             let prompt = ``;
 
             if (type <= 3) {
