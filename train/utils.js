@@ -22,17 +22,17 @@ function getHoleList(pops, num) {
 
 function pickTeam(names, teamLength) {
     if (teamLength <= 0 || teamLength >= names.length) {
-      throw new Error("Team length must be greater than 0 and less than the total number of names.");
+        throw new Error("Team length must be greater than 0 and less than the total number of names.");
     }
-  
+
     const shuffled = [...names].sort(() => Math.random() - 0.5);
-  
+
     const selected = shuffled.slice(0, teamLength);
     const unselected = shuffled.slice(teamLength);
-  
+
     return [`${selected.join(' & ')}`, `${unselected.join(' & ')}`];
-  }
-  
+}
+
 
 function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     const builtScorecards = [];

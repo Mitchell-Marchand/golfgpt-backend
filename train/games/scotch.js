@@ -23,7 +23,7 @@ async function runScotchGame() {
     const allScorecards = JSON.parse(holeCount === 9 ? course.nineScorecards : course.scorecards);
     const tees = getTees(names, allScorecards);
     const scorecards = buildScorecards(allScorecards, tees, [], holeCount);
-
+    const userId = "5c4ebd6d-b36d-44d9-acc5-824b4f14c9f1";
     let holes = [];
 
     if (scorecards?.length > 0) {
@@ -34,7 +34,7 @@ async function runScotchGame() {
             })
         }
     } else {
-        console.log("Error building scorecards", holeCount);
+        console.log("Error building holes", holeCount);
         return;
     }
 
@@ -96,19 +96,27 @@ async function runScotchGame() {
         }
     }
 
+    let gameName = "scotch";
     let prompt = ``;
+    let gameIndex = getRandomInt(6);
     let promptIndex = getRandomInt(4);
 
+    if (gameIndex === 1) {
+        gameName = "bridge";
+    } else if (gameIndex === 2) {
+        gameName = "umbrella"
+    }
+
     if (points === 4 && getRandomInt(4) === 1) {
-        prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in scotch. `
+        prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}. `
     } else if (promptIndex === 1) {
-        prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in scotch, ${points} point game. `
+        prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}, ${points} point game. `
     } else if (promptIndex === 2) {
-        prompt = `${points} point scotch game, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+        prompt = `${points} point ${gameName} game, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
     } else if (promptIndex === 3) {
-        prompt = `${points} point scotch, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+        prompt = `${points} point ${gameName}, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
     } else if (promptIndex === 4) {
-        prompt = `${points} point scotch, teams are ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+        prompt = `${points} point ${gameName}, teams are ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
     }
 
     promptIndex = getRandomInt(3);
@@ -162,6 +170,10 @@ async function runScotchGame() {
             prompt += ` allowed.`;
         }
     }
+
+    //TODO: miracle/double birdies
+
+    //If strokes.prompt, add it to prompt here
 
     //Create the game...
     const matchId = uuidv4();
