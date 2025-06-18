@@ -29,7 +29,7 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
         // Find the matching scorecard (by TeeSetRatingName)
         const scorecard = scorecards.find(sc => sc.TeeSetRatingName === teeName);
         if (!scorecard) {
-            console.warn(`No scorecard found for tee: ${teeName}`);
+            console.warn(`No scorecard found for tee: ${teeName}`, JSON.stringify(scorecards, null, 2));
             continue;
         }
 
