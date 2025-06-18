@@ -319,7 +319,7 @@ function getStrokes(names, holes) {
 
         for (let i = 0; i < strokes?.length; i++) {
             let pops = strokes[i].pops;
-            let type = getRandomInt(12);
+            let type = getRandomInt(11);
             let prompt = ``;
 
             if (type <= 3) {
@@ -333,7 +333,7 @@ function getStrokes(names, holes) {
                             allocation: holes[j].allocation,
                             strokes: -1
                         });
-                    } else if (holes[j].allocation >= holes?.length - index) {
+                    } else if (type !== 3 && holes[j].allocation > holes?.length - index) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
@@ -369,13 +369,13 @@ function getStrokes(names, holes) {
                 let index = getRandomInt(14);
 
                 for (let j = 0; j < holes?.length; j++) {
-                    if (type === 4 && holes[j].allocation >= holes?.length - index) {
+                    if (type === 4 && holes[j].allocation > holes?.length - index) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
                             strokes: 1
                         });
-                    } else if (holes[j].allocation <= index) {
+                    } else if (type !== 4 && holes[j].allocation <= index) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
