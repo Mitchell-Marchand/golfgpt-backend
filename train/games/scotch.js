@@ -54,8 +54,8 @@ async function runScotchGame() {
     const autoDoubleValue = pointVal * (getRandomInt(2) + 1);
     const autoDoubleMoneyTrigger = getRandomInt(2) === 1 ? (getRandomInt(5) + 10) * 5 : false;
     const autoDoubleAfterNineTrigger = getRandomInt(2) === 1;
-    const proxIndex = getRandomInt(6);
     const prox = "proximity";
+
     const questions = [{
         question: `Who got the point for ${prox}?`,
         answers: names,
@@ -222,6 +222,7 @@ async function runScotchGame() {
     );
 
     //TODO: score the game
+    
 }
 
 //TODO: Do this on a loop
