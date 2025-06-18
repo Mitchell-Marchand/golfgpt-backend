@@ -1,7 +1,7 @@
 const { getRandomInt, getHoleList } = require('./utils');
 
 function getStrokes(names, holes) {
-    const strokeType = getRandomInt(6);
+    const strokeType = getRandomInt(9);
     const verbeage = getRandomInt(13);
 
     let popStroke = "stroke";
@@ -482,7 +482,7 @@ function getStrokes(names, holes) {
             strokes,
             prompt: prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : ""
         };
-    } else if (strokeType === 9) {
+    } else if (strokeType === 11) {
         //Off the low or straight index
         let prompts = [];
         let idxs = [];
