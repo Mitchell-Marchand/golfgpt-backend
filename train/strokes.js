@@ -327,13 +327,13 @@ function getStrokes(names, holes) {
                 let index = getRandomInt(5);
 
                 for (let j = 0; j < holes?.length; j++) {
-                    if (type === 3 && holes[j].allocation <= index) {
+                    if (type === 3 && holes[j].allocation <= index * (holes?.length === 18 ? 1 : 2)) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
                             strokes: -1
                         });
-                    } else if (type !== 3 && holes[j].allocation > holes?.length - index) {
+                    } else if (type !== 3 && holes[j].allocation > holes?.length - (index * (holes?.length === 18 ? 1 : 2))) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
@@ -352,29 +352,29 @@ function getStrokes(names, holes) {
                     }
                 } else if (type === 2) {
                     if (idx === 1) {
-                        prompt = `${strokes[i].name} gives one back on the ${index} easiest holes`;
+                        prompt = `${strokes[i].name} gives one back on the${index === 1 ? " " : ` ${index} `}easiest hole${index === 1 ? "" : "s"}`;
                     } else if (idx === 2) {
-                        prompt = `${strokes[i].name} gives a ${popStroke} back on the ${index} easiest holes`;
+                        prompt = `${strokes[i].name} gives a ${popStroke} back on the${index === 1 ? " " : ` ${index} `}easiest hole${index === 1 ? "" : "s"}`;
                     }
                 } else if (type === 3) {
                     if (idx === 1) {
-                        prompt = `${strokes[i].name} gives one back on the ${index} hardest holes`;
+                        prompt = `${strokes[i].name} gives one back on the${index === 1 ? " " : ` ${index} `}hardest hole${index === 1 ? "" : "s"}`;
                     } else if (idx === 2) {
-                        prompt = `${strokes[i].name} gives a ${popStroke} back on the ${index} hardest holes`;
+                        prompt = `${strokes[i].name} gives a ${popStroke} back on the${index === 1 ? " " : ` ${index} `}hardest hole${index === 1 ? "" : "s"}`;
                     }
                 }
             } else if (type <= 9) {
                 // regular strokes
-                let index = getRandomInt(14);
+                let index = holes?.length === 18 ? getRandomInt(14) : getRandomInt(8);
 
                 for (let j = 0; j < holes?.length; j++) {
-                    if (type === 4 && holes[j].allocation > holes?.length - index) {
+                    if (type === 4 && holes[j].allocation > holes?.length - (index * (holes?.length === 18 ? 1 : 2))) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
                             strokes: 1
                         });
-                    } else if (type !== 4 && holes[j].allocation <= index) {
+                    } else if (type !== 4 && holes[j].allocation <= index * (holes?.length === 18 ? 1 : 2)) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
@@ -387,15 +387,15 @@ function getStrokes(names, holes) {
 
                 if (type === 4) {
                     if (idx === 1) {
-                        prompt = `${strokes[i].name} gets one on the ${index} easiest holes`;
+                        prompt = `${strokes[i].name} gets one on the${index === 1 ? " " : ` ${index} `}easiest hole${index === 1 ? "" : "s"}`;
                     } else if (idx === 2) {
-                        prompt = `${strokes[i].name} gets a ${popStroke} on the ${index} easiest holes`;
+                        prompt = `${strokes[i].name} gets a ${popStroke} on the${index === 1 ? " " : ` ${index} `}easiest hole${index === 1 ? "" : "s"}`;
                     }
                 } else if (type <= 5) {
                     if (idx === 1) {
-                        prompt = `${strokes[i].name} gets one on the ${index} hardest holes`;
+                        prompt = `${strokes[i].name} gets one on the${index === 1 ? " " : ` ${index} `}hardest hole${index === 1 ? "" : "s"}`;
                     } else if (idx === 2) {
-                        prompt = `${strokes[i].name} gets a ${popStroke} on the ${index} hardest holes`;
+                        prompt = `${strokes[i].name} gets a ${popStroke} on the${index === 1 ? " " : ` ${index} `}hardest hole${index === 1 ? "" : "s"}`;
                     }
                 } else {
                     if (idx === 1) {
@@ -445,7 +445,7 @@ function getStrokes(names, holes) {
                 //Wraparound to double pops
                 const index = getRandomInt(6);
                 for (let j = 0; j < holes?.length; j++) {
-                    if (holes[j].allocation <= index) {
+                    if (holes[j].allocation <= index * (holes?.length === 18 ? 1 : 2)) {
                         pops.push({
                             hole: null,
                             allocation: holes[j].allocation,
