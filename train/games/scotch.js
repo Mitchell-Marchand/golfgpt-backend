@@ -20,11 +20,9 @@ async function runScotchGame() {
     const holeCount = getRandomInt(3) === 1 ? 9 : 18; 
     const names = getPlayerNames(4);
     const course = await getCourse(mariadbPool);
-    const allScorecards = JSON.parse(holeCount === 18 ? course.scorecards : course.nineScorecards);
-    const tees = getTees(names, allScorecards, holeCount);
-
-    console.log("building scorecards", allScorecards, tees, [], holeCount);
-
+    const allScorecards = JSON.parse(course.scorecards);
+    const nineScorecards = JSON.parse(course.nineScorecards);
+    const tees = getTees(names, holeCount === 18 ? allScorecards : nineScorecards, holeCount);
     const scorecards = buildScorecards(allScorecards, tees, [], holeCount);
 
     let holes = [];
