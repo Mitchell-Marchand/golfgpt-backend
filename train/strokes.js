@@ -342,7 +342,6 @@ function getStrokes(names, holes) {
                     }
                 }
 
-                let prompt = ``;
                 let idx = getRandomInt(2);
 
                 if (type === 1) {
