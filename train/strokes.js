@@ -419,27 +419,27 @@ function getStrokes(names, holes) {
 
                 if (idx === 1) {
                     if (getRandomInt(2) === 1) {
-                        prompts.push(`${strokes[i].name} gets a ${popStroke} a hole`);
+                        prompt = `${strokes[i].name} gets a ${popStroke} a hole`;
                     } else {
-                        prompts.push(`${strokes[i].name} gets one a hole`);
+                        prompt = `${strokes[i].name} gets one a hole`;
                     }
                 } else if (idx === 2) {
                     if (getRandomInt(2) === 1) {
-                        prompts.push(`${strokes[i].name} gets half a ${popStroke} a hole`);
+                        prompt = `${strokes[i].name} gets half a ${popStroke} a hole`;
                     } else {
-                        prompts.push(`${strokes[i].name} gets a half a hole`);
+                        prompt = `${strokes[i].name} gets a half a hole`;
                     }
                 } else if (idx === 3) {
                     if (getRandomInt(2) === 1) {
-                        prompts.push(`${strokes[i].name} gives one ${popStroke} a hole`);
+                        prompt = `${strokes[i].name} gives one ${popStroke} a hole`;
                     } else {
-                        prompts.push(`${strokes[i].name} loses one ${popStroke} a hole`);
+                        prompt = `${strokes[i].name} loses one ${popStroke} a hole`;
                     }
                 } else if (idx === 4) {
                     if (getRandomInt(2) === 1) {
-                        prompts.push(`${strokes[i].name} gets 2 ${popStroke}s a hole`);
+                        prompt = `${strokes[i].name} gets 2 ${popStroke}s a hole`;
                     } else {
-                        prompts.push(`${strokes[i].name} gets a two a hole`);
+                        prompt = `${strokes[i].name} gets a two a hole`;
                     }
                 }
             } else {
@@ -463,11 +463,11 @@ function getStrokes(names, holes) {
 
                 const idx = getRandomInt(3);
                 if (idx === 1) {
-                    prompts.push(`${strokes[i].name} is a ${index + 18}`);
+                    prompt = `${strokes[i].name} is a ${index + 18}`;
                 } else if (idx === 2) {
-                    prompts.push(`${strokes[i].name} gets ${index + 18}`);
+                    prompt = `${strokes[i].name} gets ${index + 18}`;
                 } else if (idx === 3) {
-                    prompts.push(`${strokes[i].name} gets ${index + 18} ${popStroke}s`);
+                    prompt = `${strokes[i].name} gets ${index + 18} ${popStroke}s`;
                 }
             }
 
@@ -475,7 +475,7 @@ function getStrokes(names, holes) {
                 prompts.push(prompt);
             }
 
-            strokes[i].pops === pops;
+            strokes[i].pops = pops;
         }
 
         const delineator = getRandomInt(3);
@@ -526,7 +526,7 @@ function getStrokes(names, holes) {
             }
 
             prompts.push(prompt);
-            strokes[i] = pops;
+            strokes[i].pops = pops;
         }
 
         let pString = prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : "";
