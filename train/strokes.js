@@ -26,7 +26,7 @@ function getStrokes(names, holes) {
 
         for (let i = 0; i < strokes?.length; i++) {
             let pops = strokes[i].pops;
-            let front = getRandomInt(5) - 1;
+            let front = getRandomInt(5);
             let back = front + (getRandomInt(3) - 2);
 
             for (let j = 0; j < holes?.length; j++) {
@@ -528,6 +528,7 @@ function getStrokes(names, holes) {
             strokes[i].pops = pops;
         }
 
+        const delineator = getRandomInt(3);
         let pString = prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : "";
         let type = getRandomInt(4);
 
@@ -543,7 +544,6 @@ function getStrokes(names, holes) {
             }
         }
 
-        const delineator = getRandomInt(3);
         return {
             strokes,
             prompt: pString
