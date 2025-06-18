@@ -35,7 +35,7 @@ async function runScotchGame() {
             })
         } 
     } else {
-        console.log("Error building scorecards");
+        console.log("Error building scorecards", holeCount);
         return;
     }
     
