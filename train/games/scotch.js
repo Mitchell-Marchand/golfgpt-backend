@@ -40,7 +40,7 @@ async function runScotchGame() {
     }
     
     const strokes = getStrokes(names, holes);
-    console.log("Tees:". JSON.stringify(tees));
+    console.log("Tees:", JSON.stringify(tees));
     console.log("Prompt:", strokes.prompt);
     console.log("Strokes:", JSON.stringify(strokes.strokes, null, 2));
 }
