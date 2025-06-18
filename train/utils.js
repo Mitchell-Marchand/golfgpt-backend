@@ -20,6 +20,20 @@ function getHoleList(pops, num) {
     return holeList
 }
 
+function pickTeam(names, teamLength) {
+    if (teamLength <= 0 || teamLength >= names.length) {
+      throw new Error("Team length must be greater than 0 and less than the total number of names.");
+    }
+  
+    const shuffled = [...names].sort(() => Math.random() - 0.5);
+  
+    const selected = shuffled.slice(0, teamLength);
+    const unselected = shuffled.slice(teamLength);
+  
+    return [`${selected.join(' & ')}`, `${unselected.join(' & ')}`];
+  }
+  
+
 function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     const builtScorecards = [];
 
@@ -81,8 +95,25 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     return builtScorecards;
 }
 
+function blankAnswers(scorecards) {
+    let answers = [];
+
+    if (scorecards[0]) {
+        for (let i = 0; i < scorecards[0].holes?.length; i++) {
+            answers.push({
+                hole: scorecards[0].holes[i].holeNumber,
+                answers: []
+            });
+        }
+    }
+
+    return JSON.stringify(answers);
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
-    getHoleList
+    getHoleList,
+    pickTeam,
+    blankAnswers
 }
