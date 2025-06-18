@@ -482,7 +482,7 @@ function getStrokes(names, holes) {
             strokes,
             prompt: prompts?.length > 0 ? prompts.join(delineator === 1 ? ". " : delineator === 2 ? ", " : " and ") : ""
         };
-    } else if (strokeType === 11) {
+    } else {
         //Off the low or straight index
         let prompts = [];
         let idxs = [];
@@ -548,11 +548,6 @@ function getStrokes(names, holes) {
             strokes,
             prompt: pString
         };
-    }
-
-    return {
-        strokes,
-        prompt: ""
     }
 }
 
