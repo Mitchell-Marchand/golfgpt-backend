@@ -689,4 +689,36 @@ router.get("/courses", authenticateUser, async (req, res) => {
     }
 });
 
+router.delete("/delete/:matchId", authenticateUser, async (req, res) => {
+    const matchId = req.params.matchId;
+    const userId = req.user.id;
+
+    if (!matchId) {
+        return res.status(400).json({ error: "Missing matchId." });
+    }
+
+    try {
+        const [rows] = await mariadbPool.query(
+            "SELECT createdBy FROM Matches WHERE id = ?",
+            [matchId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
+
+        if (rows[0].createdBy !== userId) {
+            return res.status(403).json({ error: "You are not authorized to delete this match." });
+        }
+
+        await mariadbPool.query("DELETE FROM Messages WHERE threadId = ?", [matchId]);
+        await mariadbPool.query("DELETE FROM Matches WHERE id = ?", [matchId]);
+
+        res.json({ success: true, message: "Match and related messages deleted." });
+    } catch (err) {
+        console.error("Error in /delete/:matchId:", err);
+        res.status(500).json({ error: "Failed to delete match." });
+    }
+});
+
 module.exports = router;

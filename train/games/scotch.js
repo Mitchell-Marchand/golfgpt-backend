@@ -172,6 +172,7 @@ async function runScotchGame() {
     }
 
     //TODO: miracle/double birdies
+    //TODO: autodouble stays for the match or not
 
     //If strokes.prompt, add it to prompt here
 
