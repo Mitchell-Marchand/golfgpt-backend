@@ -130,11 +130,18 @@ async function runScotchGame() {
         prompt += `$${pointVal} each point`
     }
 
+    let autoDoubleStays = false;
     if (autoDoubles) {
         promptIndex = getRandomInt(3);
+        autoDoubleStays = getRandomInt(3) !== 1;
+
         let after = ``;
         if (autoDoubleMoneyTrigger) {
-            after = ` after someone goes down $${autoDoubleMoneyTrigger}`
+            if (autoDoubleStays) {
+                after = ` once someone goes down $${autoDoubleMoneyTrigger}`
+            } else {
+                after = ` while someone is down $${autoDoubleMoneyTrigger}`
+            }
         }
 
         if (autoDoubleAfterNineTrigger) {
@@ -172,7 +179,21 @@ async function runScotchGame() {
     }
 
     //TODO: miracle/double birdies
-    //TODO: autodouble stays for the match or not
+    let mircale = true;
+    if (getRandomInt(5) === 1) {
+        mircale = false;
+        if (getRandomInt(3) === 1) {
+            prompt += ` No miracles.`
+        } else {
+            prompt += ` Extra birdies don't double.`
+        }
+    } else if (getRandomInt(3) === 1) {
+        if (getRandomInt(3) === 1) {
+            prompt += ` Miracles in play.`
+        } else {
+            prompt += ` Extra birdies double.`
+        }
+    }
 
     //If strokes.prompt, add it to prompt here
 
@@ -229,13 +250,164 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );
 
+    const answers = blankAnswers(scorecards);
     await mariadbPool.query(
         "UPDATE Matches SET status = ?, answers = ? WHERE id = ?",
-        ["READY_TO_START", blankAnswers(scorecards), matchId]
+        ["READY_TO_START", answers, matchId]
     );
 
-    //TODO: score the game
-    
+    simulateGame(matchId, mariadbPool, builtScorecards, questions, answers, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, mircale);
+}
+
+async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, miracle) {
+    let currentScorecard = builtScorecards;
+    teams = teams.map(team => team.split(' & '));
+
+    let scoredHoles = [];
+    while (scoredHoles.length < currentScorecard[0].holes.length) {
+        //Sometimes repeat a hole
+        let holeToScore = getRandomInt(currentScorecard[0].holes.length) === 1 ? getRandomInt(scoredHoles.length) : scoredHoles.length;
+        let scores = [];
+        let questions = [];
+        let holePar = 4;
+
+        for (let i = 0; i < currentScorecard.length; i++) {
+            const hole = currentScorecard[i].holes.find(h => h.holeNumber === holeToScore);
+            holePar = hole.par;
+
+            scores.push({
+                name: currentScorecard[i].name,
+                score: 0,
+                holeNumber: holeToScore,
+                par: hole.par,
+                strokes: hole.strokes
+            })
+        }
+
+        for (let j = 0; j < allQuestions.length; j++) {
+            const normalizedHoles = (allQuestions[j].holes || "").toLowerCase().replace(/\s+/g, "")
+
+            let shouldAsk = false
+            if (normalizedHoles === "all") {
+                shouldAsk = true
+            } else if (normalizedHoles === "par3s" && holePar === 3) {
+                shouldAsk = true
+            } else if (normalizedHoles === "par4s" && holePar === 4) {
+                shouldAsk = true
+            } else if (normalizedHoles === "par5s" && holePar === 5) {
+                shouldAsk = true
+            } else if (/^\d+\+$/.test(normalizedHoles)) {
+                const minHole = parseInt(normalizedHoles)
+                shouldAsk = holeToScore >= minHole
+            } else if (/^(\d+,)*\d+$/.test(normalizedHoles)) {
+                const allowed = normalizedHoles.split(",").map(Number)
+                shouldAsk = allowed.includes(holeToScore)
+            }
+
+            if (shouldAsk) {
+                questions.push(allQuestions[j]);
+            }
+        }
+
+        scores = getScoresForHole(scores);
+        const answeredQuestions = getAnswersForQuestions(questions);
+
+        //TODO: Update existing answers for hole or add them
+        for (let i = 0; i < allAnswers.length; i++) {
+            if (allAnswers[i].hole === holeToScore) {
+                allAnswers[i].answers = answeredQuestions;
+                break;
+            }
+        }
+
+        //Generate plusMinus and points for any holes that this score effects
+        const results = getUpdatedHoles(currentScorecard, allAnswers, scores, teams);
+        const parsed = results.expected;
+        currentScorecard = results.scorecards;
+
+        let prompt = "";
+        if (!scoredHoles.includes(holeToScore)) {
+            //Generate prompt for new hole result
+            prompt = `Here are the hole results for hole ${holeToScore}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with the data for this hole and any other hole this score affects.`
+            scoredHoles.push(holeToScore);
+        } else {
+            //Generate prompt for updated hole result
+            prompt = `I've updated results for hole ${holeToScore}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with the data for this hole and any other hole this update affects.`;
+        }
+
+        let messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", prompt]
+        );
+
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
+        );
+
+        let status = "IN_PROGRESS";
+        if (scoredHoles.length === currentScorecard[0].holes.length) {
+            status = "COMPLETED";
+        }
+
+        await mariadbPool.query(
+            "UPDATE Matches SET scorecards = ?, answers = ?, status = ? WHERE id = ?",
+            [JSON.stringify(currentScorecard), JSON.stringify(allAnswers), status, matchId]
+        );
+    }
+}
+
+function getAnswersForQuestions(questions, teams) {
+    let answeredQuestions = [];
+    for (let i = 0; i < questions.length; i++) {
+        let answers = [];
+        let answerIndex = getRandomInt(questions[i].answers.length + 1) - 1;
+
+        if (answerIndex < questions[i].answers.length) {
+            answers.push(questions[i].answers[answerIndex]);
+            if (questions[i].numberOfAnswers > 1 && getRandomInt(5) === 1) {
+                //Add team member
+                const player1 = questions[i].answers[answerIndex];
+                for (let j = 0; j < teams.length; j++) {
+                    if (teams[j].includes(player1)) {
+                        answers = teams[j];
+                        break;
+                    }
+                }
+            }
+        }
+
+        answeredQuestions.push({
+            question: questions[i].question,
+            answers
+        })
+    }
+
+    return answeredQuestions;
+}
+
+function getScoresForHole(holes) {
+    for (let i = 0; i < holes?.length; i++) {
+        const toParIndex = getRandomInt(15);
+        let toPar = 0;
+        if (toParIndex === 1) {
+            toPar = -2;
+        } else if (toParIndex <= 3) {
+            toPar = -1;
+        } else if (toParIndex <= 6) {
+            toPar = 1;
+        } else if (toParIndex <= 8) {
+            toPar = 2;
+        } else if (toParIndex === 9) {
+            toPar = 3;
+        }
+
+        holes[i].score = holes[i].par + toPar;
+    }
+
+    return holes;
 }
 
 //TODO: Do this on a loop

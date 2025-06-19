@@ -558,10 +558,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         for (let i = 0; i < answers?.length; i++) {
             if (answers[i].hole === holeNumber) {
-                answers[i].answers = [];
-                for (let j = 0; j < answeredQuestions?.length; j++) {
-                    answers[i].answers.push(answeredQuestions[j]);
-                }
+                answers[i].answers = answeredQuestions;
             }
         }
 
