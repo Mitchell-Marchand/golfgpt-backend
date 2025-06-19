@@ -511,7 +511,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 for (let j = 0; j < parsed[m]?.results?.length; j++) {
                     if (parsed[m]?.results[j].name === scorecard.name) {
                         for (let k = 0; k < scorecard.holes.length; k++) {
-                            if (scorecard.holes[k].holeNumber === holeNumber) {
+                            if (scorecard.holes[k].holeNumber === parsed[m].results[j].holeNumber) {
                                 scorecard.holes[k].plusMinus = parsed[m]?.results[j].plusMinus;
                                 scorecard.holes[k].score = parsed[m]?.results[j].score;
                                 scorecard.holes[k].point = parsed[m]?.results[j].point;

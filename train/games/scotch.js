@@ -321,7 +321,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         }
 
         //Generate plusMinus and points for any holes that this score effects
-        const results = getUpdatedHoles(currentScorecard, allAnswers, scores, teams);
+        const results = getUpdatedHoles(currentScorecard, allAnswers, scores, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
         currentScorecard = results.scorecards;
 
@@ -356,6 +356,45 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             "UPDATE Matches SET scorecards = ?, answers = ?, status = ? WHERE id = ?",
             [JSON.stringify(currentScorecard), JSON.stringify(allAnswers), status, matchId]
         );
+    }
+}
+
+function getUpdatedHoles(currentScorecard, allAnswers, scores, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, miracle) {
+    const originalScorecard = currentScorecard;
+    let expected = [];
+
+    //Populate currentScorecard with new values based on scores
+
+    //Build expected array based on differences between currentScorecard and originalScorecard
+    for (let i = 0; i < currentScorecard[0].holes.length; i++) {
+        let hasChange = false;
+
+        for (let j = 0; j < currentScorecard.length; j++) {
+            if (currentScorecard[j].holes[i].plusMinus !== originalScorecard[j].holes[i].plusMinus || currentScorecard[j].holes[i].points !== originalScorecard[j].holes[i].points || currentScorecard[j].holes[i].score !== originalScorecard[j].holes[i].score) {
+                hasChange = true;
+                break;
+            }
+        }
+
+        if (hasChange) {
+            let expectedUpdate = [];
+            for (let j = 0; j < currentScorecard.length; j++) {
+                expectedUpdate.push({
+                    name: currentScorecard[j].name,
+                    points: currentScorecard[j].holes[i].points,
+                    score: currentScorecard[j].holes[i].score,
+                    plusMinus: currentScorecard[j].holes[i].plusMinus,
+                    holeNumber: currentScorecard[j].holes[i].holeNumber,
+                })
+            }
+
+            expected.push(expectedUpdate);
+        }
+    }
+   
+    return {
+        scorecards: currentScorecard,
+        expected
     }
 }
 
