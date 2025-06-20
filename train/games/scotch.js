@@ -123,9 +123,7 @@ async function runScotchGame() {
     }
 
     promptIndex = getRandomInt(3);
-    if (pointVal === 2 && getRandomInt(4) === 1) {
-        prompt += ``;
-    } else if (promptIndex === 1) {
+    if (promptIndex === 1) {
         prompt += `$${pointVal}/point`
     } else if (promptIndex === 2) {
         prompt += `$${pointVal} per point`
