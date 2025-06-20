@@ -206,6 +206,7 @@ async function runScotchGame() {
     }
 
     //If strokes.prompt, add it to prompt here
+    console.log("Prompt:", prompt);
 
     //Create the game...
     const matchId = uuidv4();
@@ -241,8 +242,6 @@ async function runScotchGame() {
     }
 
     const builtScorecards = buildScorecards(allScorecards, tees, parsed?.strokes, holeCount);
-    console.log("Built scorecards?", builtScorecards, allScorecards);
-    return;
 
     await mariadbPool.query(
         "UPDATE Matches SET strokes = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
