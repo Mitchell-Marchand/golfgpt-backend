@@ -216,7 +216,7 @@ async function runScotchGame() {
     let messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-        [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(names)} | Course: ${course.FullName}`]
+        [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(names)} | Course: ${course.courseName}`]
     );
 
     await mariadbPool.query("UPDATE Matches SET status = ?, tees = ?, holeCount = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(tees), holeCount, matchId]);
