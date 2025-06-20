@@ -670,7 +670,29 @@ function getAnswersForQuestions(questions, teams) {
     let answeredQuestions = [];
     for (let i = 0; i < questions.length; i++) {
         let answers = [];
-        let answerIndex = getRandomInt(questions[i].answers.length + 1) - 1;
+        let answerIndex = getRandomInt(questions[i].answers.length) - 1;
+        let doubleAnswer = questions[i].numberOfAnswers > 1 && getRandomInt(4) === 1;
+
+        if (getRandomInt(4) > 1) {
+            answers.push(questions[i].answers[answerIndex]);
+            if (doubleAnswer) {
+                const player1 = questions[i].answers[answerIndex];
+                for (let j = 0; j < teams.length; j++) {
+                    if (teams[j].includes(player1)) {
+                        const players = teams[j].split[" & "];
+                        if (!answers.includes(players[0])) {
+                            answers.push(players[0]);
+                        } else {
+                            answers.push(players[1]);
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        /*let answerIndex = getRandomInt(questions[i].answers.length + 1) - 1;
 
         if (answerIndex < questions[i].answers.length) {
             answers.push(questions[i].answers[answerIndex]);
@@ -684,7 +706,7 @@ function getAnswersForQuestions(questions, teams) {
                     }
                 }
             }
-        }
+        }*/
 
         answeredQuestions.push({
             question: questions[i].question,
