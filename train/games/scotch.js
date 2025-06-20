@@ -558,13 +558,19 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             secondTeamPoints++;
         }
 
-        console.log("Teams:", nameTeams);
+        console.log("Name Teams:", nameTeams);
+        console.log("Array Teams:", teams);
+        console.log("Team Scores:", teamScores);
+        console.log("Team 1 Totals:", getTeamTotals(teamScores[0]));
+        console.log("Team 2 Totals:", getTeamTotals(teamScores[1]));
         console.log("Scores:", scores);
         console.log("Answers:", JSON.stringify(answers, null, 2));
         console.log("First team points", firstTeamPoints);
         console.log("Second team points", secondTeamPoints);
         console.log("First team birdies", firstTeamBirdieCount);
         console.log("Second team birdies", secondTeamBirdieCount);
+        console.log("Point value:", pointWorth);
+        console.log("Points needed to sweep:", pointsNeededToSweep);
         return;
 
         if (secondTeamPoints === 0 && firstTeamPoints >= pointsNeededToSweep) {
