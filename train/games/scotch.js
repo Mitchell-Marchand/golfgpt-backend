@@ -272,7 +272,7 @@ async function runScotchGame() {
 
 async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     let currentScorecard = builtScorecards;
-    teams = nameTeams.map(team => team.split(' & '));
+    const teams = nameTeams.map(team => team.split(' & '));
 
     let scoredHoles = [];
     while (scoredHoles.length < currentScorecard[0].holes.length) {
