@@ -267,7 +267,7 @@ async function runScotchGame() {
         ["READY_TO_START", answers, matchId]
     );
 
-    simulateGame(matchId, mariadbPool, builtScorecards, questions, answers, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
+    simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
 }
 
 async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
@@ -342,6 +342,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         console.log("Hole to Score:", holeToScore);
         console.log("Answered Questions:", answeredQuestions);
         console.log("All Answers", allAnswers);
+        return;
 
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
