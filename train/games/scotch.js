@@ -341,6 +341,9 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             }
         }
 
+        console.log("All answers:", allAnswers);
+        return;
+
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
