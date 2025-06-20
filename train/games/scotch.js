@@ -560,7 +560,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
         console.log("Teams:", nameTeams);
         console.log("Scores:", scores);
-        console.log("Answers:", answers);
+        console.log("Answers:", JSON.stringify(answers, null, 2));
         console.log("First team points", firstTeamPoints);
         console.log("Second team points", secondTeamPoints);
         console.log("First team birdies", firstTeamBirdieCount);
