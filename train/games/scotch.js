@@ -351,7 +351,6 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             scoredHoles.push(holeToScore);
         } else {
             //Generate prompt for updated hole result
-            console.log("Hole getting updated:", holeToScore, scores);
             prompt = `I've updated results for hole ${holeToScore}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with the data for this hole and any other hole this update affects.`;
         }
 
