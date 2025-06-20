@@ -747,4 +747,4 @@ async function runSimulations(count) {
     }
 }
 
-runSimulations(10);
+runSimulations(1000);
