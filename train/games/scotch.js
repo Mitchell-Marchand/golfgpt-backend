@@ -47,8 +47,8 @@ async function runScotchGame() {
     }));
 
     const teams = pickTeam(names, 2);
-    const pointIndex = getRandomInt(40) + 4;
-    const points = pointIndex % 2 === 0 ? 4 : pointIndex % 3 === 0 ? 6 : 8;
+    const pointIndex = getRandomInt(9) + 3;
+    const points = pointIndex % 2 === 0 ? 4 : pointIndex % 3 === 0 ? 8 : 6;
     const pointVal = getRandomInt(6);
     const doubles = getRandomInt(3) !== 1;
     const redoubles = doubles && getRandomInt(3) !== 1;
