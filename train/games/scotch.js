@@ -381,7 +381,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
 }
 
 function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
-    const originalScorecard = currentScorecard;
+    const originalScorecard = structuredClone(currentScorecard);
     let expected = [];
 
     //Add scores to currentScorecard
