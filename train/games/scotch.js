@@ -280,9 +280,9 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         let holeToScore = currentScorecard[0].holes[scoredHoles.length].holeNumber;
         if (getRandomInt(currentScorecard[0].holes.length) === 1) {
             //Update an existing hole
-            console.log("Skipping a hole:", holeToScore, scoredHoles);
+            //console.log("Skipping a hole:", holeToScore, scoredHoles);
             holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
-            console.log("New hole to score:", holeToScore);
+            //console.log("New hole to score:", holeToScore);
         }
 
         let scores = [];
@@ -560,7 +560,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             secondTeamPoints++;
         }
 
-        console.log("**HOLE:", i + 1);
+        /*console.log("**HOLE:", i + 1);
         console.log("Name Teams:", nameTeams);
         console.log("Array Teams:", teams);
         console.log("Team Scores:", teamScores);
@@ -575,7 +575,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         console.log("Second team money", secondTeamBirdieCount);
         console.log("Point value:", pointVal);
         console.log("Point worth:", pointWorth);
-        console.log("Points needed to sweep:", pointsNeededToSweep);
+        console.log("Points needed to sweep:", pointsNeededToSweep);*/
 
         let swept = false;
         if (secondTeamPoints === 0 && firstTeamPoints >= pointsNeededToSweep) {
