@@ -95,6 +95,10 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     return builtScorecards;
 }
 
+async function delay(ms) {
+    return await new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function blankAnswers(scorecards) {
     let answers = [];
 
@@ -115,5 +119,6 @@ module.exports = {
     buildScorecards,
     getHoleList,
     pickTeam,
-    blankAnswers
+    blankAnswers,
+    delay
 }

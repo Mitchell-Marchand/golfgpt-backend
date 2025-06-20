@@ -1,7 +1,7 @@
 const { getCourse } = require('../course');
 const { getPlayerNames } = require('../players');
 const { getTees } = require('../tees');
-const { buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
+const { buildScorecards, getRandomInt, pickTeam, blankAnswers, delay } = require('../utils');
 const { getStrokes } = require('../strokes');
 const { v4: uuidv4 } = require('uuid');
 
@@ -212,20 +212,24 @@ async function runScotchGame() {
         `INSERT INTO Matches (id, createdBy, golfers, courseId, status) VALUES (?, ?, ?, ?, ?)`,
         [matchId, userId, JSON.stringify(names), course.courseId, "COURSE_PROVIDED"]
     );
+    await delay(10);
 
     let messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(names)} | Course: ${course.FullName}`]
     );
+    await delay(10);
 
     await mariadbPool.query("UPDATE Matches SET status = ?, tees = ?, holeCount = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(tees), holeCount, matchId]);
+    await delay(10);
 
     messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", `Tees by golfer: ${JSON.stringify(tees)}`]
     );
+    await delay(10);
 
     const setupPrompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\n\nRules:\n${prompt || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
     messageId = uuidv4();
@@ -233,6 +237,7 @@ async function runScotchGame() {
         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", setupPrompt]
     );
+    await delay(10);
 
     const parsed = {
         strokes,
@@ -245,12 +250,14 @@ async function runScotchGame() {
         "UPDATE Matches SET strokes = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
         [JSON.stringify(parsed?.strokes), isPublic ? 1 : 0, `${points} Point Scotch ($${pointVal})`, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
     );
+    await delay(10);
 
     messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
         [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
     );
+    await delay(10);
 
     prompt = `Everything looks good, get ready to track the results of the match.`;
     messageId = uuidv4();
@@ -258,12 +265,14 @@ async function runScotchGame() {
         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", prompt]
     );
+    await delay(10);
 
     const answers = blankAnswers(scorecards);
     await mariadbPool.query(
         "UPDATE Matches SET status = ?, answers = ? WHERE id = ?",
         ["READY_TO_START", answers, matchId]
     );
+    await delay(10);
 
     simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
 }
@@ -359,12 +368,14 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", prompt]
         );
+        await delay(10);
 
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
         );
+        await delay(10);
 
         let status = "IN_PROGRESS";
         if (scoredHoles.length === currentScorecard[0].holes.length) {
@@ -375,6 +386,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             "UPDATE Matches SET scorecards = ?, answers = ?, status = ? WHERE id = ?",
             [JSON.stringify(currentScorecard), JSON.stringify(allAnswers), status, matchId]
         );
+        await delay(10);
     }
 }
 
