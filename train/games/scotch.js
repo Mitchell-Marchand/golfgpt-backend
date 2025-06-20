@@ -459,6 +459,11 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         }
 
         const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
+
+        if (teamScores[0].includes(0) || teamScores[1].includes(0)) {
+            break;
+        }
+
         const answers = allAnswers[i];
         const pointsNeededToSweep = points;
 
@@ -627,7 +632,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 }
 
 function getTeamTotals(teamScores) {
-    console.log(teamScores);
     return teamScores.reduce((sum, num) => sum + num, 0);
 }
 
