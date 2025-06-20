@@ -458,14 +458,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        console.log("Teams:", teams);
-        console.log("I:", i);
-        console.log("Current Scorecard", JSON.stringify(currentScorecard, null, 2));
         const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
-        console.log("Team Scores", teamScores);
-        return;
-
-        //const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
         const answers = allAnswers[i];
         const pointsNeededToSweep = points;
 
@@ -653,6 +646,7 @@ function getLowScoreWinners(teamScores) {
 }
 
 function getTeamScoresOnHole(teams, currentScorecard, i) {
+    console.log("Getting team scores on hole i:", i)
     const result = teams.map(team => {
         return team.map(playerName => {
             const playerCard = currentScorecard.find(p => p.name === playerName);
