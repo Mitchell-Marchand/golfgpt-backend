@@ -560,7 +560,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             secondTeamPoints++;
         }
 
-        /*console.log("Name Teams:", nameTeams);
+        console.log("**HOLE:", i + 1);
+        console.log("Name Teams:", nameTeams);
         console.log("Array Teams:", teams);
         console.log("Team Scores:", teamScores);
         console.log("Team 1 Totals:", getTeamTotals(teamScores[0]));
@@ -575,7 +576,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         console.log("Second team money", secondTeamBirdieCount);
         console.log("Point value:", pointWorth);
         console.log("Points needed to sweep:", pointsNeededToSweep);
-        return;*/
 
         if (secondTeamPoints === 0 && firstTeamPoints >= pointsNeededToSweep) {
             firstTeamPoints = firstTeamPoints * 2;
