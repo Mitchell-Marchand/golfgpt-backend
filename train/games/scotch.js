@@ -333,11 +333,6 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         scores = getScoresForHole(scores);
         const answeredQuestions = getAnswersForQuestions(questions, nameTeams);
 
-        console.log("Name teams:", nameTeams);
-        console.log("Questions:", questions);
-        console.log("Answered questions:", answeredQuestions);
-        return;
-
         //TODO: Update existing answers for hole or add them
         for (let i = 0; i < allAnswers.length; i++) {
             if (allAnswers[i].hole === holeToScore) {
@@ -345,6 +340,9 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
                 break;
             }
         }
+
+        console.log("All Answers", allAnswers);
+        return;
 
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
@@ -667,7 +665,6 @@ function getTeamScoresOnHole(teams, currentScorecard, i) {
 }
 
 function getAnswersForQuestions(questions, teams) {
-    console.log("Teams in getAnswers:", teams);
     let answeredQuestions = [];
     for (let i = 0; i < questions.length; i++) {
         let answers = [];
@@ -692,22 +689,6 @@ function getAnswersForQuestions(questions, teams) {
                 }
             }
         }
-
-        /*let answerIndex = getRandomInt(questions[i].answers.length + 1) - 1;
-
-        if (answerIndex < questions[i].answers.length) {
-            answers.push(questions[i].answers[answerIndex]);
-            if (questions[i].numberOfAnswers > 1 && getRandomInt(5) === 1) {
-                //Add team member
-                const player1 = questions[i].answers[answerIndex];
-                for (let j = 0; j < teams.length; j++) {
-                    if (teams[j].includes(player1)) {
-                        answers = teams[j];
-                        break;
-                    }
-                }
-            }
-        }*/
 
         answeredQuestions.push({
             question: questions[i].question,
