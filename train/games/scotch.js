@@ -465,6 +465,9 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         const answers = allAnswers[i];
         const pointsNeededToSweep = points;
 
+        console.log(answers);
+        return;
+
         if (points === 4) {
             if (getLowScoreWinners(teamScores).team1Wins) {
                 firstTeamPoints++;
