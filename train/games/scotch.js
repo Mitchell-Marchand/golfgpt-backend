@@ -680,7 +680,7 @@ function getAnswersForQuestions(questions, teams) {
                 const player1 = questions[i].answers[answerIndex];
                 for (let j = 0; j < teams.length; j++) {
                     if (teams[j].includes(player1)) {
-                        const players = teams[j].split[" & "];
+                        const players = teams[j].split(" & ");
                         if (!answers.includes(players[0])) {
                             answers.push(players[0]);
                         } else {
