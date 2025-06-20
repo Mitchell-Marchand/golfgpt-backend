@@ -240,8 +240,8 @@ async function runScotchGame() {
         questions
     }
 
-    const builtScorecards = buildScorecards(scorecards, tees, parsed?.strokes, holeCount);
-    console.log("Built scorecards?", builtScorecards, scorecards);
+    const builtScorecards = buildScorecards(allScorecards, tees, parsed?.strokes, holeCount);
+    console.log("Built scorecards?", builtScorecards, allScorecards);
     return;
 
     await mariadbPool.query(
