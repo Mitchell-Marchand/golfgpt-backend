@@ -667,6 +667,7 @@ function getTeamScoresOnHole(teams, currentScorecard, i) {
 }
 
 function getAnswersForQuestions(questions, teams) {
+    console.log("Teams in getAnswers:", teams);
     let answeredQuestions = [];
     for (let i = 0; i < questions.length; i++) {
         let answers = [];
