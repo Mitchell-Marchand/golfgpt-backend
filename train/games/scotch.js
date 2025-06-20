@@ -277,13 +277,23 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
     let scoredHoles = [];
     while (scoredHoles.length < currentScorecard[0].holes.length) {
         //Sometimes repeat a hole
-        let holeToScore = getRandomInt(currentScorecard[0].holes.length) === 1 && scoredHoles.length > 0 ? getRandomInt(scoredHoles.length) : scoredHoles.length;
+        let holeToScore = currentScorecard[0].holes[scoredHoles.length].holeNumber;
+        if (getRandomInt(currentScorecard[0].holes.length) === 1) {
+            //Update an existing hole
+            holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
+        }
+
+
         let scores = [];
         let questions = [];
         let holePar = 4;
 
         for (let i = 0; i < currentScorecard.length; i++) {
             const hole = currentScorecard[i].holes.find(h => h.holeNumber === holeToScore);
+            if (!hole) {
+                continue;
+            }
+
             holePar = hole.par;
 
             scores.push({
