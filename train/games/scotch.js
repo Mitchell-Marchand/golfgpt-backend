@@ -241,6 +241,8 @@ async function runScotchGame() {
     }
 
     const builtScorecards = buildScorecards(scorecards, tees, parsed?.strokes, holeCount);
+    console.log("Built scorecards?", builtScorecards, scorecards);
+    return;
 
     await mariadbPool.query(
         "UPDATE Matches SET strokes = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
