@@ -743,5 +743,10 @@ function getScoresForHole(holes) {
     return holes;
 }
 
-//TODO: Do this on a loop
-runScotchGame();
+async function runSimulations(count) {
+    for (let i = 0; i < count; i++) {
+        await runScotchGame();
+    }
+}
+
+runSimulations(10);
