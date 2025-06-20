@@ -384,6 +384,9 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
     //Add scores to currentScorecard
     for (let i = 0; i < currentScorecard.length; i++) {
+        currentScorecard[i].plusMinus = 0;
+        currentScorecard[i].points = 0;
+        
         for (let j = 0; j < currentScorecard[i].holes.length; j++) {
             if (currentScorecard[i].holes[j].holeNumber === scores[0].holeNumber) {
                 for (let k = 0; k < scores.length; k++) {
@@ -650,7 +653,6 @@ function getLowScoreWinners(teamScores) {
 }
 
 function getTeamScoresOnHole(teams, currentScorecard, i) {
-    console.log("Getting team scores on hole i:", i)
     const result = teams.map(team => {
         return team.map(playerName => {
             const playerCard = currentScorecard.find(p => p.name === playerName);
@@ -659,8 +661,6 @@ function getTeamScoresOnHole(teams, currentScorecard, i) {
             return hole?.score ?? null;
         });
     });
-
-    console.log("Result:", result);
 
     return result;
 }
