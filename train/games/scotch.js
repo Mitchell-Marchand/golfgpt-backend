@@ -265,7 +265,7 @@ async function runScotchGame() {
         ["READY_TO_START", answers, matchId]
     );
 
-    simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
+    await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
 }
 
 async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
@@ -396,6 +396,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                         break;
                     }
                 }
+
+                break;
             }
         }
     }
