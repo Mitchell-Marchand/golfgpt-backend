@@ -386,7 +386,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
     for (let i = 0; i < currentScorecard.length; i++) {
         currentScorecard[i].plusMinus = 0;
         currentScorecard[i].points = 0;
-        
+
         for (let j = 0; j < currentScorecard[i].holes.length; j++) {
             if (currentScorecard[i].holes[j].holeNumber === scores[0].holeNumber) {
                 for (let k = 0; k < scores.length; k++) {
@@ -558,6 +558,12 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             secondTeamPoints++;
         }
 
+        console.log("First team points", firstTeamPoints);
+        console.log("Second team points", secondTeamPoints);
+        console.log("First team birdies", firstTeamBirdieCount);
+        console.log("Second team birdies", secondTeamBirdieCount);
+        return;
+
         if (secondTeamPoints === 0 && firstTeamPoints >= pointsNeededToSweep) {
             firstTeamPoints = firstTeamPoints * 2;
         } else if (firstTeamPoints === 0 && secondTeamPoints >= pointsNeededToSweep) {
@@ -584,7 +590,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         firstTeamMoney = (firstTeamPoints - secondTeamPoints) * pointWorth;
         secondTeamMoney = (secondTeamPoints - firstTeamPoints) * pointWorth;
 
-        //TODO: Issue with duplicating plusMinus overall as we iterate through
         for (let j = 0; j < currentScorecard.length; j++) {
             if (teams[0].includes(currentScorecard[j].name)) {
                 currentScorecard[j].plusMinus += firstTeamMoney;
