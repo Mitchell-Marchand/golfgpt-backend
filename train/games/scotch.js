@@ -581,6 +581,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         firstTeamMoney = (firstTeamPoints - secondTeamPoints) * pointWorth;
         secondTeamMoney = (secondTeamPoints - firstTeamPoints) * pointWorth;
 
+        //TODO: Issue with duplicating plusMinus overall as we iterate through
         for (let j = 0; j < currentScorecard.length; j++) {
             if (teams[0].includes(currentScorecard[j].name)) {
                 currentScorecard[j].plusMinus += firstTeamMoney;
