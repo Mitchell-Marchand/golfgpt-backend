@@ -472,9 +472,9 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 secondTeamPoints++;
             }
 
-            if (getTeamTotals(teamScores)[0] < getTeamTotals(teamScores[1])) {
+            if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints++;
-            } else if (getTeamTotals(teamScores)[0] > getTeamTotals(teamScores[1])) {
+            } else if (getTeamTotals(teamScores[0]) > getTeamTotals(teamScores[1])) {
                 secondTeamPoints++;
             }
         } else {
@@ -484,9 +484,9 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 secondTeamPoints += 2;
             }
 
-            if (getTeamTotals(teamScores)[0] < getTeamTotals(teamScores[1])) {
+            if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints += 2;
-            } else if (getTeamTotals(teamScores)[0] > getTeamTotals(teamScores[1])) {
+            } else if (getTeamTotals(teamScores[0]) > getTeamTotals(teamScores[1])) {
                 secondTeamPoints += 2;
             }
         }
