@@ -629,6 +629,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 }
 
 function getTeamTotals(teamScores) {
+    console.log(teamScores);
     return teamScores.map(team =>
         team.reduce((sum, score) => sum + score, 0)
     );
