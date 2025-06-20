@@ -245,7 +245,7 @@ async function runScotchGame() {
 
     await mariadbPool.query(
         "UPDATE Matches SET strokes = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
-        [JSON.stringify(parsed?.strokes), isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
+        [JSON.stringify(parsed?.strokes), isPublic ? 1 : 0, `${points} Point Scotch ($${pointVal})`, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
     );
 
     messageId = uuidv4();
