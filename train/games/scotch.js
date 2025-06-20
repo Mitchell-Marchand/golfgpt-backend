@@ -339,11 +339,6 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             }
         }
 
-        console.log("Hole to Score:", holeToScore);
-        console.log("Answered Questions:", answeredQuestions);
-        console.log("All Answers", allAnswers);
-        return;
-
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
@@ -467,9 +462,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
         const answers = allAnswers[i];
         const pointsNeededToSweep = points;
-
-        console.log(answers);
-        return;
 
         if (points === 4) {
             if (getLowScoreWinners(teamScores).team1Wins) {
