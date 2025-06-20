@@ -569,6 +569,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         console.log("Second team points", secondTeamPoints);
         console.log("First team birdies", firstTeamBirdieCount);
         console.log("Second team birdies", secondTeamBirdieCount);
+        console.log("First team money", firstTeamBirdieCount);
+        console.log("Second team money", secondTeamBirdieCount);
         console.log("Point value:", pointWorth);
         console.log("Points needed to sweep:", pointsNeededToSweep);
         return;
