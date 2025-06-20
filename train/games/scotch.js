@@ -646,7 +646,9 @@ function getLowScoreWinners(teamScores) {
 }
 
 function getTeamScoresOnHole(teams, currentScorecard, i) {
-    return teams.map(team => {
+    console.log("Info:", teams, currentScorecard, i);
+
+    const result = teams.map(team => {
         return team.map(playerName => {
             const playerCard = currentScorecard.find(p => p.name === playerName);
             if (!playerCard) return null;
@@ -654,6 +656,10 @@ function getTeamScoresOnHole(teams, currentScorecard, i) {
             return hole?.score ?? null;
         });
     });
+
+    console.log("Result:", result);
+
+    return result;
 }
 
 function getAnswersForQuestions(questions, teams) {
