@@ -341,6 +341,8 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             }
         }
 
+        console.log("Hole to Score:", holeToScore);
+        console.log("Answered Questions:", answeredQuestions);
         console.log("All Answers", allAnswers);
         return;
 
