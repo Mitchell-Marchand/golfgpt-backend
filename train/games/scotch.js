@@ -283,7 +283,6 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
         }
 
-
         let scores = [];
         let questions = [];
         let holePar = 4;
@@ -333,10 +332,9 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         scores = getScoresForHole(scores);
         const answeredQuestions = getAnswersForQuestions(questions, nameTeams);
 
-        //TODO: Update existing answers for hole or add them
-        for (let i = 0; i < allAnswers.length; i++) {
-            if (allAnswers[i].hole === holeToScore) {
-                allAnswers[i].answers = answeredQuestions;
+        for (let k = 0; k < allAnswers.length; k++) {
+            if (allAnswers[k].hole === holeToScore) {
+                allAnswers[k].answers = answeredQuestions;
                 break;
             }
         }
