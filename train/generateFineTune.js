@@ -1,7 +1,8 @@
-require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
-const mysql = require("mysql2/promise");
+
+const mysql = require('mysql2/promise');
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 const mariadbPool = mysql.createPool({
   host: "ec2-18-232-136-96.compute-1.amazonaws.com",
