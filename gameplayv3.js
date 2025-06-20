@@ -598,7 +598,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
              LEFT JOIN Courses c ON m.courseId = c.courseId
              WHERE m.createdBy = ? 
                AND m.status IN ('RULES_PROVIDED', 'READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
-             ORDER BY m.updatedAt DESC`,
+             ORDER BY m.updatedAt DESC, m.serial DESC`,
             [userId]
         );
 
