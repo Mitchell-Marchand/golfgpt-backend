@@ -333,6 +333,11 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         scores = getScoresForHole(scores);
         const answeredQuestions = getAnswersForQuestions(questions, nameTeams);
 
+        console.log("Name teams:", nameTeams);
+        console.log("Questions:", questions);
+        console.log("Answered questions:", answeredQuestions);
+        return;
+
         //TODO: Update existing answers for hole or add them
         for (let i = 0; i < allAnswers.length; i++) {
             if (allAnswers[i].hole === holeToScore) {
@@ -340,9 +345,6 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
                 break;
             }
         }
-
-        console.log("All answers:", allAnswers);
-        return;
 
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
