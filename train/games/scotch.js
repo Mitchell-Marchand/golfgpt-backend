@@ -747,6 +747,8 @@ async function runSimulations(count) {
     for (let i = 0; i < count; i++) {
         await runScotchGame();
     }
+
+    await mariadbPool.end();
 }
 
-runSimulations(1000);
+await runSimulations(1000);
