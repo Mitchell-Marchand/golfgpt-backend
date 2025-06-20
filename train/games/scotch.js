@@ -406,7 +406,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         let secondTeamMoney = 0;
 
         if (autoDoubleWhileTiedTrigger) {
-            //TODO: something
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
                 if (currentScorecard[j].plusMinus !== 0) {
@@ -458,6 +457,11 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
             }
         }
+
+        console.log("Teams:", teams);
+        console.log("I:", i);
+        console.log("Current Scorecard", JSON.stringify(currentScorecard, null, 2));
+        return;
 
         const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
         const answers = allAnswers[i];
