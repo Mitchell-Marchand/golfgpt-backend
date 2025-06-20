@@ -3,6 +3,7 @@ const { getPlayerNames } = require('../players');
 const { getTees } = require('../tees');
 const { buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
 const { getStrokes } = require('../strokes');
+const { v4: uuidv4 } = require('uuid');
 
 const mysql = require('mysql2/promise');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
@@ -24,6 +25,7 @@ async function runScotchGame() {
     const tees = getTees(names, allScorecards);
     const scorecards = buildScorecards(allScorecards, tees, [], holeCount);
     const userId = "5c4ebd6d-b36d-44d9-acc5-824b4f14c9f1";
+    const isPublic = false;
     let holes = [];
 
     if (scorecards?.length > 0) {
@@ -54,6 +56,7 @@ async function runScotchGame() {
     const autoDoubleValue = pointVal * (getRandomInt(2) + 1);
     const autoDoubleMoneyTrigger = getRandomInt(2) === 1 ? (getRandomInt(5) + 10) * 5 : false;
     const autoDoubleAfterNineTrigger = getRandomInt(2) === 1;
+    const autoDoubleWhileTiedTrigger = getRandomInt(3) === 1;
     const prox = "proximity";
 
     const questions = [{
@@ -152,6 +155,14 @@ async function runScotchGame() {
             }
         }
 
+        if (autoDoubleWhileTiedTrigger) {
+            if (autoDoubleAfterNineTrigger || autoDoubleMoneyTrigger) {
+                after += ` or while the match is tied`
+            } else {
+                after += ` while the match is tied`
+            }
+        }
+
         if (promptIndex === 1) {
             prompt += `, goes to $${autoDoubleValue}${after}.`
         } else if (promptIndex === 2) {
@@ -178,10 +189,9 @@ async function runScotchGame() {
         }
     }
 
-    //TODO: miracle/double birdies
-    let mircale = true;
+    let miracle = true;
     if (getRandomInt(5) === 1) {
-        mircale = false;
+        miracle = false;
         if (getRandomInt(3) === 1) {
             prompt += ` No miracles.`
         } else {
@@ -190,7 +200,7 @@ async function runScotchGame() {
     } else if (getRandomInt(3) === 1) {
         if (getRandomInt(3) === 1) {
             prompt += ` Miracles in play.`
-        } else {
+        } else if (getRandomInt(2) === 1) {
             prompt += ` Extra birdies double.`
         }
     }
@@ -256,17 +266,17 @@ async function runScotchGame() {
         ["READY_TO_START", answers, matchId]
     );
 
-    simulateGame(matchId, mariadbPool, builtScorecards, questions, answers, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, mircale);
+    simulateGame(matchId, mariadbPool, builtScorecards, questions, answers, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
 }
 
-async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, miracle) {
+async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     let currentScorecard = builtScorecards;
-    teams = teams.map(team => team.split(' & '));
+    teams = nameTeams.map(team => team.split(' & '));
 
     let scoredHoles = [];
     while (scoredHoles.length < currentScorecard[0].holes.length) {
         //Sometimes repeat a hole
-        let holeToScore = getRandomInt(currentScorecard[0].holes.length) === 1 ? getRandomInt(scoredHoles.length) : scoredHoles.length;
+        let holeToScore = getRandomInt(currentScorecard[0].holes.length) === 1 && scoredHoles.length > 0 ? getRandomInt(scoredHoles.length) : scoredHoles.length;
         let scores = [];
         let questions = [];
         let holePar = 4;
@@ -321,7 +331,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         }
 
         //Generate plusMinus and points for any holes that this score effects
-        const results = getUpdatedHoles(currentScorecard, allAnswers, scores, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, miracle);
+        const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
         currentScorecard = results.scorecards;
 
@@ -359,11 +369,219 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
     }
 }
 
-function getUpdatedHoles(currentScorecard, allAnswers, scores, teams, pointVal, points, doubles, redoubles, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleValue, autoDoubleStays, miracle) {
+function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     const originalScorecard = currentScorecard;
     let expected = [];
 
+    //Add scores to currentScorecard
+    for (let i = 0; i < currentScorecard.length; i++) {
+        for (let j = 0; j < currentScorecard[i].holes.length; j++) {
+            if (currentScorecard[i].holes[j].holeNumber === scores[0].holeNumber) {
+                for (let k = 0; k < scores.length; k++) {
+                    if (scores[k].name === currentScorecard[i].name) {
+                        currentScorecard[i].holes[j].score = scores[k].score;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     //Populate currentScorecard with new values based on scores
+    let pointWorth = pointVal;
+    let isDoubled = false;
+    for (let i = 0; i < currentScorecard[0].holes.length; i++) {
+        let firstTeamPoints = 0;
+        let secondTeamPoints = 0;
+        let firstTeamMoney = 0;
+        let secondTeamMoney = 0;
+
+        if (autoDoubleWhileTiedTrigger) {
+            //TODO: something
+            let needsToDouble = true;
+            for (let j = 0; j < currentScorecard.length; j++) {
+                if (currentScorecard[j].plusMinus !== 0) {
+                    needsToDouble = false;
+                    break;
+                }
+            }
+
+            if (needsToDouble && !isDoubled) {
+                isDoubled = true;
+                pointWorth = autoDoubleValue;
+            } else if (isDoubled && !needsToDouble) {
+                isDoubled = false;
+                pointWorth = pointVal;
+            }
+        }
+
+        //Determine if we're ay autodouble somehow and apply
+        if (autoDoubles && !isDoubled) {
+            if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
+                pointWorth = autoDoubleValue;
+                isDoubled = true;
+            } else if (autoDoubleMoneyTrigger > 0) {
+                //Check if any golfer is above the trigger
+                for (let j = 0; j < currentScorecard.length; j++) {
+                    if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
+                        pointWorth = autoDoubleValue;
+                        isDoubled = true;
+                        break;
+                    }
+                }
+            }
+        } else if (autoDoubles && isDoubled && !autoDoubleStays) {
+            //Check if no longer needed
+            if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
+                continue;
+            } else if (autoDoubleMoneyTrigger > 0) {
+                let change = true;
+                for (let j = 0; j < currentScorecard.length; j++) {
+                    if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
+                        change = false;
+                        break;
+                    }
+                }
+
+                if (change) {
+                    pointWorth = pointVal;
+                    isDoubled = false;
+                }
+            }
+        }
+
+        const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
+        const answers = allAnswers[i];
+        const pointsNeededToSweep = points;
+
+        if (points === 4) {
+            if (getLowScoreWinners(teamScores).team1Wins) {
+                firstTeamPoints++;
+            } else if (getLowScoreWinners(teamScores).team2Wins) {
+                secondTeamPoints++;
+            }
+
+            if (getTeamTotals(teamScores)[0] < getTeamTotals(teamScores[1])) {
+                firstTeamPoints++;
+            } else if (getTeamTotals(teamScores)[0] > getTeamTotals(teamScores[1])) {
+                secondTeamPoints++;
+            }
+        } else {
+            if (getLowScoreWinners(teamScores).team1Wins) {
+                firstTeamPoints += 2;
+            } else if (getLowScoreWinners(teamScores).team2Wins) {
+                secondTeamPoints += 2;
+            }
+
+            if (getTeamTotals(teamScores)[0] < getTeamTotals(teamScores[1])) {
+                firstTeamPoints += 2;
+            } else if (getTeamTotals(teamScores)[0] > getTeamTotals(teamScores[1])) {
+                secondTeamPoints += 2;
+            }
+        }
+
+        let doubleValue = 1
+        for (let j = 0; j < answers.length; j++) {
+            if (answers[j].question === "Was there a press or double press?") {
+                if (answers[j].answers.includes("Double Press")) {
+                    doubleValue = 3;
+                } else if (answers[j].answers.includes("Press")) {
+                    doubleValue = 2;
+                }
+            } else if (answers[j].question === "Was there a press?") {
+                if (answers[j].answers.includes("Yes")) {
+                    doubleValue = 2;
+                }
+            } else if (answers[j].question === "Which team had the fewest putts?") {
+                if (answers[j].answers.includes(nameTeams[0])) {
+                    firstTeamPoints++;
+                } else if (answers[j].answers.includes(nameTeams[1])) {
+                    firstTeamPoints++;
+                }
+            } else if (answers[j].answers.includes(teams[0][0]) && answers[j].answers.includes(teams[0][1])) {
+                firstTeamPoints += 2;
+                pointsNeededToSweep++;
+            } else if (answers[j].answers.includes(teams[1][0]) && answers[j].answers.includes(teams[1][1])) {
+                secondTeamPoints += 2;
+                pointsNeededToSweep++;
+            } else if (answers[j].answers.includes(teams[0][0])) {
+                firstTeamPoints++;
+            } else if (answers[j].answers.includes(teams[0][1])) {
+                firstTeamPoints++;
+            } else if (answers[j].answers.includes(teams[1][0])) {
+                secondTeamPoints++;
+            } else if (answers[j].answers.includes(teams[1][1])) {
+                secondTeamPoints++;
+            }
+        }
+
+        let firstTeamBirdieCount = 0;
+        let secondTeamBirdieCount = 0;
+
+        if (teamScores[0][0] < currentScorecard[0].holes[i].par) {
+            firstTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[0][0];
+        }
+
+        if (teamScores[0][1] < currentScorecard[0].holes[i].par) {
+            firstTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[0][1];
+        }
+
+        if (teamScores[1][0] < currentScorecard[0].holes[i].par) {
+            secondTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[1][0];
+        }
+
+        if (teamScores[1][1] < currentScorecard[0].holes[i].par) {
+            secondTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[1][1];
+        }
+
+        if (firstTeamBirdieCount > 0) {
+            firstTeamPoints++;
+        }
+
+        if (secondTeamBirdieCount > 0) {
+            secondTeamPoints++;
+        }
+
+        if (secondTeamPoints === 0 && firstTeamPoints >= pointsNeededToSweep) {
+            firstTeamPoints = firstTeamPoints * 2;
+        } else if (firstTeamPoints === 0 && secondTeamPoints >= pointsNeededToSweep) {
+            secondTeamPoints = secondTeamPoints * 2;
+        }
+
+        if (miracle) {
+            if (firstTeamBirdieCount > 1 && secondTeamBirdieCount === 0) {
+                for (let j = 0; j < firstTeamBirdieCount - 1; j++) {
+                    firstTeamPoints = firstTeamPoints * 2;
+                }
+            } else if (firstTeamBirdieCount === 0 && secondTeamBirdieCount > 1) {
+                for (let j = 0; j < secondTeamBirdieCount - 1; j++) {
+                    secondTeamBirdieCount = secondTeamPoints * 2;
+                }
+            }
+        }
+
+        for (let j = 0; j < doubleValue - 1; j++) {
+            firstTeamPoints = firstTeamPoints * 2;
+            secondTeamPoints = secondTeamPoints * 2;
+        }
+
+        firstTeamMoney = (firstTeamPoints - secondTeamPoints) * pointWorth;
+        secondTeamMoney = (secondTeamPoints - firstTeamPoints) * pointWorth;
+
+        for (let j = 0; j < currentScorecard.length; j++) {
+            if (teams[0].includes(currentScorecard[j].name)) {
+                currentScorecard[j].plusMinus += firstTeamMoney;
+                currentScorecard[j].points += firstTeamPoints;
+                currentScorecard[j].holes[i].plusMinus = firstTeamMoney;
+                currentScorecard[j].holes[i].points = firstTeamPoints;
+            } else if (teams[1].includes(currentScorecard[j].name)) {
+                currentScorecard[j].plusMinus += secondTeamMoney;
+                currentScorecard[j].points += secondTeamPoints;
+                currentScorecard[j].holes[i].plusMinus = secondTeamMoney;
+                currentScorecard[j].holes[i].points = secondTeamPoints;
+            }
+        }
+    }
 
     //Build expected array based on differences between currentScorecard and originalScorecard
     for (let i = 0; i < currentScorecard[0].holes.length; i++) {
@@ -378,6 +596,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, teams, pointVal, 
 
         if (hasChange) {
             let expectedUpdate = [];
+
             for (let j = 0; j < currentScorecard.length; j++) {
                 expectedUpdate.push({
                     name: currentScorecard[j].name,
@@ -391,11 +610,42 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, teams, pointVal, 
             expected.push(expectedUpdate);
         }
     }
-   
+
     return {
         scorecards: currentScorecard,
         expected
     }
+}
+
+function getTeamTotals(teamScores) {
+    return teamScores.map(team =>
+        team.reduce((sum, score) => sum + score, 0)
+    );
+}
+
+function getLowScoreWinners(teamScores) {
+    const [team1Scores, team2Scores] = teamScores;
+
+    const team1Wins = team1Scores.some(score1 =>
+        team2Scores.every(score2 => score1 < score2)
+    );
+
+    const team2Wins = team2Scores.some(score2 =>
+        team1Scores.every(score1 => score2 < score1)
+    );
+
+    return { team1Wins, team2Wins };
+}
+
+function getTeamScoresOnHole(teams, currentScorecard, i) {
+    return teams.map(team => {
+        return team.map(playerName => {
+            const playerCard = currentScorecard.find(p => p.name === playerName);
+            if (!playerCard) return null;
+            const hole = playerCard.holes[i];
+            return hole?.score ?? null;
+        });
+    });
 }
 
 function getAnswersForQuestions(questions, teams) {
