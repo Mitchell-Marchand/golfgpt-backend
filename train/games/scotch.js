@@ -52,11 +52,11 @@ async function runScotchGame() {
     const pointVal = getRandomInt(6);
     const doubles = getRandomInt(3) !== 1;
     const redoubles = doubles && getRandomInt(3) !== 1;
-    const autoDoubles = getRandomInt(2) !== 1;
     const autoDoubleValue = pointVal * (getRandomInt(2) + 1);
     const autoDoubleMoneyTrigger = getRandomInt(2) === 1 ? (getRandomInt(5) + 10) * 5 : false;
     const autoDoubleAfterNineTrigger = getRandomInt(2) === 1;
     const autoDoubleWhileTiedTrigger = getRandomInt(3) === 1;
+    const autoDoubles = autoDoubleMoneyTrigger || autoDoubleAfterNineTrigger || autoDoubleWhileTiedTrigger;
     const prox = "proximity";
 
     const questions = [{
