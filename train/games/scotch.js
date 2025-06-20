@@ -280,7 +280,9 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         let holeToScore = currentScorecard[0].holes[scoredHoles.length].holeNumber;
         if (getRandomInt(currentScorecard[0].holes.length) === 1) {
             //Update an existing hole
+            console.log("Skipping a hole:", holeToScore, scoredHoles);
             holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
+            console.log("New hole to score:", holeToScore);
         }
 
         let scores = [];
