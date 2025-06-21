@@ -10,7 +10,8 @@ const { buildScorecards, blankAnswers } = require('./train/utils')
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
 
-const model = "gpt-3.5-turbo"
+const model = "ft:gpt-3.5-turbo-1106:personal:golfgpt-v5:Bkdjw4gp";
+//const model = "gpt-3.5-turbo"
 //const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
 //const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
 
@@ -598,7 +599,8 @@ router.get("/matches", authenticateUser, async (req, res) => {
              LEFT JOIN Courses c ON m.courseId = c.courseId
              WHERE m.createdBy = ? 
                AND m.status IN ('RULES_PROVIDED', 'READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
-             ORDER BY m.updatedAt DESC, m.serial DESC`,
+             ORDER BY m.updatedAt DESC, m.serial DESC 
+             LIMIT 10`,
             [userId]
         );
 
