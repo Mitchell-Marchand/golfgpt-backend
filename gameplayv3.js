@@ -492,10 +492,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             const completion = await openai.chat.completions.create({
                 model,
                 messages,
-                temperature: 0
+                temperature: 0.2
             });
 
             const raw = completion.choices[0].message.content.trim();
+            console.log("raw:", raw);
 
             try {
                 const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
