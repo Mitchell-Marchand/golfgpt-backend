@@ -220,6 +220,8 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const raw = completion.choices[0].message.content.trim();
 
+            console.log("raw:", raw);
+
             try {
                 const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
                 parsed = JSON.parse(cleaned);
