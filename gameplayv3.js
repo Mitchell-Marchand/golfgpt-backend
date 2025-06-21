@@ -30,7 +30,7 @@ function formatDateForSQL(isoString) {
 }
 
 function countTokensForMessages(messages) {
-    const enc = encoding_for_model(model);
+    const enc = encoding_for_model("gpt-3.5-turbo-1106")
     let totalTokens = 0;
 
     for (const message of messages) {
