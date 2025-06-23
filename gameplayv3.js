@@ -5,7 +5,7 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 const { encoding_for_model } = require("tiktoken");
 require('dotenv').config();
-const { buildScorecards, blankAnswers } = require('./train/utils')
+const { buildScorecards, blankAnswers, deepEqual } = require('./train/utils')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -433,8 +433,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         if (!hasUpdate && playedHole) {
             for (let i = 0; i < answers?.length; i++) {
-                if (answers[i].hole === holeNumber && answers[i].answers !== answeredQuestions) {
-                    console.log("Questions", answeredQuestions, answers[i].answers);
+                if (answers[i].hole === holeNumber && !deepEqual(answers[i].answers, answeredQuestions)) {
                     hasUpdate = true;
                     break;
                 }
