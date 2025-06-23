@@ -645,7 +645,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 })
             }
 
-            expected.push(expectedUpdate);
+            expected.push(...expectedUpdate);
         }
     }
 

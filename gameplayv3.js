@@ -541,19 +541,17 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             let scorecard = scorecards[i];
 
             for (let m = 0; m < parsed?.length; m++) {
-                for (let j = 0; j < parsed[m]?.length; j++) {
-                    if (parsed[m][j].name === scorecard.name) {
-                        for (let k = 0; k < scorecard.holes.length; k++) {
-                            if (scorecard.holes[k].holeNumber === parsed[m][j].holeNumber) {
-                                scorecard.holes[k].plusMinus = parsed[m][j].plusMinus;
-                                scorecard.holes[k].score = parsed[m][j].score;
-                                scorecard.holes[k].points = parsed[m][j].points;
-                                break;
-                            }
+                if (parsed[m].name === scorecard.name) {
+                    for (let k = 0; k < scorecard.holes.length; k++) {
+                        if (scorecard.holes[k].holeNumber === parsed[m].holeNumber) {
+                            scorecard.holes[k].plusMinus = parsed[m].plusMinus;
+                            scorecard.holes[k].score = parsed[m].score;
+                            scorecard.holes[k].points = parsed[m].points;
+                            break;
                         }
-
-                        break;
                     }
+
+                    break;
                 }
             }
 
