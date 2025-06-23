@@ -424,9 +424,9 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 }
             }
 
-            if (playedHole) {
+            /*if (playedHole) {
                 break;
-            }
+            }*/
         }
 
         console.log("Has Update, Played Hole:", hasUpdate, playedHole);
