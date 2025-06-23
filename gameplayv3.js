@@ -405,7 +405,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const scorecards = JSON.parse(rows[0].scorecards);
         const answers = JSON.parse(rows[0].answers);
         let summaryResponse = rows[0].setup;
-        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this score affects.`;
+        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points, plusMinus, holeNumber, score, and name for each golfer on this hole and any other hole this score affects.`;
 
         let playedHole = false;
         let hasUpdate = false;
