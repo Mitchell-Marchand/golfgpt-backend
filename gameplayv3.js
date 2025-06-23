@@ -441,7 +441,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
             if (!hasUpdate) {
                 console.log("Nothing to update");
-                res.json({ success: true, scorecards, status: summary, answers });
+                res.json({ success: true, scorecards, status: generateSummary(scorecards), answers });
                 return;
             }
         }
