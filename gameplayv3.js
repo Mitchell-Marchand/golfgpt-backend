@@ -423,13 +423,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                     break;
                 }
             }
-
-            /*if (playedHole) {
-                break;
-            }*/
         }
-
-        console.log("Has Update, Played Hole:", hasUpdate, playedHole);
 
         if (!hasUpdate && playedHole) {
             for (let i = 0; i < answers?.length; i++) {
@@ -440,7 +434,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
 
             if (!hasUpdate) {
-                console.log("Nothing to update", scores, JSON.stringify(scorecards, null, 2));
+                console.log("Nothing to update", scores);
                 res.json({ success: true, scorecards, status: generateSummary(scorecards), answers });
                 return;
             }
