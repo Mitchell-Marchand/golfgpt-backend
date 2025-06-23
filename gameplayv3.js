@@ -440,15 +440,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
 
             if (!hasUpdate) {
-                console.log("Nothing to update");
+                console.log("Nothing to update", scores, JSON.stringify(scorecards, null, 2));
                 res.json({ success: true, scorecards, status: generateSummary(scorecards), answers });
                 return;
             }
         }
-
-        console.log("Has Update, Played Hole:", hasUpdate, playedHole);
-        //res.json({ success: true, scorecards, status: summary, answers });
-        //return;
 
         if (playedHole) {
             prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points, plusMinus, holeNumber, score, and name for each golfer on this hole and any other hole this score affects.`;
