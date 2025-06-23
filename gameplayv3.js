@@ -444,12 +444,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
         }
 
-        /*console.log("Has Update, Played Hole:", hasUpdate, playedHole);
+        console.log("Has Update, Played Hole:", hasUpdate, playedHole);
         res.json({ success: true, scorecards, status: summary, answers });
-        return;*/
+        return;
 
         if (playedHole) {
-            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this update affects.`;
+            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points, plusMinus, holeNumber, score, and name for each golfer on this hole and any other hole this score affects.`;
         }
 
         const [allMessages] = await mariadbPool.query(
