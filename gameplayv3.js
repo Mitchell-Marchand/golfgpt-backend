@@ -429,6 +429,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
         }
 
+        console.log("Has Update, Played Hole:", hasUpdate, playedHole);
+
         if (!hasUpdate && playedHole) {
             for (let i = 0; i < answers?.length; i++) {
                 if (answers[i].hole === holeNumber && answers[i].answers !== answeredQuestions) {
