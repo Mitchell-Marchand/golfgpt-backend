@@ -415,7 +415,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                     playedHole = true;
 
                     for (let k = 0; k < scores.length; k++) {
-                        if (scorecards[i]?.holes[j].name === scores[k].name && scorecards[i]?.holes[j]?.score !== scores[k].score) {
+                        if (scorecards[i]?.name === scores[k].name && scorecards[i]?.holes[j]?.score !== scores[k].score) {
                             hasUpdate = true;
                         }
                     }
