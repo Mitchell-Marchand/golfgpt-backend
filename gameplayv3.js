@@ -444,9 +444,9 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
         }
 
-        console.log("Has Update, Played Hole:", hasUpdate, playedHole);
+        /*console.log("Has Update, Played Hole:", hasUpdate, playedHole);
         res.json({ success: true, scorecards, status: summary, answers });
-        return;
+        return;*/
 
         if (playedHole) {
             prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this update affects.`;
@@ -541,13 +541,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             let scorecard = scorecards[i];
 
             for (let m = 0; m < parsed?.length; m++) {
-                for (let j = 0; j < parsed[m]?.results?.length; j++) {
-                    if (parsed[m]?.results[j].name === scorecard.name) {
+                for (let j = 0; j < parsed[m]?.length; j++) {
+                    if (parsed[m][j].name === scorecard.name) {
                         for (let k = 0; k < scorecard.holes.length; k++) {
-                            if (scorecard.holes[k].holeNumber === parsed[m].results[j].holeNumber) {
-                                scorecard.holes[k].plusMinus = parsed[m]?.results[j].plusMinus;
-                                scorecard.holes[k].score = parsed[m]?.results[j].score;
-                                scorecard.holes[k].point = parsed[m]?.results[j].point;
+                            if (scorecard.holes[k].holeNumber === parsed[m][j].holeNumber) {
+                                scorecard.holes[k].plusMinus = parsed[m][j].plusMinus;
+                                scorecard.holes[k].score = parsed[m][j].score;
+                                scorecard.holes[k].point = parsed[m][j].point;
                                 break;
                             }
                         }
