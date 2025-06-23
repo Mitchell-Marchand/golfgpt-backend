@@ -611,12 +611,12 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 currentScorecard[j].plusMinus += firstTeamMoney;
                 currentScorecard[j].points += firstTeamPoints;
                 currentScorecard[j].holes[i].plusMinus = firstTeamMoney;
-                currentScorecard[j].holes[i].point = firstTeamPoints;
+                currentScorecard[j].holes[i].points = firstTeamPoints;
             } else if (teams[1].includes(currentScorecard[j].name)) {
                 currentScorecard[j].plusMinus += secondTeamMoney;
                 currentScorecard[j].points += secondTeamPoints;
                 currentScorecard[j].holes[i].plusMinus = secondTeamMoney;
-                currentScorecard[j].holes[i].point = secondTeamPoints;
+                currentScorecard[j].holes[i].points = secondTeamPoints;
             }
         }
     }
@@ -638,7 +638,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             for (let j = 0; j < currentScorecard.length; j++) {
                 expectedUpdate.push({
                     name: currentScorecard[j].name,
-                    points: currentScorecard[j].holes[i].points,
+                    point: currentScorecard[j].holes[i].point,
                     score: currentScorecard[j].holes[i].score,
                     plusMinus: currentScorecard[j].holes[i].plusMinus,
                     holeNumber: currentScorecard[j].holes[i].holeNumber,
@@ -751,4 +751,4 @@ async function runSimulations(count) {
     await mariadbPool.end();
 }
 
-await runSimulations(1000);
+await runSimulations(1);

@@ -72,12 +72,12 @@ function generateSummary(scorecards) {
 
     // 3. Check points if money is tied
     const maxPoints = Math.max(...scorecards.map(g =>
-        g.holes.reduce((sum, h) => sum + (h.point || 0), 0)
+        g.holes.reduce((sum, h) => sum + (h.points || 0), 0)
     ))
 
     if (maxPoints > 0) {
         const pointLeaders = scorecards.filter(g =>
-            g.holes.reduce((sum, h) => sum + (h.point || 0), 0) === maxPoints
+            g.holes.reduce((sum, h) => sum + (h.points || 0), 0) === maxPoints
         )
 
         const names = pointLeaders.map(g => g.name)
@@ -405,7 +405,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const scorecards = JSON.parse(rows[0].scorecards);
         const answers = JSON.parse(rows[0].answers);
         let summaryResponse = rows[0].setup;
-        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this score affects, with each hole results in it's own array.`;
+        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this score affects.`;
 
         let playedHole = false;
         let hasUpdate = false;
@@ -449,7 +449,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         return;*/
 
         if (playedHole) {
-            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this update affects, with each hole results in it's own array.`;
+            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this update affects.`;
         }
 
         const [allMessages] = await mariadbPool.query(
@@ -547,7 +547,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                             if (scorecard.holes[k].holeNumber === parsed[m][j].holeNumber) {
                                 scorecard.holes[k].plusMinus = parsed[m][j].plusMinus;
                                 scorecard.holes[k].score = parsed[m][j].score;
-                                scorecard.holes[k].point = parsed[m][j].point;
+                                scorecard.holes[k].points = parsed[m][j].points;
                                 break;
                             }
                         }
@@ -571,7 +571,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             for (j = 0; j < scorecards[i].holes.length; j++) {
                 plusMinus += scorecards[i].holes[j].plusMinus;
                 handicap += scorecards[i].holes[j].strokes;
-                points += scorecards[i].holes[j].point;
+                points += scorecards[i].holes[j].points;
 
                 if (scorecards[i].holes[j].score === 0) {
                     golferPlayedAllHoles = false;

@@ -75,7 +75,7 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
                 plusMinus: 0,
                 strokes: pop ? pop.strokes : 0,
                 score: 0,
-                point: 0
+                points: 0
             };
         });
 
