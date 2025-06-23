@@ -638,7 +638,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             for (let j = 0; j < currentScorecard.length; j++) {
                 expectedUpdate.push({
                     name: currentScorecard[j].name,
-                    point: currentScorecard[j].holes[i].point,
+                    points: currentScorecard[j].holes[i].points,
                     score: currentScorecard[j].holes[i].score,
                     plusMinus: currentScorecard[j].holes[i].plusMinus,
                     holeNumber: currentScorecard[j].holes[i].holeNumber,
