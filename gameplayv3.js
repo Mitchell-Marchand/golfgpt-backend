@@ -408,10 +408,18 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this score affects.`;
 
         let playedHole = false;
+        let hasUpdate = false;
         for (let i = 0; i < scorecards?.length; i++) {
             for (let j = 0; j < scorecards[i]?.holes?.length; j++) {
                 if (scorecards[i]?.holes[j]?.holeNumber === holeNumber && scorecards[i]?.holes[j]?.score > 0) {
                     playedHole = true;
+
+                    for (let k = 0; k < scores.length; k++) {
+                        if (scorecards[i]?.holes[j].name === scores[k].name && scorecards[i]?.holes[j]?.score !== scores[k].score) {
+                            hasUpdate = true;
+                        }
+                    }
+
                     break;
                 }
             }
@@ -420,6 +428,25 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 break;
             }
         }
+
+        if (!hasUpdate && playedHole) {
+            for (let i = 0; i < answers?.length; i++) {
+                if (answers[i].hole === holeNumber && answers[i].answers !== answeredQuestions) {
+                    hasUpdate = true;
+                    break;
+                }
+            }
+
+            if (!hasUpdate) {
+                console.log("Nothing to update");
+                res.json({ success: true, scorecards, status: summary, answers });
+                return;
+            }
+        }
+
+        console.log("Has Update, Played Hole:", hasUpdate, playedHole);
+        res.json({ success: true, scorecards, status: summary, answers });
+        return;
 
         if (playedHole) {
             prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points and plusMinus data for this hole and any other hole this update affects.`;
