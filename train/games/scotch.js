@@ -446,7 +446,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
-                continue;
+                //continue;
+                console.log("Why were we continuing?");
             } else if (autoDoubleMoneyTrigger > 0) {
                 let change = true;
                 for (let j = 0; j < currentScorecard.length; j++) {
