@@ -87,7 +87,7 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
             handicap,
             plusMinus: 0,
             points: 0,
-            winPercent: 0.5,
+            winPercent: 0,
             holes: holeObjects
         });
     }
