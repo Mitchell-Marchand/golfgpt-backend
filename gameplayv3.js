@@ -128,6 +128,8 @@ async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbP
                 continue;
             }
 
+            console.log("Got scorecard for", golferName);
+
             const { plusMinus = 0, points = 0 } = scorecard;
 
             let won = false, lost = false, tied = false;
@@ -141,6 +143,7 @@ async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbP
             );
 
             if (existing.length > 0) {
+                console.log("Updating original");
                 await mariadbPool.query(
                     `UPDATE Results 
              SET plusMinus = ?, points = ?, won = ?, lost = ?, tied = ?, updatedAt = CURRENT_TIMESTAMP
@@ -149,6 +152,7 @@ async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbP
                 );
             } else {
                 const id = uuidv4();
+                console.log("Creating new", id);
                 await mariadbPool.query(
                     `INSERT INTO Results (id, matchId, userId, plusMinus, points, won, lost, tied)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
