@@ -287,9 +287,9 @@ router.post("/create", authenticateUser, async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You're an assistant who can return a display name for a golf match.`
+                    content: `You're an assistant who can return a display name for a golf match. Your job is to generate short, clear display names.`
                 },
-                { role: "user", content: `Generate a display name for this match based on the following rules: ${rules}` }
+                { role: "user", content: `Based on these rules, generate a display name. Limit it to 6 words or fewer: ${rules}` }
             ],
             temperature: 0.2
         });
