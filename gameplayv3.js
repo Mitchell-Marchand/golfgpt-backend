@@ -109,7 +109,7 @@ function generateSummary(scorecards) {
     }
 
     // 4. Everything tied
-    return `Tied through ${holesPlayed}`
+    return `Tied through ${holesPlayed}`;
 }
 
 router.post("/begin", authenticateUser, async (req, res) => {
@@ -153,11 +153,13 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
     if (!matchId || !teesByGolfer) {
         return res.status(400).json({ error: "Missing required data." });
-    } else if (!(await canUserAccessMatch(matchId, req.user.id))) {
-        return res.status(404).json({ error: "Not authorized to update match." });
     }
 
     try {
+        if (!(await canUserAccessMatch(matchId, req.user.id))) {
+            return res.status(404).json({ error: "Not authorized to update match." });
+        }
+
         const [rows] = await mariadbPool.query("SELECT courseId FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
@@ -194,11 +196,13 @@ router.post("/create", authenticateUser, async (req, res) => {
 
     if (!matchId || !teeTime || typeof isPublic === 'undefined') {
         return res.status(400).json({ error: "Missing required data." });
-    } else if (!(await canUserAccessMatch(matchId, req.user.id))) {
-        return res.status(404).json({ error: "Not authorized to update match." });
     }
 
     try {
+        if (!(await canUserAccessMatch(matchId, req.user.id))) {
+            return res.status(404).json({ error: "Not authorized to update match." });
+        }
+
         const [rows1] = await mariadbPool.query("SELECT courseId, tees, holeCount FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
@@ -292,11 +296,13 @@ router.post("/update", authenticateUser, async (req, res) => {
 
     if (!matchId || !newRules) {
         return res.status(400).json({ error: "Missing matchId or newRules." });
-    } else if (!(await canUserAccessMatch(matchId, req.user.id))) {
-        return res.status(404).json({ error: "Not authorized to update match." });
     }
 
     try {
+        if (!(await canUserAccessMatch(matchId, req.user.id))) {
+            return res.status(404).json({ error: "Not authorized to update match." });
+        }
+
         const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, questions, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
@@ -653,11 +659,14 @@ router.get("/matches", authenticateUser, async (req, res) => {
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
-             WHERE m.createdBy = ? 
+             WHERE (
+                createdBy = ?
+                OR JSON_CONTAINS(golferIds, JSON_QUOTE(?))
+            )
                AND m.status IN ('RULES_PROVIDED', 'READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
              ORDER BY m.updatedAt DESC, m.serial DESC 
              LIMIT 10`,
-            [userId]
+            [userId, userId]
         );
 
         const parsedMatches = rows.map(match => ({
