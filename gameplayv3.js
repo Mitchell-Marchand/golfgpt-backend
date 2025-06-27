@@ -974,7 +974,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
 
         const oldSummary = copyRows[0].setup;
 
-        const prompt = `Here is the description of a prior golf match:\n\n${oldSummary}\n\nNow create a new version of this description using these golfers instead:\n\n${JSON.stringify(golfers)}\n\nReturn a concise updated summary. Return the original summary if the golfer names are the same.`;
+        const prompt = `Here is the description of a prior golf match:\n\n${oldSummary}\n\nNow create a new version of this description using these golfers instead:\n\n${JSON.stringify(golfers)}\n\nReturn a concise updated summary. If a golfer is not included in the new list, do not include them in the summary. Return the original summary if the golfer names are the same.`;
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
