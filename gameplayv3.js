@@ -701,29 +701,52 @@ router.get("/golfers", authenticateUser, async (req, res) => {
     try {
         const [rows] = await mariadbPool.query(
             `SELECT golfers, golferIds FROM Matches 
-             WHERE createdBy = ? 
-             ORDER BY updatedAt DESC LIMIT 10`,
+         WHERE createdBy = ? 
+         ORDER BY updatedAt DESC LIMIT 10`,
             [userId]
         );
 
         const uniqueGolfers = new Map(); // Key: name + id
+        const idLookup = new Set();      // Collect non-guest IDs
 
         for (const row of rows) {
             const names = JSON.parse(row.golfers);     // array of names
             const ids = JSON.parse(row.golferIds);     // array of ids
 
             for (let i = 0; i < names.length; i++) {
-                const name = names[i].replace(/\s?\((You|G|[1-5])\)/g, '').trim();;
+                const name = names[i].replace(/\s?\((You|G|[1-5])\)/g, '').trim();
                 const id = ids[i];
                 const key = `${name}:${id}`;
 
                 if (!uniqueGolfers.has(key)) {
                     uniqueGolfers.set(key, { name, id });
+                    if (id !== "Guest") {
+                        idLookup.add(id);
+                    }
                 }
             }
         }
 
-        const golfers = Array.from(uniqueGolfers.values());
+        // Get names for all real users (non-guests)
+        const idArray = Array.from(idLookup);
+        let userNames = {};
+
+        if (idArray.length > 0) {
+            const [users] = await mariadbPool.query(
+                `SELECT id, firstName, lastName FROM Users WHERE id IN (?)`,
+                [idArray]
+            );
+
+            userNames = users.reduce((acc, user) => {
+                acc[user.id] = `${user.firstName} ${user.lastName}`;
+                return acc;
+            }, {});
+        }
+
+        const golfers = Array.from(uniqueGolfers.values()).map(g => ({
+            name: userNames[g.id] || g.name,
+            id: g.id
+        }));
 
         res.json({ success: true, golfers });
     } catch (err) {
