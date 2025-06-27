@@ -112,6 +112,53 @@ function generateSummary(scorecards) {
     return `Tied through ${holesPlayed}`;
 }
 
+async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbPool }) {
+    try {
+        for (let i = 0; i < golferIds.length; i++) {
+            const golferId = golferIds[i];
+            if (golferId === 'Guest') continue;
+
+            const golferName = golfers[i];
+            const scorecard = scorecards.find(s => s.name === golferName);
+            if (!scorecard) {
+                console.warn(`No scorecard found for golfer ${golferName}`);
+                continue;
+            }
+
+            const { plusMinus = 0, points = 0 } = scorecard;
+
+            let won = false, lost = false, tied = false;
+            if (plusMinus > 0) won = true;
+            else if (plusMinus < 0) lost = true;
+            else tied = true;
+
+            const existing = await mariadbPool.query(
+                'SELECT id FROM Results WHERE matchId = ? AND userId = ?',
+                [matchId, golferId]
+            );
+
+            if (existing.length > 0) {
+                await mariadbPool.query(
+                    `UPDATE Results 
+             SET plusMinus = ?, points = ?, won = ?, lost = ?, tied = ?, updatedAt = CURRENT_TIMESTAMP
+             WHERE matchId = ? AND userId = ?`,
+                    [plusMinus, points, won, lost, tied, matchId, golferId]
+                );
+            } else {
+                const id = uuidv4();
+                await mariadbPool.query(
+                    `INSERT INTO Results (id, matchId, userId, plusMinus, points, won, lost, tied)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [id, matchId, golferId, plusMinus, points, won, lost, tied]
+                );
+            }
+        }
+    } catch (error) {
+        console.error('Error upserting results:', error);
+        throw error;
+    }
+}
+
 router.post("/begin", authenticateUser, async (req, res) => {
     const { golfers, golferIds, course } = req.body;
     const userId = req.user.id;
@@ -312,7 +359,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 "UPDATE Matches SET displayName = ? WHERE id = ?",
                 [displayName, matchId]
             );
-        } 
+        }
 
         await mariadbPool.query(
             "UPDATE Matches SET strokes = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
@@ -697,6 +744,17 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
         );
+
+        //If all holes played, updated in results table
+        if (allHolesPlayed) {
+            await upsertResults({
+                matchId,
+                scorecards,
+                golfers,
+                golferIds,
+                mariadbPool,
+            });
+        }
 
         res.json({ success: true, scorecards, status: summary, answers });
     } catch (err) {
