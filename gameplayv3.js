@@ -5,7 +5,7 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 const { encoding_for_model } = require("tiktoken");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, deepEqual } = require('./train/utils')
+const { buildScorecards, blankAnswers, deepEqual, calculateWinPercents } = require('./train/utils')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -538,7 +538,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const scorecards = JSON.parse(rows[0].scorecards);
+        let scorecards = JSON.parse(rows[0].scorecards);
         const answers = JSON.parse(rows[0].answers);
         const golfers = JSON.parse(rows[0].golfers);
         const golferIds = JSON.parse(rows[0].golferIds);
@@ -720,6 +720,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
         }
 
+        scorecards = calculateWinPercents(scorecards);
         console.log("[score/submit] scorecard updated");
 
         for (let i = 0; i < answers?.length; i++) {

@@ -138,6 +138,45 @@ function blankAnswers(scorecards) {
     return JSON.stringify(answers);
 }
 
+function calculateWinPercents(scorecards) {
+    // Determine number of holes played and remaining
+    const totalHoles = scorecards[0]?.holes?.length || 18;
+
+    const holesPlayed = scorecards[0]?.holes?.filter(h => h.plusMinus !== undefined && h.plusMinus !== null).length || 0;
+    const holesRemaining = totalHoles - holesPlayed;
+
+    // Estimate average money swing per hole (across all players)
+    let totalMoneySwung = 0;
+    let countedHoles = 0;
+
+    for (let i = 0; i < scorecards.length; i++) {
+        const golfer = scorecards[i];
+        golfer.holes.forEach((h, index) => {
+            if (index < holesPlayed) {
+                totalMoneySwung += Math.abs(h.plusMinus || 0);
+            }
+        });
+    }
+
+    const totalSwings = scorecards.length * holesPlayed;
+    const avgMoneyPerHole = totalSwings > 0 ? totalMoneySwung / totalSwings : 1;
+    const maxRemainingSwing = avgMoneyPerHole * holesRemaining;
+
+    // Avoid division by 0
+    const confidenceFactor = Math.max(maxRemainingSwing, 1);
+
+    // Convert plusMinus to softmax-style probabilities
+    const rawScores = scorecards.map(sc => sc.plusMinus || 0);
+    const expScores = rawScores.map(pm => Math.exp(pm / confidenceFactor));
+    const sumExp = expScores.reduce((sum, val) => sum + val, 0);
+
+    // Return updated scorecards with winPercent
+    return scorecards.map((sc, i) => ({
+        ...sc,
+        winPercent: sumExp === 0 ? 1 / scorecards.length : parseFloat((expScores[i] / sumExp).toFixed(4)),
+    }));
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -145,5 +184,6 @@ module.exports = {
     pickTeam,
     blankAnswers,
     delay,
-    deepEqual
+    deepEqual,
+    calculateWinPercents
 }
