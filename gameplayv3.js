@@ -203,7 +203,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        const [rows1] = await mariadbPool.query("SELECT courseId, tees, holeCount, golfers, golferIds FROM Matches WHERE id = ?", [matchId]);
+        const [rows1] = await mariadbPool.query("SELECT courseId, displayName, tees, holeCount, golfers, golferIds FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -213,6 +213,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const holes = rows1[0].holeCount;
         const golfers = JSON.parse(rows1[0].golfers);
         const golferIds = JSON.parse(rows1[0].golferIds);
+        const currentDisplayName = rows1[0].displayName;
 
         const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
@@ -229,6 +230,9 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\n\nRules:\n${rules || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
+        if (currentDisplayName && currentDisplayName?.length > 0) {
+            pastMessages.pop();
+        }
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that returns only valid JSON." },
