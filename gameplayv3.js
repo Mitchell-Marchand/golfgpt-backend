@@ -203,7 +203,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        const [rows1] = await mariadbPool.query("SELECT courseId, tees, holeCount FROM Matches WHERE id = ?", [matchId]);
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees, holeCount, golfers, golferIds FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -211,6 +211,9 @@ router.post("/create", authenticateUser, async (req, res) => {
         const courseId = rows1[0].courseId;
         const playerTees = JSON.parse(rows1[0].tees);
         const holes = rows1[0].holeCount;
+        const golfers = JSON.parse(rows1[0].golfers);
+        const golferIds = JSON.parse(rows1[0].golferIds);
+
         const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
             return res.status(404).json({ error: "Match not found." });
@@ -220,6 +223,10 @@ router.post("/create", authenticateUser, async (req, res) => {
         const nineScorecards = JSON.parse(rows2[0].nineScorecards);
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
+
+        if (golferIds?.includes(req.user.id)) {
+            pastMessages.unshift({ role: "system", content: `The golfer creating the match is named ${golfers[golferIds.indexOf(req.user.id)]}. They might refer to themselves a "Me" or "I".` });
+        }
 
         const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\n\nRules:\n${rules || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
 
@@ -303,7 +310,7 @@ router.post("/update", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, questions, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, golfers, golferIds, questions, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -311,6 +318,8 @@ router.post("/update", authenticateUser, async (req, res) => {
         const courseId = rows1[0]?.courseId;
         const playerTees = JSON.parse(rows1[0]?.tees);
         const holes = rows1[0].holeCount;
+        const golfers = JSON.parse(rows1[0].golfers);
+        const golferIds = JSON.parse(rows1[0].golferIds);
 
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
@@ -318,6 +327,10 @@ router.post("/update", authenticateUser, async (req, res) => {
         const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
             return res.status(404).json({ error: "Course not found." });
+        }
+
+        if (golferIds?.includes(req.user.id)) {
+            pastMessages.unshift({ role: "system", content: `The golfer creating the match is named "${golfers[golferIds.indexOf(req.user.id)]}". They might refer to themselves a "Me" or "I".` });
         }
 
         const prompt = `New user input:\n${newRules}\n\nUpdate the questions stroke holes accordingly and return only valid raw JSON.`;
@@ -437,13 +450,16 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        const [rows] = await mariadbPool.query("SELECT scorecards, setup, answers FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards, setup, golfers, golferIds, answers FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const scorecards = JSON.parse(rows[0].scorecards);
         const answers = JSON.parse(rows[0].answers);
+        const golfers = JSON.parse(rows[0].golfers);
+        const golferIds = JSON.parse(rows[0].golferIds);
+
         let summaryResponse = rows[0].setup;
         let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing the points, plusMinus, holeNumber, score, and name for each golfer on this hole and any other hole this score affects.`;
 
@@ -498,6 +514,10 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             .map(msg => ({ role: "user", content: msg.content }));
 
         if (!summaryResponse) {
+            if (golferIds?.includes(req.user.id)) {
+                setupContent.unshift({ role: "system", content: `The golfer creating the match is named "${golfers[golferIds.indexOf(req.user.id)]}". They might refer to themselves a "Me" or "I". Use their full name when generating the summary.` });
+            }
+
             summaryResponse = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [
@@ -776,8 +796,6 @@ router.get("/courses", authenticateUser, async (req, res) => {
         for (let i = 0; i < rows?.length; i++) {
             courses.push(rows[i]);
         }
-
-        console.log(courses);
 
         res.json({ success: true, courses });
     } catch (err) {
