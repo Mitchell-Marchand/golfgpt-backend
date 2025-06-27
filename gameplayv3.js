@@ -912,4 +912,92 @@ router.delete("/delete/:matchId", authenticateUser, async (req, res) => {
     }
 });
 
+router.get("/matches/recent", authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `SELECT id, displayName, teeTime, golfers
+             FROM Matches
+             WHERE (createdBy = ?
+                OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))
+                AND setup != ''
+             ORDER BY updatedAt DESC, serial DESC
+             LIMIT 20`,
+            [userId, userId]
+        );
+
+        const matches = rows.map(match => ({
+            id: match.id,
+            displayName: match.displayName,
+            teeTime: match.teeTime,
+            golfers: match.golfers ? JSON.parse(match.golfers) : []
+        }));
+
+        res.json({ success: true, matches });
+    } catch (err) {
+        console.error("Error in /matches/recent:", err);
+        res.status(500).json({ error: "Failed to fetch recent matches." });
+    }
+});
+
+router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
+    const { matchToEditId, matchToCopyId } = req.body;
+    const userId = req.user.id;
+
+    if (!matchToEditId || !matchToCopyId) {
+        return res.status(400).json({ error: "Missing match IDs." });
+    }
+
+    try {
+        // Validate access to matchToEdit
+        const [editRows] = await mariadbPool.query(
+            `SELECT golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            [matchToEditId, userId, userId]
+        );
+
+        if (editRows.length === 0) {
+            return res.status(403).json({ error: "Unauthorized to edit this match." });
+        }
+
+        const golfers = JSON.parse(editRows[0].golfers);
+
+        // Pull summary from match to copy
+        const [copyRows] = await mariadbPool.query(
+            `SELECT setup FROM Matches WHERE id = ?`,
+            [matchToCopyId]
+        );
+
+        if (copyRows.length === 0 || !copyRows[0].setup) {
+            return res.status(404).json({ error: "Original match setup not found." });
+        }
+
+        const oldSummary = copyRows[0].setup;
+
+        const prompt = `Here is the description of a prior golf match:\n\n${oldSummary}\n\nNow create a new version of this description using these golfers instead:\n\n${JSON.stringify(golfers)}\n\nReturn a concise updated summary. Return the original summary if the golfer names are the same.`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a golf match assistant. Rewrite the match description using the new golfer names."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.3
+        });
+
+        const newSummary = completion.choices[0].message.content.trim();
+
+        res.json({ success: true, setup: newSummary });
+    } catch (err) {
+        console.error("Error in /matches/copy-setup:", err);
+        res.status(500).json({ error: "Failed to generate new setup." });
+    }
+});
+
 module.exports = router;
