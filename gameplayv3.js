@@ -113,6 +113,9 @@ function generateSummary(scorecards) {
 }
 
 async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbPool }) {
+    console.log(JSON.stringify(golfers, null, 2));
+    console.log(JSON.stringify(golferIds, null, 2));
+
     try {
         for (let i = 0; i < golferIds.length; i++) {
             const golferId = golferIds[i];
