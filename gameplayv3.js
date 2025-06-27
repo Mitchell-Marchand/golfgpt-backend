@@ -700,25 +700,35 @@ router.get("/golfers", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT golfers from Matches where createdBy = ? 
+            `SELECT golfers, golferIds FROM Matches 
+             WHERE createdBy = ? 
              ORDER BY updatedAt DESC LIMIT 10`,
             [userId]
         );
 
-        let golfers = [];
-        for (let i = 0; i < rows.length; i++) {
-            let matchGs = JSON.parse(rows[i].golfers);
-            for (let j = 0; j < matchGs.length; j++) {
-                if (!golfers.includes(matchGs[j])) {
-                    golfers.push(matchGs[j]);
+        const uniqueGolfers = new Map(); // Key: name + id
+
+        for (const row of rows) {
+            const names = JSON.parse(row.golfers);     // array of names
+            const ids = JSON.parse(row.golferIds);     // array of ids
+
+            for (let i = 0; i < names.length; i++) {
+                const name = names[i];
+                const id = ids[i];
+                const key = `${name}:${id}`;
+
+                if (!uniqueGolfers.has(key)) {
+                    uniqueGolfers.set(key, { name, id });
                 }
             }
         }
 
+        const golfers = Array.from(uniqueGolfers.values());
+
         res.json({ success: true, golfers });
     } catch (err) {
-        console.error("Error in /matches:", err);
-        res.status(500).json({ error: "Failed to fetch user matches." });
+        console.error("Error in /golfers:", err);
+        res.status(500).json({ error: "Failed to fetch user golfers." });
     }
 });
 
