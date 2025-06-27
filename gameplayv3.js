@@ -675,7 +675,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT m.id, m.displayName, m.golfers, m.status, m.isPublic, m.questions, m.answers, m.strokes, m.summary, m.teeTime, m.scorecards, m.updatedAt, m.courseId,
+            `SELECT m.id, m.displayName, m.golfers, m.golferIds, m.status, m.isPublic, m.questions, m.answers, m.strokes, m.summary, m.teeTime, m.scorecards, m.updatedAt, m.courseId,
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
@@ -693,6 +693,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
             id: match.id,
             displayName: match.displayName,
             golfers: match.golfers ? JSON.parse(match.golfers) : [],
+            golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
             scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
             questions: match.questions ? JSON.parse(match.questions) : [],
             answers: match.answers ? JSON.parse(match.answers) : [],
@@ -772,6 +773,27 @@ router.get("/golfers", authenticateUser, async (req, res) => {
     } catch (err) {
         console.error("Error in /golfers:", err);
         res.status(500).json({ error: "Failed to fetch user golfers." });
+    }
+});
+
+router.post("/golfers/update", authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+    const { matchId, golferIds } = req.body;
+
+    try {
+        if (!(await canUserAccessMatch(matchId, userId))) {
+            return res.status(404).json({ error: "Not authorized to update match." });
+        }
+
+        await mariadbPool.query(
+            "UPDATE Matches SET golferIds = ? WHERE id = ?",
+            [JSON.stringify(golferIds), matchId]
+        );
+    
+        res.json({ success: true, golferIds });
+    } catch (err) {
+        console.error("Error in /matches:", err);
+        res.status(500).json({ error: "Failed to fetch user matches." });
     }
 });
 
