@@ -137,7 +137,7 @@ async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbP
             else if (plusMinus < 0) lost = true;
             else tied = true;
 
-            const existing = await mariadbPool.query(
+            const [existing] = await mariadbPool.query(
                 'SELECT id FROM Results WHERE matchId = ? AND userId = ?',
                 [matchId, golferId]
             );
