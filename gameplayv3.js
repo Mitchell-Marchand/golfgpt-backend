@@ -113,9 +113,6 @@ function generateSummary(scorecards) {
 }
 
 async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbPool }) {
-    console.log(JSON.stringify(golfers, null, 2));
-    console.log(JSON.stringify(golferIds, null, 2));
-
     try {
         for (let i = 0; i < golferIds.length; i++) {
             const golferId = golferIds[i];
@@ -127,8 +124,6 @@ async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbP
                 console.warn(`No scorecard found for golfer ${golferName}`);
                 continue;
             }
-
-            console.log("Got scorecard for", golferName);
 
             const { plusMinus = 0, points = 0 } = scorecard;
 
@@ -143,7 +138,6 @@ async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbP
             );
 
             if (existing.length > 0) {
-                console.log("Updating original");
                 await mariadbPool.query(
                     `UPDATE Results 
              SET plusMinus = ?, points = ?, won = ?, lost = ?, tied = ?, updatedAt = CURRENT_TIMESTAMP
