@@ -702,7 +702,7 @@ router.get("/golfers", authenticateUser, async (req, res) => {
         const [rows] = await mariadbPool.query(
             `SELECT golfers, golferIds FROM Matches 
          WHERE createdBy = ? 
-         ORDER BY updatedAt DESC LIMIT 10`,
+         ORDER BY updatedAt DESC LIMIT 6`,
             [userId]
         );
 
@@ -783,6 +783,32 @@ router.get("/courses", authenticateUser, async (req, res) => {
     } catch (err) {
         console.error("Error in /matches:", err);
         res.status(500).json({ error: "Failed to fetch user matches." });
+    }
+});
+
+router.get("/members", authenticateUser, async (req, res) => {
+    const query = (req.query.q || "").trim();
+    if (!query || query.length < 2) return res.status(400).json({ error: "Missing or too short query." });
+
+    try {
+        const [rows] = await mariadbPool.query(`
+        SELECT id, firstName, lastName, homeClub
+        FROM Users
+        WHERE CONCAT(firstName, ' ', lastName) LIKE ?
+        ORDER BY lastName ASC
+        LIMIT 10
+      `, [`%${query}%`]);
+
+        const users = rows.map(u => ({
+            id: u.id,
+            name: `${u.firstName} ${u.lastName}`,
+            homeClub: u.homeClub || "Unknown"
+        }));
+
+        res.json({ success: true, users });
+    } catch (err) {
+        console.error("Error in /members:", err);
+        res.status(500).json({ error: "Failed to search members." });
     }
 });
 

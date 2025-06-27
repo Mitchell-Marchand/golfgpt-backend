@@ -74,7 +74,7 @@ router.post('/signIn', async (req, res) => {
 })
 
 router.post('/register', async (req, res) => {
-  const { phone, firstName, lastName, code } = req.body;
+  const { phone, firstName, lastName, homeClub, code } = req.body;
   const formattedPhone = formatAndValidatePhone(phone);
   if (!formattedPhone || !firstName || !lastName) {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
@@ -95,8 +95,8 @@ router.post('/register', async (req, res) => {
       const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '30d' });
 
       await mariadbPool.query(
-        `INSERT INTO Users (id, phone, firstName, lastName, accessToken) VALUES (?, ?, ?, ?, ?)`,
-        [id, formattedPhone, firstName, lastName, accessToken]
+        `INSERT INTO Users (id, phone, firstName, lastName, homeClub, accessToken) VALUES (?, ?, ?, ?, ?, ?)`,
+        [id, formattedPhone, firstName, lastName, homeClub || "", accessToken]
       );
 
       const [newUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [id]);
