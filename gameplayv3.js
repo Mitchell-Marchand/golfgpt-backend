@@ -282,9 +282,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         //Get creative displayName from AI.
         let displayName = "Golf Match";
-        const setupContent = allMessages
-            .filter(msg => msg.type === 'setup')
-            .map(msg => ({ role: "user", content: msg.content }));
         const displayNameResponse = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
@@ -292,19 +289,18 @@ router.post("/create", authenticateUser, async (req, res) => {
                     role: "system",
                     content: `You're an assistant who can return a display name for a golf match.`
                 },
-                ...setupContent,
-                { role: "user", content: `Generate a display name for this match based on the following rules, who is playing, and where they're playing: ${rules}` }
+                { role: "user", content: `Generate a display name for this match based on the following rules: ${rules}` }
             ],
-            temperature: 0.2,
+            temperature: 0.2
         });
 
         if (displayNameResponse.choices[0].message.content) {
+            displayName = displayNameResponse.choices[0].message.content?.trim()?.replaceAll('"', '');
+
             await mariadbPool.query(
                 "UPDATE Matches SET displayName = ? WHERE id = ?",
-                [displayNameResponse.choices[0].message.content?.trim(), matchId]
+                [displayName, matchId]
             );
-
-            displayName = displayNameResponse.choices[0].message.content?.trim();
         } 
 
         await mariadbPool.query(
