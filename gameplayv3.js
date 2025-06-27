@@ -231,6 +231,13 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\n\nRules:\n${rules || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
         if (currentDisplayName && currentDisplayName?.length > 0) {
+            //Update most recent user message with prompt
+            const rulesId = pastMessages[pastMessages.length - 1].id;
+            await mariadbPool.query(
+                "UPDATE Messages SET content = ? WHERE id = ?",
+                [prompt, rulesId]
+            );
+
             pastMessages.pop();
         }
 
