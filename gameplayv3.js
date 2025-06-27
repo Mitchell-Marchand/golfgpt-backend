@@ -295,7 +295,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 ...setupContent,
                 { role: "user", content: "Generate a display name for my golf match based on the rules. ONLY return the display name as a string." }
             ],
-            temperature: 0.7,
+            temperature: 0.2,
         });
 
         if (displayNameResponse.choices[0].message.content) {
