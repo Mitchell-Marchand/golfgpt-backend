@@ -290,10 +290,10 @@ router.post("/create", authenticateUser, async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You're an assistant who can return a display name for a golf match based on the rules, who is playing, and where they're playing.`
+                    content: `You're an assistant who can return a display name for a golf match.`
                 },
                 ...setupContent,
-                { role: "user", content: "Generate a display name for my golf match. ONLY return the display name as a string." }
+                { role: "user", content: `Generate a display name for this match based on the following rules, who is playing, and where they're playing: ${rules}` }
             ],
             temperature: 0.2,
         });
