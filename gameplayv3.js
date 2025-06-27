@@ -802,7 +802,7 @@ router.get("/members", authenticateUser, async (req, res) => {
         const users = rows.map(u => ({
             id: u.id,
             name: `${u.firstName} ${u.lastName}`,
-            homeClub: u.homeClub || "Unknown"
+            homeClub: u.homeClub || ""
         }));
 
         res.json({ success: true, users });
