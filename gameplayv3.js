@@ -713,7 +713,7 @@ router.get("/golfers", authenticateUser, async (req, res) => {
             const ids = JSON.parse(row.golferIds);     // array of ids
 
             for (let i = 0; i < names.length; i++) {
-                const name = names[i];
+                const name = names[i].replace(/\s?\((You|G|[1-5])\)/g, '').trim();;
                 const id = ids[i];
                 const key = `${name}:${id}`;
 
