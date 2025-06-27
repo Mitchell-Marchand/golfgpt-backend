@@ -539,7 +539,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const golferIds = JSON.parse(rows[0].golferIds);
 
         let summaryResponse = rows[0].setup;
-        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing objects with the points, plusMinus, holeNumber, score, and name for each golfer on this hole and each golfer on any other hole this score affects.`;
+        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing objects with key value pairs for the "points", "plusMinus", "holeNumber", "score", and "name" for each golfer on this hole and each golfer on any other hole this score affects.`;
 
         let playedHole = false;
         let hasUpdate = false;
@@ -574,7 +574,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }
 
         if (playedHole) {
-            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing objects with the points, plusMinus, holeNumber, score, and name for each golfer on this hole and each golfer any other hole this score affects.`;
+            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing objects with key value pairs for the "points", "plusMinus", "holeNumber", "score", and "name" for each golfer on this hole and each golfer any other hole this score affects.`;
         }
 
         const [allMessages] = await mariadbPool.query(
