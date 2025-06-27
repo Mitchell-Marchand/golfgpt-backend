@@ -111,6 +111,7 @@ async function runScotchGame() {
     }
 
     //TODO: Describe game by types of points and their values
+    //TODO: Separate conversations by setup and game play w/ summary
 
     if (points === 4 && getRandomInt(4) === 1) {
         prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}. `

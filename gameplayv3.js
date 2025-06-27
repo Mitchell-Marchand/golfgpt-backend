@@ -280,9 +280,36 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const formattedTeeTime = formatDateForSQL(teeTime);
 
+        //Get creative displayName from AI.
+        let displayName = "Golf Match";
+        const setupContent = allMessages
+            .filter(msg => msg.type === 'setup')
+            .map(msg => ({ role: "user", content: msg.content }));
+        const displayNameResponse = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: `You're a creative assistant who can return a display name for a golf match based on the rules, who is playing, and where they're playing.`
+                },
+                ...setupContent,
+                { role: "user", content: "Generate a display name for my golf match based on the rules. ONLY return the display name as a string." }
+            ],
+            temperature: 0.7,
+        });
+
+        if (displayNameResponse.choices[0].message.content) {
+            await mariadbPool.query(
+                "UPDATE Matches SET displayName = ? WHERE id = ?",
+                [displayNameResponse.choices[0].message.content?.trim(), matchId]
+            );
+
+            displayName = displayNameResponse.choices[0].message.content?.trim();
+        } 
+
         await mariadbPool.query(
-            "UPDATE Matches SET strokes = ?, teeTime = ?, isPublic = ?, displayName = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
-            [JSON.stringify(parsed?.strokes), formattedTeeTime, isPublic ? 1 : 0, parsed?.displayName, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
+            "UPDATE Matches SET strokes = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            [JSON.stringify(parsed?.strokes), displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
         messageId = uuidv4();
@@ -291,7 +318,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
         );
 
-        res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
+        res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards, displayName });
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to generate match setup." });
@@ -299,7 +326,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 });
 
 router.post("/update", authenticateUser, async (req, res) => {
-    const { matchId, newRules, expected } = req.body;
+    const { matchId, newRules, expected, displayName } = req.body;
 
     if (!matchId || !newRules) {
         return res.status(400).json({ error: "Missing matchId or newRules." });
@@ -310,7 +337,7 @@ router.post("/update", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        const [rows1] = await mariadbPool.query("SELECT courseId, tees, displayName, golfers, golferIds, questions, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
+        const [rows1] = await mariadbPool.query("SELECT courseId, tees, golfers, golferIds, questions, displayName, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
         if (rows1.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -320,6 +347,7 @@ router.post("/update", authenticateUser, async (req, res) => {
         const holes = rows1[0].holeCount;
         const golfers = JSON.parse(rows1[0].golfers);
         const golferIds = JSON.parse(rows1[0].golferIds);
+        const newDisplayName = displayName || rows1[0].displayName;
 
         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
@@ -384,8 +412,8 @@ router.post("/update", authenticateUser, async (req, res) => {
         }
 
         await mariadbPool.query(
-            "UPDATE Matches SET displayName = ?, questions = ?, strokes = ?, scorecards = ? WHERE id = ?",
-            [parsed.displayName, JSON.stringify(parsed.questions), JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
+            "UPDATE Matches SET questions = ?, displayName = ?, strokes = ?, scorecards = ? WHERE id = ?",
+            [JSON.stringify(parsed.questions), newDisplayName, JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
         );
 
         messageId = uuidv4();
@@ -789,7 +817,7 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
             "UPDATE Matches SET golferIds = ? WHERE id = ?",
             [JSON.stringify(golferIds), matchId]
         );
-    
+
         res.json({ success: true, golferIds });
     } catch (err) {
         console.error("Error in /matches:", err);
