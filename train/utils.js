@@ -160,7 +160,7 @@ function calculateWinPercents(scorecards) {
         /* ------------------------------------
            Gather basic round information
         ------------------------------------ */
-        const played = sc.holes.filter(h => typeof h.plusMinus === 'number');
+        const played = sc.holes.filter(h => typeof h.score !== 0);
         const holesPlayed = played.length;
         const holesRemaining = TOTAL_HOLES - holesPlayed;
         const currentPM = sc.plusMinus ?? 0;       // running total
@@ -193,6 +193,8 @@ function calculateWinPercents(scorecards) {
         /* probability final plusMinus ≥ 0 */
         const z = currentPM / sigmaTotal;   // can be ±
         const winPct = Φ(z);
+
+        console.log(`Win % for ${sc.name}:`, winPct);
 
         return { ...sc, winPercent: +winPct.toFixed(4) };
     });
