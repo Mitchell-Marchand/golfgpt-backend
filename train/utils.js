@@ -164,6 +164,8 @@ function calculateWinPercents(scorecards) {
         const holesPlayed = played.length;
         const holesRemaining = TOTAL_HOLES - holesPlayed;
         const currentPM = sc.plusMinus ?? 0;       // running total
+        
+        console.log("Logs:", played, holesPlayed, holesRemaining)
 
         /* 1) Match not started */
         if (holesPlayed === 0) {
