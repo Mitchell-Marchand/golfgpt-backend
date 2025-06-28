@@ -160,7 +160,7 @@ function calculateWinPercents(scorecards) {
         /* ------------------------------------
            Gather basic round information
         ------------------------------------ */
-        const played = sc.holes.filter(h => typeof h.score !== 0);
+        const played = sc.holes.filter(h => h.score !== 0);
         const holesPlayed = played.length;
         const holesRemaining = TOTAL_HOLES - holesPlayed;
         const currentPM = sc.plusMinus ?? 0;       // running total
