@@ -165,25 +165,31 @@ function calculateWinPercents(scorecards) {
 
     // === 3) MATCH IN PROGRESS ===
 
-    // Helper: standard normal CDF approximation
     const normalCDF = (x) => {
-        return 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * x)); // fast approx of norm CDF
+        return 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * x));
     };
 
     return scorecards.map(sc => {
         const playedHoles = sc.holes.filter(h => h.plusMinus !== undefined && h.plusMinus !== null);
         const totalPlusMinus = playedHoles.reduce((sum, h) => sum + (h.plusMinus || 0), 0);
-        const avgPerHole = playedHoles.length > 0 ? totalPlusMinus / playedHoles.length : 0;
-        const projectedRecovery = avgPerHole * holesRemaining;
-        const finalProjection = totalPlusMinus + projectedRecovery;
 
-        let winPercent;
         if (totalPlusMinus >= 0) {
-            winPercent = 1;
-        } else {
-            const z = finalProjection / Math.max(1, Math.abs(totalPlusMinus)); // normalize to current deficit
-            winPercent = parseFloat(normalCDF(z).toFixed(4));
+            return { ...sc, winPercent: 1 };
         }
+
+        // New logic: use absolute swing potential
+        const totalSwing = playedHoles.reduce((sum, h) => sum + Math.abs(h.plusMinus || 0), 0);
+        const avgSwingPerHole = playedHoles.length > 0 ? totalSwing / playedHoles.length : 1;
+
+        const projectedMaxSwing = avgSwingPerHole * holesRemaining;
+        const requiredRecovery = -totalPlusMinus;
+
+        // If projected swing is zero (e.g. no volatility yet), fallback to 0.5
+        const winPercent = projectedMaxSwing <= 0
+            ? 0.5
+            : parseFloat(
+                normalCDF((projectedMaxSwing - requiredRecovery) / projectedMaxSwing).toFixed(4)
+            );
 
         return {
             ...sc,
