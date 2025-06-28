@@ -151,63 +151,63 @@ function blankAnswers(scorecards) {
  *      they can also win X on a hole
  */
 function calculateWinPercents(scorecards) {
-    const totalHoles = scorecards[0]?.holes?.length ?? 18;
+    const TOTAL_HOLES = scorecards[0]?.holes?.length ?? 18;
 
-    // holesPlayed = any hole that already has a numeric plusMinus
-    const holesPlayed = scorecards[0].holes.filter(
-        h => h.score !== 0
-    ).length;
+    /* ----------------------------------------
+       Helper: standard-normal CDF (fast tanh)
+    ---------------------------------------- */
+    const Φ = (z) => 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * z));
 
-    const holesRemaining = totalHoles - holesPlayed;
+    return scorecards.map((sc) => {
+        /* ------------------  holes played / left  ------------------ */
+        const played = sc.holes.filter((h) => typeof h.plusMinus === 'number');
+        const holesPlayed = played.length;
+        const holesRemaining = TOTAL_HOLES - holesPlayed;
 
-    /* ------------------------------------------------------------------ */
-    /* 1) MATCH NOT STARTED                                               */
-    /* ------------------------------------------------------------------ */
-    if (holesPlayed === 0) {
-        return scorecards.map(sc => ({ ...sc, winPercent: 0.5 }));
-    }
+        /* ---------- 1) MATCH NOT STARTED ---------- */
+        if (holesPlayed === 0) {
+            return { ...sc, winPercent: 0.5 };
+        }
 
-    /* ------------------------------------------------------------------ */
-    /* 2) MATCH FINISHED                                                  */
-    /* ------------------------------------------------------------------ */
-    if (holesRemaining === 0) {
-        return scorecards.map(sc => ({
-            ...sc,
-            winPercent: sc.plusMinus >= 0 ? 1 : 0,
-        }));
-    }
+        /* ---------- Total +/- so far (cumulative) ---------- */
+        const currentPM = played[played.length - 1].plusMinus; // last hole’s cumulative value
 
-    /* ------------------------------------------------------------------ */
-    /* 3) MATCH IN PROGRESS                                               */
-    /* ------------------------------------------------------------------ */
+        /* ---------- 2) MATCH FINISHED ---------- */
+        if (holesRemaining === 0) {
+            return { ...sc, winPercent: currentPM >= 0 ? 1 : 0 };
+        }
 
-    // Fast approximation of the standard-normal CDF (±0.2% accuracy)
-    const normCDF = x => 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * x));
+        /* ---------- 3) MATCH IN PROGRESS ---------- */
 
-    return scorecards.map(sc => {
-        const played = sc.holes.filter(h => typeof h.plusMinus === 'number');
+        /*  Extract per-hole *deltas* (swing on that hole only)  */
+        const deltas = played.map((h, idx) =>
+            idx === 0 ? h.plusMinus : h.plusMinus - played[idx - 1].plusMinus
+        );
 
-        const currentPM = played.reduce((s, h) => s + h.plusMinus, 0);   // can be ±
-        const currentDeficit = Math.max(0, -currentPM);                       // money needed to reach 0
-        const absSwingSum = played.reduce((s, h) => s + Math.abs(h.plusMinus), 0);
-        const avgAbsPerHole = played.length ? absSwingSum / played.length : 0;
+        /*  Average absolute swing per hole  */
+        const avgAbsSwing =
+            deltas.reduce((s, d) => s + Math.abs(d), 0) / deltas.length;
 
-        // Symmetric volatility per remaining hole.  Variance of sum = n * σ² (σ ≈ avgAbs/√3)
-        const sigmaPerHole = avgAbsPerHole / Math.sqrt(3);                  // uniform→normal equiv.
-        const sigmaTotal = sigmaPerHole * Math.sqrt(holesRemaining);      // std-dev of future sum
+        /*  If no volatility yet (all zeros), fall back to 50 %  */
+        if (avgAbsSwing === 0) {
+            return { ...sc, winPercent: 0.5 };
+        }
 
+        /*  Normal approximation:
+            Each future hole ~ Uniform[-avgAbs, +avgAbs]
+            σ(hole) = avgAbs / √3 ;  σ(sum) = σ(hole) * √(holesRemaining)
+         */
+        const sigmaHole = avgAbsSwing / Math.sqrt(3);
+        const sigmaTotal = sigmaHole * Math.sqrt(holesRemaining);
+
+        /*  If already ahead, certainty; otherwise probability to erase deficit */
         let winPercent;
-
         if (currentPM >= 0) {
-            // Already at break-even or better → certainty
             winPercent = 1;
-        } else if (sigmaTotal === 0) {
-            // No volatility observed yet → 50/50 fallback
-            winPercent = 0.5;
         } else {
-            // Probability that a normal(0, sigmaTotal²) random variable ≥ deficit
-            const z = currentDeficit / sigmaTotal;
-            winPercent = 1 - normCDF(z);
+            const deficit = -currentPM;            // $ needed to break even
+            const z = deficit / sigmaTotal;        // how many σ’s deficit is
+            winPercent = 1 - Φ(z);                 // P(sum ≥ deficit)
         }
 
         return { ...sc, winPercent: +winPercent.toFixed(4) };
