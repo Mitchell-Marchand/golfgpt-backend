@@ -147,45 +147,49 @@ function calculateWinPercents(scorecards) {
 
     const holesRemaining = totalHoles - holesPlayed;
 
-    const allHolesPlayed = holesRemaining === 0;
-
-    if (allHolesPlayed) {
-        // Match is over: assign 1 to those who made money, 0 to others
+    // === 1) MATCH NOT STARTED ===
+    if (holesPlayed === 0) {
         return scorecards.map(sc => ({
             ...sc,
-            winPercent: sc.plusMinus > 0 ? 1 : 0,
+            winPercent: 0.5,
         }));
     }
 
-    // Probabilistic mode: match still in progress
-
-    let totalMoneySwung = 0;
-
-    for (let i = 0; i < scorecards.length; i++) {
-        const golfer = scorecards[i];
-        golfer.holes.forEach((h, index) => {
-            if (index < holesPlayed) {
-                totalMoneySwung += Math.abs(h.plusMinus || 0);
-            }
-        });
+    // === 2) MATCH COMPLETED ===
+    if (holesPlayed === totalHoles) {
+        return scorecards.map(sc => ({
+            ...sc,
+            winPercent: sc.plusMinus >= 0 ? 1 : 0,
+        }));
     }
 
-    const totalSwings = scorecards.length * holesPlayed;
-    const avgMoneyPerHole = totalSwings > 0 ? totalMoneySwung / totalSwings : 1;
-    const maxRemainingSwing = avgMoneyPerHole * holesRemaining;
+    // === 3) MATCH IN PROGRESS ===
 
-    const confidenceFactor = Math.max(maxRemainingSwing, 1);
+    // Helper: standard normal CDF approximation
+    const normalCDF = (x) => {
+        return 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * x)); // fast approx of norm CDF
+    };
 
-    const rawScores = scorecards.map(sc => sc.plusMinus || 0);
-    const expScores = rawScores.map(pm => Math.exp(pm / confidenceFactor));
-    const sumExp = expScores.reduce((sum, val) => sum + val, 0);
+    return scorecards.map(sc => {
+        const playedHoles = sc.holes.filter(h => h.plusMinus !== undefined && h.plusMinus !== null);
+        const totalPlusMinus = playedHoles.reduce((sum, h) => sum + (h.plusMinus || 0), 0);
+        const avgPerHole = playedHoles.length > 0 ? totalPlusMinus / playedHoles.length : 0;
+        const projectedRecovery = avgPerHole * holesRemaining;
+        const finalProjection = totalPlusMinus + projectedRecovery;
 
-    return scorecards.map((sc, i) => ({
-        ...sc,
-        winPercent: sumExp === 0
-            ? 1 / scorecards.length
-            : parseFloat((expScores[i] / sumExp).toFixed(4)),
-    }));
+        let winPercent;
+        if (totalPlusMinus >= 0) {
+            winPercent = 1;
+        } else {
+            const z = finalProjection / Math.max(1, Math.abs(totalPlusMinus)); // normalize to current deficit
+            winPercent = parseFloat(normalCDF(z).toFixed(4));
+        }
+
+        return {
+            ...sc,
+            winPercent,
+        };
+    });
 }
 
 module.exports = {
