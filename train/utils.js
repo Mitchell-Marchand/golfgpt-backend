@@ -164,8 +164,6 @@ function calculateWinPercents(scorecards) {
         const holesPlayed = played.length;
         const holesRemaining = TOTAL_HOLES - holesPlayed;
         const currentPM = sc.plusMinus ?? 0;       // running total
-        
-        console.log("Logs:", played, holesPlayed, holesRemaining)
 
         /* 1) Match not started */
         if (holesPlayed === 0) {
@@ -195,8 +193,6 @@ function calculateWinPercents(scorecards) {
         /* probability final plusMinus ≥ 0 */
         const z = currentPM / sigmaTotal;   // can be ±
         const winPct = Φ(z);
-
-        console.log(`Win % for ${sc.name}:`, winPct);
 
         return { ...sc, winPercent: +winPct.toFixed(4) };
     });
