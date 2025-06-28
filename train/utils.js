@@ -155,7 +155,7 @@ function calculateWinPercents(scorecards) {
 
     // holesPlayed = any hole that already has a numeric plusMinus
     const holesPlayed = scorecards[0].holes.filter(
-        h => typeof h.plusMinus === 'number'
+        h => h.score !== 0
     ).length;
 
     const holesRemaining = totalHoles - holesPlayed;
