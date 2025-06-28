@@ -192,7 +192,11 @@ function calculateWinPercents(scorecards) {
 
         /* probability final plusMinus ≥ 0 */
         const z = currentPM / sigmaTotal;   // can be ±
-        const winPct = Φ(z);
+        let winPct = Φ(z);
+
+        if (winPct > 0.5) {
+            winPct -= ((winPct - 0.6) * ((holesRemaining / TOTAL_HOLES)));
+        }
 
         return { ...sc, winPercent: +winPct.toFixed(4) };
     });
