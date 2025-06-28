@@ -1065,7 +1065,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
     }
 });
 
-router.get('/results/summary', requireAuth, async (req, res) => {
+router.get('/results/summary', authenticateUser, async (req, res) => {
     const after = req.query.after;
 
     if (!after || isNaN(new Date(after).getTime())) {
