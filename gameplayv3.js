@@ -1065,4 +1065,40 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
     }
 });
 
+router.get('/results/summary', requireAuth, async (req, res) => {
+    const after = req.query.after;
+
+    if (!after || isNaN(new Date(after).getTime())) {
+        return res.status(400).json({ error: 'Invalid or missing "after" date (YYYY-MM-DD).' });
+    }
+
+    try {
+        const sql = `
+        SELECT
+            COUNT(*)                     AS totalGames,
+            SUM(won)                     AS totalWins,
+            SUM(lost)                    AS totalLosses,
+            SUM(tied)                    AS totalTies,
+            COALESCE(SUM(plusMinus), 0)  AS totalPlusMinus
+            FROM Results
+            WHERE userId = ?
+            AND createdAt >= ?
+        `;
+
+        const [rows] = await mariadbPool.query(sql, [req.user.id, after]);
+        const summary = rows[0] || {
+            totalGames: 0,
+            totalWins: 0,
+            totalLosses: 0,
+            totalTies: 0,
+            totalPlusMinus: 0,
+        };
+
+        res.json(summary);
+    } catch (err) {
+        console.error('Results summary error:', err);
+        res.status(500).json({ error: 'Server error fetching results summary.' });
+    }
+});
+
 module.exports = router;
