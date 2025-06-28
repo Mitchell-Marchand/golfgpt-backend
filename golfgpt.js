@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
 const axios = require('axios');
+const authenticateUser = require('./authMiddleware');
 require('dotenv').config();
 
 const router = express.Router();
@@ -232,5 +233,26 @@ router.get("/ghin/course-details", async (req, res) => {
   }
 });
 
+router.put('/user/update', authenticateUser, async (req, res) => {
+  const { firstName, lastName, homeClub } = req.body;
+  const userId = req.user?.id;
+
+  if (!firstName || !lastName) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  try {
+    await mariadbPool.query(
+      'UPDATE Users SET firstName = ?, lastName = ?, homeClub = ? WHERE id = ?',
+      [firstName, lastName, homeClub || '', userId]
+    );
+
+    const [updatedUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [userId]);
+    res.status(200).json({ success: true, user: updatedUser[0] });
+  } catch (err) {
+    console.error("User update error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 module.exports = router;
