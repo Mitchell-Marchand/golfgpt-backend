@@ -153,54 +153,46 @@ function blankAnswers(scorecards) {
 function calculateWinPercents(scorecards) {
     const TOTAL_HOLES = scorecards[0]?.holes?.length ?? 18;
 
-    /* fast standard-normal CDF (≤0.2 % error) */
+    /* fast Φ(z): ≤0.2 % error */
     const Φ = z => 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * z));
 
-    /* ---------- map over golfers ---------- */
     return scorecards.map(sc => {
-        /* played holes = those whose per-hole swing is a number */
-        const playedHoles = sc.holes.filter(h => typeof h.plusMinus === 'number');
-        const holesPlayed = playedHoles.length;
+        /* ------------------------------------
+           Gather basic round information
+        ------------------------------------ */
+        const played = sc.holes.filter(h => typeof h.plusMinus === 'number');
+        const holesPlayed = played.length;
         const holesRemaining = TOTAL_HOLES - holesPlayed;
+        const currentPM = sc.plusMinus ?? 0;       // running total
 
-        /* 1) match not started */
+        /* 1) Match not started */
         if (holesPlayed === 0) {
             return { ...sc, winPercent: 0.5 };
         }
 
-        /* cumulative money so far is on the card header */
-        const currentPM = sc.plusMinus ?? 0;
-
-        /* 2) match finished */
+        /* 2) Match finished */
         if (holesRemaining === 0) {
             return { ...sc, winPercent: currentPM >= 0 ? 1 : 0 };
         }
 
-        /* 3) match in progress */
+        /* 3) Match in progress */
 
-        /* per-hole swings already observed (deltas) */
-        const deltas = playedHoles.map(h => h.plusMinus);
+        /* average absolute swing S observed so far for *this* golfer   */
         const avgAbsSwing =
-            deltas.reduce((s, d) => s + Math.abs(d), 0) / deltas.length;
+            played.reduce((sum, h) => sum + Math.abs(h.plusMinus), 0) / holesPlayed;
 
-        /* no volatility seen yet → 0.5 fallback */
+        /* if no volatility yet (all swings zero) → 0.5 fallback */
         if (avgAbsSwing === 0) {
             return { ...sc, winPercent: 0.5 };
         }
 
-        /* volatility of the *sum* of remaining holes */
-        const sigmaHole = avgAbsSwing / Math.sqrt(3);           // std-dev of one hole
-        const sigmaTotal = sigmaHole * Math.sqrt(holesRemaining); // std-dev of remaining sum
+        /* σ (std-dev) of the total of remaining holes */
+        const sigmaHole = avgAbsSwing / Math.sqrt(3);          // Uniform[-S, +S]
+        const sigmaTotal = sigmaHole * Math.sqrt(holesRemaining);
 
-        /* already ahead ⇒ certainty */
-        if (currentPM >= 0) {
-            return { ...sc, winPercent: 1 };
-        }
-
-        /* probability the remaining swings erase the deficit */
-        const deficit = -currentPM;           // positive $
-        const z = deficit / sigmaTotal; // how many σ
-        const winPct = 1 - Φ(z);             // P(sum ≥ deficit)
+        /* probability final plusMinus ≥ 0 */
+        const z = currentPM / sigmaTotal;   // can be ±
+        const winPct = Φ(z);
 
         return { ...sc, winPercent: +winPct.toFixed(4) };
     });
