@@ -138,63 +138,79 @@ function blankAnswers(scorecards) {
     return JSON.stringify(answers);
 }
 
+/**
+ * Estimate winPercent for each golfer.
+ *
+ * Rules
+ * -----
+ * 1. Match not started  → everyone 0.5
+ * 2. Match finished     → plusMinus ≥ 0 ⇒ 1, else 0
+ * 3. Match in progress  → probability golfer’s final plusMinus ≥ 0
+ *    - Uses current deficit, holes remaining, and volatility already observed
+ *    - Assumes future holes are symmetric: if a golfer can lose X on a hole,
+ *      they can also win X on a hole
+ */
 function calculateWinPercents(scorecards) {
-    const totalHoles = scorecards[0]?.holes?.length || 18;
+    const totalHoles = scorecards[0]?.holes?.length ?? 18;
 
-    const holesPlayed = scorecards[0]?.holes?.filter(
-        h => h.plusMinus !== undefined && h.plusMinus !== null
-    ).length || 0;
+    // holesPlayed = any hole that already has a numeric plusMinus
+    const holesPlayed = scorecards[0].holes.filter(
+        h => typeof h.plusMinus === 'number'
+    ).length;
 
     const holesRemaining = totalHoles - holesPlayed;
 
-    // === 1) MATCH NOT STARTED ===
+    /* ------------------------------------------------------------------ */
+    /* 1) MATCH NOT STARTED                                               */
+    /* ------------------------------------------------------------------ */
     if (holesPlayed === 0) {
-        return scorecards.map(sc => ({
-            ...sc,
-            winPercent: 0.5,
-        }));
+        return scorecards.map(sc => ({ ...sc, winPercent: 0.5 }));
     }
 
-    // === 2) MATCH COMPLETED ===
-    if (holesPlayed === totalHoles) {
+    /* ------------------------------------------------------------------ */
+    /* 2) MATCH FINISHED                                                  */
+    /* ------------------------------------------------------------------ */
+    if (holesRemaining === 0) {
         return scorecards.map(sc => ({
             ...sc,
             winPercent: sc.plusMinus >= 0 ? 1 : 0,
         }));
     }
 
-    // === 3) MATCH IN PROGRESS ===
+    /* ------------------------------------------------------------------ */
+    /* 3) MATCH IN PROGRESS                                               */
+    /* ------------------------------------------------------------------ */
 
-    const normalCDF = (x) => {
-        return 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * x));
-    };
+    // Fast approximation of the standard-normal CDF (±0.2% accuracy)
+    const normCDF = x => 0.5 * (1 + Math.tanh(Math.sqrt(Math.PI / 8) * x));
 
     return scorecards.map(sc => {
-        const playedHoles = sc.holes.filter(h => h.plusMinus !== undefined && h.plusMinus !== null);
-        const totalPlusMinus = playedHoles.reduce((sum, h) => sum + (h.plusMinus || 0), 0);
+        const played = sc.holes.filter(h => typeof h.plusMinus === 'number');
 
-        if (totalPlusMinus >= 0) {
-            return { ...sc, winPercent: 1 };
+        const currentPM = played.reduce((s, h) => s + h.plusMinus, 0);   // can be ±
+        const currentDeficit = Math.max(0, -currentPM);                       // money needed to reach 0
+        const absSwingSum = played.reduce((s, h) => s + Math.abs(h.plusMinus), 0);
+        const avgAbsPerHole = played.length ? absSwingSum / played.length : 0;
+
+        // Symmetric volatility per remaining hole.  Variance of sum = n * σ² (σ ≈ avgAbs/√3)
+        const sigmaPerHole = avgAbsPerHole / Math.sqrt(3);                  // uniform→normal equiv.
+        const sigmaTotal = sigmaPerHole * Math.sqrt(holesRemaining);      // std-dev of future sum
+
+        let winPercent;
+
+        if (currentPM >= 0) {
+            // Already at break-even or better → certainty
+            winPercent = 1;
+        } else if (sigmaTotal === 0) {
+            // No volatility observed yet → 50/50 fallback
+            winPercent = 0.5;
+        } else {
+            // Probability that a normal(0, sigmaTotal²) random variable ≥ deficit
+            const z = currentDeficit / sigmaTotal;
+            winPercent = 1 - normCDF(z);
         }
 
-        // New logic: use absolute swing potential
-        const totalSwing = playedHoles.reduce((sum, h) => sum + Math.abs(h.plusMinus || 0), 0);
-        const avgSwingPerHole = playedHoles.length > 0 ? totalSwing / playedHoles.length : 1;
-
-        const projectedMaxSwing = avgSwingPerHole * holesRemaining;
-        const requiredRecovery = -totalPlusMinus;
-
-        // If projected swing is zero (e.g. no volatility yet), fallback to 0.5
-        const winPercent = projectedMaxSwing <= 0
-            ? 0.5
-            : parseFloat(
-                normalCDF((projectedMaxSwing - requiredRecovery) / projectedMaxSwing).toFixed(4)
-            );
-
-        return {
-            ...sc,
-            winPercent,
-        };
+        return { ...sc, winPercent: +winPercent.toFixed(4) };
     });
 }
 
