@@ -182,6 +182,18 @@ router.post("/begin", authenticateUser, async (req, res) => {
             [matchId, userId, JSON.stringify(golfers), JSON.stringify(golferIds), course.CourseID, "COURSE_PROVIDED"]
         );
 
+        for (const golferId of golferIds) {
+            await mariadbPool.query(
+                'INSERT INTO MatchPlayers (matchId, userId) VALUES (?, ?)',
+                [matchId, golferId]
+            );
+        }
+
+        await mariadbPool.query(
+            'INSERT INTO MatchPlayers (matchId, userId) VALUES (?, ?)',
+            [matchId, userId]
+        );
+
         const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
@@ -878,6 +890,17 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
             "UPDATE Matches SET golferIds = ? WHERE id = ?",
             [JSON.stringify(golferIds), matchId]
         );
+
+        // Clear existing MatchPlayers for this match
+        await mariadbPool.query("DELETE FROM MatchPlayers WHERE matchId = ?", [matchId]);
+
+        // Insert updated golferIds
+        for (const golferId of golferIds) {
+            await mariadbPool.query(
+                'INSERT INTO MatchPlayers (matchId, userId) VALUES (?, ?)',
+                [matchId, golferId]
+            );
+        }
 
         res.json({ success: true, golferIds });
     } catch (err) {

@@ -10,6 +10,7 @@ const golfgptRoutes = require('./golfgpt');
 //const gamePlayRoutes = require('./gameplay');
 //const gamePlayRoutes = require('./gameplayv2');
 const gamePlayRoutes = require('./gameplayv3');
+const socialRoutes = requires('./social')
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(bodyParser.json());
 app.use('/', agenticRoutes);
 app.use('/gpt', golfgptRoutes);
 app.use('/game', gamePlayRoutes);
+app.use('/social', socialRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
