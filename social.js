@@ -161,6 +161,32 @@ router.post('/follow/unfollow', authenticateUser, async (req, res) => {
     }
 });
 
+router.post('/follow/unblock', authenticateUser, async (req, res) => {
+    const followedId = req.user.id;
+    const { userId: followerId } = req.body;
+
+    if (!followerId) {
+        return res.status(400).json({ error: 'Missing follower user ID.' });
+    }
+
+    try {
+        const [result] = await mariadbPool.query(
+            `DELETE FROM Follows
+         WHERE followerId = ? AND followedId = ? AND status = 'rejected'`,
+            [followerId, followedId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'No blocked relationship found.' });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error unblocking user:', err);
+        res.status(500).json({ error: 'Failed to unblock user.' });
+    }
+});
+
 router.post('/follow/block', authenticateUser, async (req, res) => {
     const followedId = req.user.id;
     const { userId: followerId } = req.body;
