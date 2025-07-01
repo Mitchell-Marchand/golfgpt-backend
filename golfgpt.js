@@ -234,7 +234,7 @@ router.get("/ghin/course-details", async (req, res) => {
 });
 
 router.put('/user/update', authenticateUser, async (req, res) => {
-  const { firstName, lastName, homeClub, expoPushToken } = req.body;
+  const { firstName, lastName, homeClub } = req.body;
   const userId = req.user?.id;
 
   if (!firstName || !lastName) {
@@ -247,6 +247,19 @@ router.put('/user/update', authenticateUser, async (req, res) => {
       [firstName, lastName, homeClub || '', userId]
     );
 
+    const [updatedUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [userId]);
+    res.status(200).json({ success: true, user: updatedUser[0] });
+  } catch (err) {
+    console.error("User update error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+router.put('/user/update', authenticateUser, async (req, res) => {
+  const { expoPushToken } = req.body;
+  const userId = req.user?.id;
+
+  try {
     if (expoPushToken) {
       await mariadbPool.query(
         'UPDATE Users SET expoPushToken = ? WHERE id = ?',
