@@ -54,30 +54,202 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
             [...followedIds, ...followedIds, pageSize, offset]
         );
 
-        // Step 3: Get total count for pagination
-        const [countRows] = await mariadbPool.query(
-            `
-        SELECT COUNT(DISTINCT m.id) AS total
-        FROM Matches m
-        LEFT JOIN MatchPlayers mp ON mp.matchId = m.id
-        WHERE m.createdBy IN (${placeholders})
-           OR mp.userId IN (${placeholders})
-        `,
-            [...followedIds, ...followedIds]
-        );
-
-        const total = countRows[0].total || 0;
-
         res.json({
             page,
             pageSize,
-            total,
-            totalPages: Math.ceil(total / pageSize),
             matches,
         });
     } catch (err) {
         console.error('Error fetching matches feed:', err);
         res.status(500).json({ error: 'Failed to fetch matches' });
+    }
+});
+
+router.post('/follow/request', authenticateUser, async (req, res) => {
+    const followerId = req.user.id;
+    const { userId: followedId } = req.body;
+
+    if (!followedId || followedId === followerId) {
+        return res.status(400).json({ error: 'Invalid target user ID.' });
+    }
+
+    try {
+        const [rows] = await mariadbPool.query('SELECT isPublic FROM Users WHERE id = ?', [followedId]);
+        if (rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+
+        const isPublic = rows[0].isPublic;
+
+        const status = isPublic ? 'accepted' : 'pending';
+
+        await mariadbPool.query(
+            `INSERT INTO Follows (followerId, followedId, status)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE status = VALUES(status)`,
+            [followerId, followedId, status]
+        );
+
+        res.json({ success: true, status });
+    } catch (err) {
+        console.error('Error submitting follow request:', err);
+        res.status(500).json({ error: 'Failed to submit follow request.' });
+    }
+});
+
+router.post('/follow/accept', authenticateUser, async (req, res) => {
+    const followedId = req.user.id;
+    const { userId: followerId } = req.body;
+
+    if (!followerId) {
+        return res.status(400).json({ error: 'Missing follower user ID.' });
+    }
+
+    try {
+        const [result] = await mariadbPool.query(
+            `UPDATE Follows SET status = 'accepted'
+         WHERE followerId = ? AND followedId = ? AND status = 'pending'`,
+            [followerId, followedId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'No pending follow request found.' });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error accepting follow request:', err);
+        res.status(500).json({ error: 'Failed to accept follow request.' });
+    }
+});
+
+router.post('/follow/unfollow', authenticateUser, async (req, res) => {
+    const followerId = req.user.id;
+    const { userId: followedId } = req.body;
+
+    if (!followedId) {
+        return res.status(400).json({ error: 'Missing followed user ID.' });
+    }
+
+    try {
+        await mariadbPool.query(
+            `DELETE FROM Follows WHERE followerId = ? AND followedId = ?`,
+            [followerId, followedId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error unfollowing user:', err);
+        res.status(500).json({ error: 'Failed to unfollow user.' });
+    }
+});
+
+router.post('/follow/block', authenticateUser, async (req, res) => {
+    const followedId = req.user.id;
+    const { userId: followerId } = req.body;
+
+    if (!followerId) {
+        return res.status(400).json({ error: 'Missing follower user ID.' });
+    }
+
+    try {
+        await mariadbPool.query(
+            `INSERT INTO Follows (followerId, followedId, status)
+         VALUES (?, ?, 'rejected')
+         ON DUPLICATE KEY UPDATE status = 'rejected'`,
+            [followerId, followedId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error blocking user:', err);
+        res.status(500).json({ error: 'Failed to block user.' });
+    }
+});
+
+router.get('/follow/counts/:userId', authenticateUser, async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const [[{ followers }]] = await mariadbPool.query(
+            `SELECT COUNT(*) AS followers
+         FROM Follows
+         WHERE followedId = ? AND status = 'accepted'`,
+            [userId]
+        );
+
+        const [[{ requests }]] = await mariadbPool.query(
+            `SELECT COUNT(*) AS followers
+         FROM Follows
+         WHERE followedId = ? AND status = 'pending'`,
+            [userId]
+        );
+
+        const [[{ following }]] = await mariadbPool.query(
+            `SELECT COUNT(*) AS following
+         FROM Follows
+         WHERE followerId = ? AND status = 'accepted'`,
+            [userId]
+        );
+
+        const [[{ matches }]] = await mariadbPool.query(
+            `SELECT COUNT(*) AS matches
+         FROM Matches
+         WHERE (
+                createdBy = ?
+                OR JSON_CONTAINS(golferIds, JSON_QUOTE(?))
+            )`,
+            [userId]
+        );
+
+        res.json({ followers, following, matches, requests });
+    } catch (err) {
+        console.error('Error fetching follow counts:', err);
+        res.status(500).json({ error: 'Failed to fetch follow counts.' });
+    }
+});
+
+router.get('/follow/followers/:userId', authenticateUser, async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
+         FROM Follows f
+         JOIN Users u ON u.id = f.followerId
+         WHERE f.followedId = ? AND f.status = 'accepted'`,
+            [userId]
+        );
+
+        const [requests] = await mariadbPool.query(
+            `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
+         FROM Follows f
+         JOIN Users u ON u.id = f.followerId
+         WHERE f.followedId = ? AND f.status = 'pending'`,
+            [userId]
+        );
+
+        res.json({ success: true, users: rows, requests });
+    } catch (err) {
+        console.error('Error fetching followers:', err);
+        res.status(500).json({ error: 'Failed to fetch followers.' });
+    }
+});
+
+router.get('/follow/following/:userId', authenticateUser, async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
+         FROM Follows f
+         JOIN Users u ON u.id = f.followedId
+         WHERE f.followerId = ? AND f.status = 'accepted'`,
+            [userId]
+        );
+
+        res.json({ success: true, users: rows });
+    } catch (err) {
+        console.error('Error fetching following:', err);
+        res.status(500).json({ error: 'Failed to fetch following.' });
     }
 });
 

@@ -10,7 +10,7 @@ const golfgptRoutes = require('./golfgpt');
 //const gamePlayRoutes = require('./gameplay');
 //const gamePlayRoutes = require('./gameplayv2');
 const gamePlayRoutes = require('./gameplayv3');
-const socialRoutes = requires('./social')
+const socialRoutes = require('./social')
 
 const app = express();
 
