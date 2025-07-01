@@ -234,7 +234,7 @@ router.get('/follow/followers/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followerId
-         WHERE f.followedId = ? AND f.status != 'rejected'`,
+         WHERE f.followedId = ? AND f.status = 'accepted'`,
             [userId]
         );
 
