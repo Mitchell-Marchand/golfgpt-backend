@@ -280,7 +280,7 @@ router.get('/follow/requests/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followedId
-         WHERE f.followerId = ? AND f.status = 'requested'`,
+         WHERE f.followerId = ? AND f.status = 'pending'`,
             [userId]
         );
 
