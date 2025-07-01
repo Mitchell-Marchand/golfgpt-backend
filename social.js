@@ -77,7 +77,7 @@ router.post('/follow/request', authenticateUser, async (req, res) => {
         const [rows] = await mariadbPool.query('SELECT isPublic FROM Users WHERE id = ?', [followedId]);
         if (rows.length === 0) return res.status(404).json({ error: 'User not found.' });
 
-        const { isPublic, expoPushToken } = userRows[0];
+        const { isPublic, expoPushToken } = rows[0];
         const status = isPublic ? 'accepted' : 'pending';
 
         await mariadbPool.query(
