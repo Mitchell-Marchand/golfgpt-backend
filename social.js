@@ -197,7 +197,7 @@ router.get('/follow/counts/:userId', authenticateUser, async (req, res) => {
                 createdBy = ?
                 OR JSON_CONTAINS(golferIds, JSON_QUOTE(?))
             )`,
-            [userId]
+            [userId, userId]
         );
 
         res.json({ followers, following, matches, requests });
