@@ -234,7 +234,7 @@ router.get("/ghin/course-details", async (req, res) => {
 });
 
 router.put('/user/update', authenticateUser, async (req, res) => {
-  const { firstName, lastName, homeClub } = req.body;
+  const { firstName, lastName, homeClub, expoPushToken } = req.body;
   const userId = req.user?.id;
 
   if (!firstName || !lastName) {
@@ -246,6 +246,13 @@ router.put('/user/update', authenticateUser, async (req, res) => {
       'UPDATE Users SET firstName = ?, lastName = ?, homeClub = ? WHERE id = ?',
       [firstName, lastName, homeClub || '', userId]
     );
+
+    if (expoPushToken) {
+      await mariadbPool.query(
+        'UPDATE Users SET expoPushToken = ? WHERE id = ?',
+        [expoPushToken, userId]
+      );
+    }
 
     const [updatedUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [userId]);
     res.status(200).json({ success: true, user: updatedUser[0] });
