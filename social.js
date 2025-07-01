@@ -77,8 +77,7 @@ router.post('/follow/request', authenticateUser, async (req, res) => {
         const [rows] = await mariadbPool.query('SELECT isPublic FROM Users WHERE id = ?', [followedId]);
         if (rows.length === 0) return res.status(404).json({ error: 'User not found.' });
 
-        const isPublic = rows[0].isPublic;
-
+        const { isPublic, expoPushToken } = userRows[0];
         const status = isPublic ? 'accepted' : 'pending';
 
         await mariadbPool.query(
@@ -87,6 +86,26 @@ router.post('/follow/request', authenticateUser, async (req, res) => {
          ON DUPLICATE KEY UPDATE status = VALUES(status)`,
             [followerId, followedId, status]
         );
+
+        if (expoPushToken) {
+            const [[follower]] = await mariadbPool.query(
+                `SELECT firstName, lastName FROM Users WHERE id = ?`,
+                [followerId]
+            );
+
+            const body = {
+                to: expoPushToken,
+                sound: 'default',
+                title: 'New Follow Request',
+                body: `${follower.firstName} ${follower.lastName} ${status === 'pending' ? "wants to follow you." : "started following you."}`,
+            };
+
+            await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+        }
 
         res.json({ success: true, status });
     } catch (err) {

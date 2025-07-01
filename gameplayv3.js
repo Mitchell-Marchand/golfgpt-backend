@@ -964,7 +964,8 @@ router.get("/members", authenticateUser, async (req, res) => {
 
         const users = rows.map(u => ({
             id: u.id,
-            name: `${u.firstName} ${u.lastName}`,
+            firstName: u.firstName,
+            lastName: u.lastName,
             homeClub: u.homeClub || ""
         }));
 
