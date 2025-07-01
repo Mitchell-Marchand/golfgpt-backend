@@ -261,7 +261,26 @@ router.get('/follow/following/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followedId
-         WHERE f.followerId = ? AND f.status != 'rejected'`,
+         WHERE f.followerId = ? AND f.status = 'accepted'`,
+            [userId]
+        );
+
+        res.json({ success: true, users: rows });
+    } catch (err) {
+        console.error('Error fetching following:', err);
+        res.status(500).json({ error: 'Failed to fetch following.' });
+    }
+});
+
+router.get('/follow/requests/:userId', authenticateUser, async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
+         FROM Follows f
+         JOIN Users u ON u.id = f.followedId
+         WHERE f.followerId = ? AND f.status = 'requested'`,
             [userId]
         );
 
