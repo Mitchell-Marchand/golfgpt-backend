@@ -940,16 +940,27 @@ router.get("/courses", authenticateUser, async (req, res) => {
 
 router.get("/members", authenticateUser, async (req, res) => {
     const query = (req.query.q || "").trim();
-    if (!query || query.length < 2) return res.status(400).json({ error: "Missing or too short query." });
+    const userId = req.user.id;
+
+    if (!query || query.length < 2) {
+        return res.status(400).json({ error: "Missing or too short query." });
+    }
 
     try {
-        const [rows] = await mariadbPool.query(`
-        SELECT id, firstName, lastName, homeClub
-        FROM Users
-        WHERE CONCAT(firstName, ' ', lastName) LIKE ?
-        ORDER BY lastName ASC
+        const [rows] = await mariadbPool.query(
+            `
+        SELECT u.id, u.firstName, u.lastName, u.homeClub
+        FROM Users u
+        LEFT JOIN Follows f
+          ON f.followerId = ? AND f.followedId = u.id AND f.status = 'rejected'
+        WHERE f.followedId IS NULL
+          AND CONCAT(u.firstName, ' ', u.lastName) LIKE ?
+          AND u.id != ? -- exclude self
+        ORDER BY u.lastName ASC
         LIMIT 10
-      `, [`%${query}%`]);
+        `,
+            [userId, `%${query}%`, userId]
+        );
 
         const users = rows.map(u => ({
             id: u.id,
