@@ -255,7 +255,7 @@ router.put('/user/update', authenticateUser, async (req, res) => {
   }
 });
 
-router.put('/user/update', authenticateUser, async (req, res) => {
+router.put('/user/epn', authenticateUser, async (req, res) => {
   const { expoPushToken } = req.body;
   const userId = req.user?.id;
 
