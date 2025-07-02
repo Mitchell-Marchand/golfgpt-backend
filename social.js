@@ -42,7 +42,7 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
         const statusPlaceholders = `'READY_TO_START','IN_PROGRESS','COMPLETED'`;
 
         // Step 2: Get paginated matches with filtered fields and status
-        const [matches] = await mariadbPool.query(
+        const [rows] = await mariadbPool.query(
             `
             SELECT DISTINCT
                 m.id,
@@ -65,6 +65,22 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
             `,
             [...followedIds, ...followedIds, pageSize, offset]
         );
+
+        const matches = rows.map(row => {
+            const {
+                courseId,
+                courseName,
+                ...match
+            } = row;
+
+            return {
+                ...match,
+                course: {
+                    courseId,
+                    courseName,
+                },
+            };
+        });
 
         res.json({
             success: true,
