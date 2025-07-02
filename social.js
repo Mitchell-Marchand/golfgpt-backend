@@ -39,18 +39,30 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
         }
 
         const placeholders = followedIds.map(() => '?').join(',');
+        const statusPlaceholders = `'READY_TO_START','IN_PROGRESS','COMPLETED'`;
 
-        // Step 2: Get paginated matches
+        // Step 2: Get paginated matches with filtered fields and status
         const [matches] = await mariadbPool.query(
             `
-        SELECT DISTINCT m.*
-        FROM Matches m
-        LEFT JOIN MatchPlayers mp ON mp.matchId = m.id
-        WHERE m.createdBy IN (${placeholders})
-           OR mp.userId IN (${placeholders})
-        ORDER BY m.updatedAt DESC
-        LIMIT ? OFFSET ?
-        `,
+            SELECT DISTINCT
+                m.id,
+                m.displayName,
+                m.status,
+                m.summary,
+                m.updatedAt,
+                m.createdAt,
+                m.scorecards,
+                m.teeTime,
+                c.courseId,
+                c.courseName
+            FROM Matches m
+            LEFT JOIN MatchPlayers mp ON mp.matchId = m.id
+            LEFT JOIN Courses c ON m.courseId = c.courseId
+            WHERE (m.createdBy IN (${placeholders}) OR mp.userId IN (${placeholders}))
+              AND m.status IN (${statusPlaceholders})
+            ORDER BY m.updatedAt DESC
+            LIMIT ? OFFSET ?
+            `,
             [...followedIds, ...followedIds, pageSize, offset]
         );
 
