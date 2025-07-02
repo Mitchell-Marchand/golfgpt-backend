@@ -163,7 +163,7 @@ router.post('/follow/unfollow', authenticateUser, async (req, res) => {
 
 router.post('/follow/unblock', authenticateUser, async (req, res) => {
     const followedId = req.user.id;
-    const { userId: followerId } = req.body.id;
+    const { userId: followerId } = req.body;
 
     console.log("Follower, Followed", followerId, followedId)
 
