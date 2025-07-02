@@ -358,14 +358,17 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
                 m.createdAt,
                 m.handshakes,
                 m.replyToId,
+                sender.firstName AS senderFirstName,
+                sender.lastName AS senderLastName,
                 r.id AS replyId,
                 r.message AS replyMessage,
                 r.userId AS replyUserId,
-                u.firstName AS replyUserFirstName,
-                u.lastName AS replyUserLastName
+                replyUser.firstName AS replyUserFirstName,
+                replyUser.lastName AS replyUserLastName
             FROM MatchMessages m
+            LEFT JOIN Users sender ON m.userId = sender.id
             LEFT JOIN MatchMessages r ON m.replyToId = r.id
-            LEFT JOIN Users u ON r.userId = u.id
+            LEFT JOIN Users replyUser ON r.userId = replyUser.id
             WHERE m.matchId = ?
             ORDER BY m.createdAt DESC
             LIMIT ? OFFSET ?
@@ -380,6 +383,8 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
             isCurrentUser: row.userId === userId,
             handshakes: JSON.parse(row.handshakes || '[]'),
             createdAt: row.createdAt,
+            firstName: row.senderFirstName,
+            lastName: row.senderLastName,
             replyTo: row.replyId
                 ? {
                     id: row.replyId,
