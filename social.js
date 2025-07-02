@@ -111,7 +111,7 @@ router.post('/follow/request', authenticateUser, async (req, res) => {
     }
 
     try {
-        const [rows] = await mariadbPool.query('SELECT isPublic FROM Users WHERE id = ?', [followedId]);
+        const [rows] = await mariadbPool.query('SELECT isPublic, expoPushToken FROM Users WHERE id = ?', [followedId]);
         if (rows.length === 0) return res.status(404).json({ error: 'User not found.' });
 
         const { isPublic, expoPushToken } = rows[0];
@@ -137,11 +137,16 @@ router.post('/follow/request', authenticateUser, async (req, res) => {
                 body: `${follower.firstName} ${follower.lastName} ${status === 'pending' ? "wants to follow you." : "started following you."}`,
             };
 
-            await fetch('https://exp.host/--/api/v2/push/send', {
+            const response = await fetch('https://exp.host/--/api/v2/push/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             });
+
+            const result = await response.json();
+            console.log('Expo Push Response:', result);
+        } else {
+            console.log("No push token");
         }
 
         res.json({ success: true, status });
