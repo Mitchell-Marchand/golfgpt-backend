@@ -72,11 +72,17 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
             const {
                 courseId,
                 courseName,
+                scorecards,
+                golfers,
+                golferIds,
                 ...match
             } = row;
 
             return {
                 ...match,
+                scorecards: JSON.parse(scorecards || '[]'),
+                golfers: JSON.parse(golfers || '[]'),
+                golferIds: JSON.parse(golferIds || '[]'),
                 course: {
                     courseId,
                     courseName,
