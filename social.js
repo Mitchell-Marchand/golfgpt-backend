@@ -367,7 +367,7 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
             LEFT JOIN MatchMessages r ON m.replyToId = r.id
             LEFT JOIN Users u ON r.userId = u.id
             WHERE m.matchId = ?
-            ORDER BY m.createdAt ASC
+            ORDER BY m.createdAt DESC
             LIMIT ? OFFSET ?
             `,
             [matchId, limit, offset]
