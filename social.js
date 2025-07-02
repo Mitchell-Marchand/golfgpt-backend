@@ -53,6 +53,8 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
                 m.createdAt,
                 m.scorecards,
                 m.teeTime,
+                m.golferIds,
+                m.golfers,
                 c.courseId,
                 c.courseName
             FROM Matches m
