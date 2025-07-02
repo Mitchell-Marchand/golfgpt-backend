@@ -67,6 +67,7 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
         );
 
         res.json({
+            success: true,
             page,
             pageSize,
             matches,
