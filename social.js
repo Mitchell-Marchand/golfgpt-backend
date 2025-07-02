@@ -394,7 +394,7 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
         res.json({
             page,
             limit,
-            messages,
+            messages: messages.reverse(),
         });
     } catch (err) {
         console.error('Error fetching match messages:', err);
