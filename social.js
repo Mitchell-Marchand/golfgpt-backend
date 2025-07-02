@@ -360,9 +360,12 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
                 m.replyToId,
                 r.id AS replyId,
                 r.message AS replyMessage,
-                r.userId AS replyUserId
+                r.userId AS replyUserId,
+                u.firstName AS replyUserFirstName,
+                u.lastName AS replyUserLastName
             FROM MatchMessages m
             LEFT JOIN MatchMessages r ON m.replyToId = r.id
+            LEFT JOIN Users u ON r.userId = u.id
             WHERE m.matchId = ?
             ORDER BY m.createdAt ASC
             LIMIT ? OFFSET ?
@@ -382,6 +385,8 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
                     id: row.replyId,
                     message: row.replyMessage,
                     userId: row.replyUserId,
+                    firstName: row.replyUserFirstName,
+                    lastName: row.replyUserLastName,
                 }
                 : null,
         }));
