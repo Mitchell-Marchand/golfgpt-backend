@@ -340,4 +340,148 @@ router.get('/follow/blocked', authenticateUser, async (req, res) => {
     }
 });
 
+router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+    const matchId = req.params.matchId;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `
+            SELECT
+                m.id,
+                m.message,
+                m.userId,
+                m.createdAt,
+                m.handshakes,
+                m.replyToId,
+                r.id AS replyId,
+                r.message AS replyMessage,
+                r.userId AS replyUserId
+            FROM MatchMessages m
+            LEFT JOIN MatchMessages r ON m.replyToId = r.id
+            WHERE m.matchId = ?
+            ORDER BY m.createdAt ASC
+            LIMIT ? OFFSET ?
+            `,
+            [matchId, limit, offset]
+        );
+
+        const messages = rows.map(row => ({
+            id: row.id,
+            message: row.message,
+            userId: row.userId,
+            isCurrentUser: row.userId === userId,
+            handshakes: JSON.parse(row.handshakes || '[]'),
+            createdAt: row.createdAt,
+            replyTo: row.replyId
+                ? {
+                    id: row.replyId,
+                    message: row.replyMessage,
+                    userId: row.replyUserId,
+                }
+                : null,
+        }));
+
+        res.json({
+            page,
+            limit,
+            messages,
+        });
+    } catch (err) {
+        console.error('Error fetching match messages:', err);
+        res.status(500).json({ error: 'Failed to fetch match messages.' });
+    }
+});
+
+router.post('/match/:matchId/messages', authenticateUser, async (req, res) => {
+    const matchId = req.params.matchId;
+    const userId = req.user.id;
+    const { message, replyToId } = req.body;
+
+    if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Message is required and must be a string.' });
+    }
+
+    const id = require('uuid').v4();
+    const createdAt = new Date();
+
+    try {
+        await mariadbPool.query(
+            `
+            INSERT INTO MatchMessages (id, matchId, userId, message, replyToId, handshakes, createdAt)
+            VALUES (?, ?, ?, ?, ?, JSON_ARRAY(), ?)
+            `,
+            [id, matchId, userId, message, replyToId || null, createdAt]
+        );
+
+        // Optional: also return the parent message preview if this is a reply
+        let replyTo = null;
+        if (replyToId) {
+            const [replyRows] = await mariadbPool.query(
+                `SELECT id, message, userId FROM MatchMessages WHERE id = ? LIMIT 1`,
+                [replyToId]
+            );
+            if (replyRows.length > 0) {
+                replyTo = {
+                    id: replyRows[0].id,
+                    message: replyRows[0].message,
+                    userId: replyRows[0].userId,
+                };
+            }
+        }
+
+        res.status(201).json({
+            id,
+            matchId,
+            userId,
+            message,
+            replyTo,
+            handshakes: [],
+            createdAt,
+            isCurrentUser: true
+        });
+    } catch (err) {
+        console.error('Error saving match message:', err);
+        res.status(500).json({ error: 'Failed to save message.' });
+    }
+});
+
+router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+    const { matchId, messageId } = req.params;
+
+    try {
+        // Get current handshakes
+        const [rows] = await mariadbPool.query(
+            `SELECT handshakes FROM MatchMessages WHERE id = ? AND matchId = ?`,
+            [messageId, matchId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Message not found.' });
+        }
+
+        let handshakes = JSON.parse(rows[0].handshakes || '[]');
+        if (handshakes.includes(userId)) {
+            return res.status(400).json({ error: 'You’ve already handshook this message.' });
+        }
+
+        handshakes.push(userId);
+
+        await mariadbPool.query(
+            `UPDATE MatchMessages SET handshakes = ? WHERE id = ?`,
+            [JSON.stringify(handshakes), messageId]
+        );
+
+        res.status(200).json({ success: true, handshakes });
+    } catch (err) {
+        console.error('Error applying handshake:', err);
+        res.status(500).json({ error: 'Failed to apply handshake.' });
+    }
+});
+
 module.exports = router;
