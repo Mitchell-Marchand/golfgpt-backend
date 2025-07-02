@@ -382,6 +382,7 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
             userId: row.userId,
             isCurrentUser: row.userId === userId,
             handshakes: JSON.parse(row.handshakes || '[]'),
+            handshakeUsers: [],
             createdAt: row.createdAt,
             firstName: row.senderFirstName,
             lastName: row.senderLastName,
@@ -395,6 +396,24 @@ router.get('/match/:matchId/messages', authenticateUser, async (req, res) => {
                 }
                 : null,
         }));
+
+        const allHandshakeIds = new Set();
+        messages.forEach(m => m.handshakes.forEach(id => allHandshakeIds.add(id)));
+        const handshakeIdList = Array.from(allHandshakeIds);
+
+        if (handshakeIdList.length > 0) {
+            const placeholders = handshakeIdList.map(() => '?').join(',');
+            const [userRows] = await mariadbPool.query(
+                `SELECT id, firstName, lastName FROM Users WHERE id IN (${placeholders})`,
+                handshakeIdList
+            );
+
+            const idToUser = Object.fromEntries(userRows.map(u => [u.id, { id: u.id, firstName: u.firstName, lastName: u.lastName }]));
+
+            messages.forEach(m => {
+                m.handshakeUsers = m.handshakes.map(id => idToUser[id]).filter(Boolean);
+            });
+        }
 
         res.json({
             page,
@@ -469,6 +488,7 @@ router.post('/match/:matchId/messages', authenticateUser, async (req, res) => {
             message,
             createdAt,
             handshakes: [],
+            handshakeUsers: [],
             isCurrentUser: true,
             firstName: sender?.firstName || null,
             lastName: sender?.lastName || null,
@@ -507,7 +527,21 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
             [JSON.stringify(handshakes), messageId]
         );
 
-        res.status(200).json({ success: true, handshakes });
+        const placeholders = handshakes.map(() => '?').join(',');
+        const [users] = await mariadbPool.query(
+            `SELECT id, firstName, lastName FROM Users WHERE id IN (${placeholders})`,
+            handshakes
+        );
+
+        res.status(200).json({
+            success: true,
+            handshakes,
+            handshakeUsers: users.map(u => ({
+                id: u.id,
+                firstName: u.firstName,
+                lastName: u.lastName
+            }))
+        });
     } catch (err) {
         console.error('Error applying handshake:', err);
         res.status(500).json({ error: 'Failed to apply handshake.' });
