@@ -422,24 +422,42 @@ router.post('/match/:matchId/messages', authenticateUser, async (req, res) => {
     try {
         await mariadbPool.query(
             `
-            INSERT INTO MatchMessages (id, matchId, userId, message, replyToId, handshakes, createdAt)
-            VALUES (?, ?, ?, ?, ?, JSON_ARRAY(), ?)
-            `,
+        INSERT INTO MatchMessages (id, matchId, userId, message, replyToId, handshakes, createdAt)
+        VALUES (?, ?, ?, ?, ?, JSON_ARRAY(), ?)
+        `,
             [id, matchId, userId, message, replyToId || null, createdAt]
         );
 
-        // Optional: also return the parent message preview if this is a reply
+        // Fetch sender info
+        const [[sender]] = await mariadbPool.query(
+            `SELECT firstName, lastName FROM Users WHERE id = ? LIMIT 1`,
+            [userId]
+        );
+
+        // Optional: return reply info if this is a reply
         let replyTo = null;
         if (replyToId) {
-            const [replyRows] = await mariadbPool.query(
-                `SELECT id, message, userId FROM MatchMessages WHERE id = ? LIMIT 1`,
+            const [[replyRow]] = await mariadbPool.query(
+                `
+          SELECT 
+            r.id, r.message, r.userId,
+            u.firstName AS firstName,
+            u.lastName AS lastName
+          FROM MatchMessages r
+          LEFT JOIN Users u ON r.userId = u.id
+          WHERE r.id = ?
+          LIMIT 1
+          `,
                 [replyToId]
             );
-            if (replyRows.length > 0) {
+
+            if (replyRow) {
                 replyTo = {
-                    id: replyRows[0].id,
-                    message: replyRows[0].message,
-                    userId: replyRows[0].userId,
+                    id: replyRow.id,
+                    message: replyRow.message,
+                    userId: replyRow.userId,
+                    firstName: replyRow.firstName,
+                    lastName: replyRow.lastName,
                 };
             }
         }
@@ -449,10 +467,12 @@ router.post('/match/:matchId/messages', authenticateUser, async (req, res) => {
             matchId,
             userId,
             message,
-            replyTo,
-            handshakes: [],
             createdAt,
-            isCurrentUser: true
+            handshakes: [],
+            isCurrentUser: true,
+            firstName: sender?.firstName || null,
+            lastName: sender?.lastName || null,
+            replyTo,
         });
     } catch (err) {
         console.error('Error saving match message:', err);
