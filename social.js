@@ -165,6 +165,8 @@ router.post('/follow/unblock', authenticateUser, async (req, res) => {
     const followedId = req.user.id;
     const { userId: followerId } = req.body;
 
+    console.log("Follower, Followed", followerId, followedId)
+
     if (!followerId) {
         return res.status(400).json({ error: 'Missing follower user ID.' });
     }
