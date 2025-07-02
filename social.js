@@ -317,4 +317,25 @@ router.get('/follow/requests/:userId', authenticateUser, async (req, res) => {
     }
 });
 
+router.get('/follow/blocked', authenticateUser, async (req, res) => {
+    const followedId = req.user.id;
+
+    try {
+        const [rows] = await mariadbPool.query(
+            `
+        SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
+        FROM Follows f
+        JOIN Users u ON u.id = f.followerId
+        WHERE f.followedId = ? AND f.status = 'rejected'
+        `,
+            [followedId]
+        );
+
+        res.json({ success: true, users: rows });
+    } catch (err) {
+        console.error('Error fetching blocked users:', err);
+        res.status(500).json({ error: 'Failed to fetch blocked users.' });
+    }
+});
+
 module.exports = router;
