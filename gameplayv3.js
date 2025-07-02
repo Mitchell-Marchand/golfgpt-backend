@@ -784,7 +784,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
                 createdBy = ?
                 OR JSON_CONTAINS(golferIds, JSON_QUOTE(?))
             )
-               AND m.status IN ('RULES_PROVIDED', 'READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
+               AND m.status IN ('READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
              ORDER BY m.updatedAt DESC, m.serial DESC 
              LIMIT 10`,
             [userId, userId]
