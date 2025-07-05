@@ -16,7 +16,6 @@ async function authenticateUser(req, res, next) {
     console.log("user authenticated", user.id);
     next()
   } catch (err) {
-    console.log("wtf?", err);
     return res.status(403).json({ error: 'Invalid or expired token' })
   }
 }
