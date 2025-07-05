@@ -262,6 +262,8 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );
 
+    //TODO: Generate summary
+
     const answers = blankAnswers(scorecards);
     await mariadbPool.query(
         "UPDATE Matches SET status = ?, answers = ? WHERE id = ?",
