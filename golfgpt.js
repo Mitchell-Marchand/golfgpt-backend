@@ -73,6 +73,13 @@ router.post('/signIn', async (req, res) => {
       .verificationChecks.create({ to: `+1${phone}`, code });
 
     if (verificationCheck.status === 'approved') {
+      const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
+
+      await mariadbPool.query(
+        'UPDATE Users SET accessToken = ? WHERE phone = ?',
+        [accessToken, formattedPhone]
+      );
+
       const [users] = await mariadbPool.query('SELECT * FROM Users WHERE phone = ?', [formattedPhone]);
       res.status(201).json({ success: true, user: users[0] });
     } else {
@@ -108,7 +115,7 @@ router.post('/register', async (req, res) => {
 
     if (verificationCheck.status === 'approved') {
       const id = uuidv4();
-      const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '30d' });
+      const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
 
       await mariadbPool.query(
         `INSERT INTO Users (id, phone, firstName, lastName, homeClub, accessToken) VALUES (?, ?, ?, ?, ?, ?)`,
