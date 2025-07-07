@@ -301,7 +301,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         const messages = [
-            { role: "system", content: "You are a golf scoring assistant that returns only valid JSON." },
+            { role: "system", content: "You are a golf scoring assistant that determines strokes and proper questions to be asked each hole for a match. Always respond ONLY with valid raw JSON." },
             ...pastMessages,
             { role: "user", content: prompt }
         ];
@@ -635,12 +635,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const messages = [
             {
                 role: "system",
-                content:
-                    "You are a golf scoring assistant that updates scorecards based on hole-by-hole results and your understanding of the rules. Always respond ONLY with valid raw JSON."
-            },
-            {
-                role: "system",
-                content: summaryResponse || "No summary available."
+                content: `You are a golf scoring assistant that tracks points and money based on hole-by-hole results for each golfer and your understanding of the rules. Always respond ONLY with valid raw JSON. Here is a summary of the rules. If a golfer gets strokes on a hole, it will be provided in the hole-by-hole update:\n\n${summaryResponse}`
             },
             ...scoreContent,
             { role: "user", content: prompt }

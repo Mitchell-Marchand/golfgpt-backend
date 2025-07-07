@@ -4,9 +4,12 @@ const { getTees } = require('../tees');
 const { buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
 const { getStrokes } = require('../strokes');
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 const mysql = require('mysql2/promise');
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+const OpenAI = require("openai");
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
@@ -111,7 +114,6 @@ async function runScotchGame() {
     }
 
     //TODO: Describe game by types of points and their values
-    //TODO: Separate conversations by setup and game play w/ summary
 
     if (points === 4 && getRandomInt(4) === 1) {
         prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}. `
@@ -262,15 +264,30 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );
 
-    //TODO: Generate summary
+    const summaryResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+            {
+                role: "system",
+                content: `You're assisting in summarizing a golf match setup for a scoring assistant. Return a single concise paragraph describing who is playing, any strokes given, and any provided rules and dollar values of the golf match.`
+            },
+            ...setupContent,
+            { role: "user", content: "Summarize this match setup clearly and concisely." }
+        ],
+        temperature: 0.2,
+    });
 
-    const answers = blankAnswers(scorecards);
-    await mariadbPool.query(
-        "UPDATE Matches SET status = ?, answers = ? WHERE id = ?",
-        ["READY_TO_START", answers, matchId]
-    );
+    if (summaryResponse.choices[0].message.content) {
+        await mariadbPool.query(
+            "UPDATE Matches SET status = ?, answers = ?, setup = ? WHERE id = ?",
+            ["READY_TO_START", answers, summaryResponse.choices[0].message.content, matchId]
+        );
 
-    await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
+        const answers = blankAnswers(scorecards);
+        await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
+    } else {
+        console.log("Unable to generate summary for the match", matchId);
+    }
 }
 
 async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
@@ -283,9 +300,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         let holeToScore = currentScorecard[0].holes[scoredHoles.length].holeNumber;
         if (getRandomInt(currentScorecard[0].holes.length) === 1) {
             //Update an existing hole
-            //console.log("Skipping a hole:", holeToScore, scoredHoles);
             holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
-            //console.log("New hole to score:", holeToScore);
         }
 
         let scores = [];
