@@ -353,7 +353,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const summary = `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(golfers)}\n\nRules:${rules}`;
 
         await mariadbPool.query(
-            "UPDATE Matches SET strokes = ?, summary = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            "UPDATE Matches SET strokes = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
             [JSON.stringify(parsed?.strokes), summary, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
