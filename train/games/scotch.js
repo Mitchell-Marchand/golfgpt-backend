@@ -188,16 +188,43 @@ async function runScotchGame() {
 
     //Presses
     if (doubles) {
-        const pressWord = getRandomInt(2) === 1 ? 'Presses' : 'Hammers';
-        prompt += ` ${pressWord}`;
-        if (redoubles) {
-            prompt += ` and double ${pressWord.toLocaleLowerCase()}`
-        }
+        const pressIndex = getRandomInt(10);
+        if (pressIndex === 1) {
+            if (redoubles) {
+                prompt += ` Cups and bowls of soup`
+            } else {
+                prompt += ` Cups of soup`
+            }
 
-        if (getRandomInt(2) === 1) {
-            prompt += ` allowed each hole.`;
+            if (getRandomInt(2) === 1) {
+                prompt += ` allowed each hole.`;
+            } else {
+                prompt += ` allowed.`;
+            }
+        } else if (pressIndex === 2) {
+            if (redoubles) {
+                prompt += ` Bridges and rebridges`
+            } else {
+                prompt += ` Bridges`
+            }
+
+            if (getRandomInt(2) === 1) {
+                prompt += ` allowed each hole.`;
+            } else {
+                prompt += ` allowed.`;
+            }
         } else {
-            prompt += ` allowed.`;
+            const pressWord = getRandomInt(2) === 1 ? 'Presses' : 'Hammers';
+            prompt += ` ${pressWord}`;
+            if (redoubles) {
+                prompt += ` and double ${pressWord.toLocaleLowerCase()}`
+            }
+
+            if (getRandomInt(2) === 1) {
+                prompt += ` allowed each hole.`;
+            } else {
+                prompt += ` allowed.`;
+            }
         }
     }
 
@@ -317,7 +344,7 @@ async function runScotchGame() {
         //Delete the match as we no longer need it for training.
         await mariadbPool.query(
             "DELETE FROM Matches WHERE id = ?",
-            [ matchId ]
+            [matchId]
         );
         console.log("Unable to generate summary for the match", matchId);
     }
