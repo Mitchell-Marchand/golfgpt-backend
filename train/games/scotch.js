@@ -51,7 +51,7 @@ async function runScotchGame() {
     }));
 
     const teams = pickTeam(names, 2);
-    const pointIndex = getRandomInt(9) + 3;
+    const pointIndex = getRandomInt(10) + 3;
     const points = pointIndex % 2 === 0 ? 4 : pointIndex % 3 === 0 ? 8 : 6;
     const pointVal = getRandomInt(6);
     const doubles = getRandomInt(3) !== 1;
@@ -119,11 +119,11 @@ async function runScotchGame() {
     } else if (promptIndex === 1) {
         prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}, ${points} point game. `
     } else if (promptIndex === 2) {
-        prompt = `${points} point ${gameName} game, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+        prompt = `${points} point ${gameName} game, ${teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ")}. `
     } else if (promptIndex === 3) {
-        prompt = `${points} point ${gameName}, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+        prompt = `${points} point ${gameName}, ${teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ")}. `
     } else if (promptIndex === 4) {
-        prompt = `${points} point ${gameName}, teams are ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+        prompt = `${points} point ${gameName}, teams are ${teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ")}. `
     }
 
     if (getRandomInt(8) === 1) {
