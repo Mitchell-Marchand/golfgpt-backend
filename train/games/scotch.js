@@ -111,9 +111,9 @@ async function runScotchGame() {
 
     if (getRandomInt(3) === 1) {
         const teamCopy = [...teams];
-        const myTeam = teamCopy[0].split(" & ");
-        myTeam[0] = "Me";
-        teamCopy[0] = myTeam;
+        const firstTeam = teams[0].split(" & ");
+        firstTeam[0] = "Me";
+        teamCopy[0] = firstTeam.join(" & ");
         teamString = teamCopy?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ");
     }
 
