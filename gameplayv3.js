@@ -281,8 +281,8 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const scorecards = JSON.parse(rows2[0].scorecards);
         const nineScorecards = JSON.parse(rows2[0].nineScorecards);
-        const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
-        const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
+        const allMessages = await mariadbPool.query("SELECT content, role FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
+        const pastMessages = allMessages[0].map(m => ({ role: m.role, content: m.content }));
 
         if (golferIds?.includes(req.user.id)) {
             pastMessages.unshift({ role: "system", content: `The golfer creating the match is named ${golfers[golferIds.indexOf(req.user.id)]}. They might refer to themselves a "Me" or "I".` });
@@ -377,7 +377,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
+            [messageId, matchId, "assistant", "setup", JSON.stringify(parsed, null, 2)]
         );
 
         res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards, displayName });
@@ -386,110 +386,6 @@ router.post("/create", authenticateUser, async (req, res) => {
         res.status(500).json({ error: "Failed to generate match setup." });
     }
 });
-
-// router.post("/update", authenticateUser, async (req, res) => {
-//     const { matchId, newRules, expected, displayName } = req.body;
-
-//     if (!matchId || !newRules) {
-//         return res.status(400).json({ error: "Missing matchId or newRules." });
-//     }
-
-//     try {
-//         if (!(await canUserAccessMatch(matchId, req.user.id))) {
-//             return res.status(404).json({ error: "Not authorized to update match." });
-//         }
-
-//         const [rows1] = await mariadbPool.query("SELECT courseId, tees, golfers, golferIds, questions, displayName, strokes, holeCount FROM Matches WHERE id = ?", [matchId]);
-//         if (rows1.length === 0) {
-//             return res.status(404).json({ error: "Match not found." });
-//         }
-
-//         const courseId = rows1[0]?.courseId;
-//         const playerTees = JSON.parse(rows1[0]?.tees);
-//         const holes = rows1[0].holeCount;
-//         const golfers = JSON.parse(rows1[0].golfers);
-//         const golferIds = JSON.parse(rows1[0].golferIds);
-//         const newDisplayName = displayName || rows1[0].displayName;
-
-//         const allMessages = await mariadbPool.query("SELECT content FROM Messages WHERE threadId = ? and role = 'user' ORDER BY createdAt ASC", [matchId]);
-//         const pastMessages = allMessages[0].map(m => ({ role: "user", content: m.content }));
-
-//         const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
-//         if (rows2.length === 0) {
-//             return res.status(404).json({ error: "Course not found." });
-//         }
-
-//         if (golferIds?.includes(req.user.id)) {
-//             pastMessages.unshift({ role: "system", content: `The golfer creating the match is named "${golfers[golferIds.indexOf(req.user.id)]}". They might refer to themselves a "Me" or "I".` });
-//         }
-
-//         const prompt = `New user input:\n${newRules}\n\nUpdate the questions stroke holes accordingly and return only valid raw JSON.`;
-
-//         const messages = [
-//             { role: "system", content: "You are a golf scoring assistant that updates and returns only valid JSON." },
-//             ...pastMessages,
-//             { role: "user", content: prompt }
-//         ];
-
-//         let messageId = uuidv4();
-//         await mariadbPool.query(
-//             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-//             [messageId, matchId, "user", "setup", newRules]
-//         );
-
-//         const tokenCount = countTokensForMessages(messages);
-//         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
-
-//         let parsed;
-//         if (!expected) {
-//             const completion = await openai.chat.completions.create({
-//                 model,
-//                 messages,
-//                 temperature: 0.0
-//             });
-
-//             const raw = completion.choices[0].message.content.trim();
-
-//             console.log("raw update:", raw);
-
-//             try {
-//                 const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-//                 parsed = JSON.parse(cleaned);
-//             } catch (err) {
-//                 console.error("Failed to parse JSON:", raw);
-//                 return res.status(500).json({ error: "Model response was not valid JSON." });
-//             }
-//         } else {
-//             parsed = expected;
-//         }
-
-//         const scorecards = JSON.parse(rows2[0].scorecards);
-//         const nineScorecards = JSON.parse(rows2[0].nineScorecards);
-//         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, parsed?.strokes, holes);
-
-//         console.log("Updated a scorecard");
-
-//         if (builtScorecards?.length === 0) {
-//             return res.status(500).json({ error: "Couldn't build scorecard" });
-//         }
-
-//         await mariadbPool.query(
-//             "UPDATE Matches SET questions = ?, displayName = ?, strokes = ?, scorecards = ? WHERE id = ?",
-//             [JSON.stringify(parsed.questions), newDisplayName, JSON.stringify(parsed?.strokes), JSON.stringify(builtScorecards), matchId]
-//         );
-
-//         messageId = uuidv4();
-//         await mariadbPool.query(
-//             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-//             [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
-//         );
-
-//         res.status(201).json({ success: true, ...parsed, scorecards: builtScorecards });
-//     } catch (err) {
-//         console.error("Error in /update:", err);
-//         res.status(500).json({ error: "Failed to update match." });
-//     }
-// });
 
 router.post("/confirm", authenticateUser, async (req, res) => {
     const { matchId, displayName } = req.body;
@@ -551,7 +447,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const golferIds = JSON.parse(rows[0].golferIds);
 
         let summaryResponse = rows[0].setup;
-        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing objects with key value pairs for the "points", "plusMinus", "holeNumber", "score", and "name" for each golfer on this hole and each golfer on any other hole this score affects.`;
+        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
 
         let playedHole = false;
         let hasUpdate = false;
@@ -586,21 +482,21 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }
 
         if (playedHole) {
-            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}\nRespond with a JSON array containing objects with key value pairs for the "points", "plusMinus", "holeNumber", "score", and "name" for each golfer on this hole and each golfer any other hole this score affects.`;
+            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
         }
 
         const [allMessages] = await mariadbPool.query(
-            "SELECT type, content FROM Messages WHERE threadId = ? AND role = 'user' ORDER BY createdAt ASC",
+            "SELECT type, content, role FROM Messages WHERE threadId = ? ORDER BY createdAt ASC",
             [matchId]
         );
 
         const setupContent = allMessages
             .filter(msg => msg.type === 'setup')
-            .map(msg => ({ role: "user", content: msg.content }));
+            .map(msg => ({ role: msg.role, content: msg.content }));
 
         const scoreContent = allMessages
             .filter(msg => msg.type === 'score')
-            .map(msg => ({ role: "user", content: msg.content }));
+            .map(msg => ({ role: msg.role, content: msg.content }));
 
         if (!summaryResponse) {
             if (golferIds?.includes(req.user.id)) {
@@ -635,7 +531,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const messages = [
             {
                 role: "system",
-                content: `You are a golf scoring assistant that tracks points and money based on hole-by-hole results for each golfer and your understanding of the rules. If a golfer gets strokes on a hole, it will be provided in the hole-by-hole update. Always respond ONLY with valid raw JSON.`
+                content: `You are a golf scoring assistant that tracks points and money based on hole-by-hole 
+                results for each golfer and your understanding of the rules. If a golfer gets strokes on a hole, 
+                it will be provided in the hole-by-hole update. Always respond ONLY with valid raw JSON. 
+                Respond with a JSON array containing objects with key value pairs for the "points", "plusMinus", 
+                "holeNumber", "score", and "name" for each golfer on this hole and each golfer any other hole 
+                this score affects.`
             },
             {
                 role: "user",
@@ -749,7 +650,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "json", JSON.stringify(parsed, null, 2)]
+            [messageId, matchId, "assistant", "score", JSON.stringify(parsed, null, 2)]
         );
 
         //If all holes played, updated in results table

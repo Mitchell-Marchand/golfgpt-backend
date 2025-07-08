@@ -19,6 +19,7 @@ async function main() {
   const [rows] = await mariadbPool.query(`
     SELECT threadId, role, content, createdAt, serial, type
     FROM Messages
+    WHERE training = 1
     ORDER BY threadId, type, createdAt, serial
   `);
 
