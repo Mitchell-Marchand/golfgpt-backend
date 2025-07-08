@@ -9,10 +9,11 @@ const { buildScorecards, blankAnswers, deepEqual, calculateWinPercents, countTok
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
 
-const model = "ft:gpt-3.5-turbo-1106:personal:golfgpt-v5:Bkdjw4gp";
+//const model = "ft:gpt-3.5-turbo-1106:personal:golfgpt-v5:Bkdjw4gp";
 //const model = "gpt-3.5-turbo"
 //const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
 //const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
+const model = "ft:gpt-3.5-turbo-1106:personal:test-jul-725-1155:BqvMKYiV";
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
@@ -395,7 +396,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
                 "UPDATE Matches SET status = ?, answers = ?, displayName = ? WHERE id = ?",
                 ["READY_TO_START", blankAnswers(scorecards), displayName, matchId]
             );
-            
+
             const messageId = uuidv4();
             await mariadbPool.query(
                 `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
