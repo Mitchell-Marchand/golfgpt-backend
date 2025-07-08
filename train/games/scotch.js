@@ -333,8 +333,8 @@ async function runScotchGame() {
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", summary]
+            `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", 1, summary]
         );
 
         console.log("Summary:", summary);
@@ -436,14 +436,14 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
 
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", prompt]
+            `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", 1, prompt]
         );
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", JSON.stringify(parsed, null, 2)]
+            `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", "score", 1, JSON.stringify(parsed, null, 2)]
         );
 
         let status = "IN_PROGRESS";
