@@ -197,7 +197,7 @@ router.post("/begin", authenticateUser, async (req, res) => {
         const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(golfers)} | Course: ${course.FullName}`]
+            [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(golfers)}`]
         );
 
         res.json({ success: true, matchId });
@@ -237,11 +237,11 @@ router.post("/tees", authenticateUser, async (req, res) => {
 
         await mariadbPool.query("UPDATE Matches SET status = ?, tees = ?, holeCount = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(teesByGolfer), holes, matchId]);
 
-        const messageId = uuidv4();
+        /*const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup", `Tees by golfer: ${JSON.stringify(teesByGolfer)}`]
-        );
+        );*/
 
         res.json({ success: true });
     } catch (err) {
@@ -402,15 +402,15 @@ router.post("/confirm", authenticateUser, async (req, res) => {
 
         const scorecards = JSON.parse(rows[0]?.scorecards);
 
-        if (rows[0]?.status === "RULES_PROVIDED") {
-            const prompt = `Everything looks good, get ready to track the results of the match.`;
+        // if (rows[0]?.status === "RULES_PROVIDED") {
+        //     const prompt = `Everything looks good, get ready to track the results of the match.`;
 
-            const messageId = uuidv4();
-            await mariadbPool.query(
-                `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-                [messageId, matchId, "user", "setup", prompt]
-            );
-        }
+        //     const messageId = uuidv4();
+        //     await mariadbPool.query(
+        //         `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
+        //         [messageId, matchId, "user", "setup", prompt]
+        //     );
+        // }
 
         await mariadbPool.query(
             "UPDATE Matches SET status = ?, answers = ?, displayName = ? WHERE id = ?",
@@ -973,7 +973,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
         Now create a new version of this description using these golfers instead:\n\n${JSON.stringify(golfers)}\n\n
         Return a concise updated summary. If a golfer is not included in the new list, do not include them in the 
         summary. Do not assume the same number of golfers are playing. Only include the names of the golfers if they 
-        are mentioned in the original summary. Do not include the course name or tees in the summary.`;
+        are mentioned in the original summary.`;
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
