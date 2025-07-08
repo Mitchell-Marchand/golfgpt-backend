@@ -297,7 +297,8 @@ async function runScotchGame() {
 
     if (summaryResponse.choices[0].message.content) {
         const summary = summaryResponse.choices[0].message.content;
-
+        const answers = blankAnswers(scorecards);
+        
         await mariadbPool.query(
             "UPDATE Matches SET status = ?, answers = ?, setup = ? WHERE id = ?",
             ["READY_TO_START", answers, summary, matchId]
@@ -311,7 +312,6 @@ async function runScotchGame() {
 
         console.log("Summary:", summary);
 
-        const answers = blankAnswers(scorecards);
         await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
     } else {
         //Delete the match as we no longer need it for training.
