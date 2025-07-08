@@ -430,7 +430,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const golferIds = JSON.parse(rows[0].golferIds);
 
         let summaryResponse = rows[0].setup;
-        let prompt = `Here are the hole results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
+        let prompt = `Hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
 
         let playedHole = false;
         let hasUpdate = false;
@@ -465,7 +465,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }
 
         if (playedHole) {
-            prompt = `I've updated results for hole ${holeNumber}\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
+            prompt = `Updated hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
         }
 
         const [allMessages] = await mariadbPool.query(
