@@ -2,7 +2,7 @@ const { getCourse } = require('../course');
 const { getPlayerNames } = require('../players');
 const { getTees } = require('../tees');
 const { buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
-const { getStrokes } = require('../strokes');
+//const { getStrokes } = require('../strokes');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
@@ -43,6 +43,7 @@ async function runScotchGame() {
         return;
     }
 
+    //TODO: Copy functionality to new script
     //const strokes = getStrokes(names, holes);
     const strokes = names.map(name => ({
         name,
@@ -113,8 +114,6 @@ async function runScotchGame() {
         gameName = "umbrella"
     }
 
-    //TODO: Describe game by types of points and their values
-
     if (points === 4 && getRandomInt(4) === 1) {
         prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}. `
     } else if (promptIndex === 1) {
@@ -125,6 +124,16 @@ async function runScotchGame() {
         prompt = `${points} point ${gameName}, ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
     } else if (promptIndex === 4) {
         prompt = `${points} point ${gameName}, teams are ${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")}. `
+    }
+
+    if (getRandomInt(8) === 1) {
+        if (points === 4) {
+            prompt += `1 point for low team, 1 point for low individual, 1 point for proximity, 1 point for birdies. `
+        } else if (points === 6) {
+            prompt += `2 points for low team, 2 points for low individual, 1 point for proximity, 1 point for birdies. `
+        } else if (points === 8) {
+            prompt += `2 points for low team, 2 points for low individual, 1 point for proximity, 1 point for birdies, 1 point for longest drive, and 1 point for team fewest putts. `
+        }
     }
 
     promptIndex = getRandomInt(3);
@@ -208,7 +217,7 @@ async function runScotchGame() {
         }
     }
 
-    //If strokes.prompt, add it to prompt here
+    //TODO: If strokes.prompt, add it to prompt here
     console.log("Prompt:", prompt);
 
     //Create the game...
@@ -264,6 +273,15 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );
 
+    const [allMessages] = await mariadbPool.query(
+        "SELECT type, content FROM Messages WHERE threadId = ? AND role = 'user' ORDER BY createdAt ASC",
+        [matchId]
+    );
+
+    const setupContent = allMessages
+        .filter(msg => msg.type === 'setup')
+        .map(msg => ({ role: "user", content: msg.content }));
+
     const summaryResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -286,12 +304,17 @@ async function runScotchGame() {
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", summaryResponse ]
+            [messageId, matchId, "user", "score", summaryResponse]
         );
 
         const answers = blankAnswers(scorecards);
         await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
     } else {
+        //Delete the match as we no longer need it for training.
+        await mariadbPool.query(
+            "DELETE FROM Matches WHERE id = ?",
+            [ matchId ]
+        );
         console.log("Unable to generate summary for the match", matchId);
     }
 }
