@@ -48,8 +48,7 @@ async function main() {
       console.log("Tokens in conversation", countTokensForMessages(validMessages));
       output.write(
         JSON.stringify({
-          messages: validMessages,
-          metadata: { type: key.split("__")[1] },
+          messages: validMessages
         }) + "\n"
       );
     }
