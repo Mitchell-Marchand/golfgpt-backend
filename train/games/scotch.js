@@ -296,16 +296,20 @@ async function runScotchGame() {
     });
 
     if (summaryResponse.choices[0].message.content) {
+        const summary = summaryResponse.choices[0].message.content;
+
         await mariadbPool.query(
             "UPDATE Matches SET status = ?, answers = ?, setup = ? WHERE id = ?",
-            ["READY_TO_START", answers, summaryResponse.choices[0].message.content, matchId]
+            ["READY_TO_START", answers, summary, matchId]
         );
 
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", summaryResponse]
+            [messageId, matchId, "user", "score", summary]
         );
+
+        console.log("Summary:", summary);
 
         const answers = blankAnswers(scorecards);
         await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
