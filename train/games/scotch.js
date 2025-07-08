@@ -24,7 +24,7 @@ async function runScotchGame() {
     const holeCount = getRandomInt(3) === 1 ? 9 : 18;
     const names = getPlayerNames(4);
     const course = await getCourse(mariadbPool);
-    const allScorecards = JSON.parse(holeCount === 9 ? course.nineScorecards : course.scorecards);
+    const allScorecards = JSON.parse(holeCount === 9 && course.nineScorecards ? course.nineScorecards : course.scorecards);
     const tees = getTees(names, allScorecards);
     const scorecards = buildScorecards(allScorecards, tees, [], holeCount);
     const userId = "5c4ebd6d-b36d-44d9-acc5-824b4f14c9f1";
@@ -298,7 +298,7 @@ async function runScotchGame() {
     if (summaryResponse.choices[0].message.content) {
         const summary = summaryResponse.choices[0].message.content;
         const answers = blankAnswers(scorecards);
-        
+
         await mariadbPool.query(
             "UPDATE Matches SET status = ?, answers = ?, setup = ? WHERE id = ?",
             ["READY_TO_START", answers, summary, matchId]
