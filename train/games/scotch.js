@@ -309,54 +309,21 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );*/
 
-    const [allMessages] = await mariadbPool.query(
-        "SELECT type, content FROM Messages WHERE threadId = ? AND role = 'user' ORDER BY createdAt ASC",
-        [matchId]
+    const summary = `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(names)}\n\nRules:${prompt}`;
+    const answers = blankAnswers(scorecards);
+
+    await mariadbPool.query(
+        "UPDATE Matches SET status = ?, answers = ?, setup = ? WHERE id = ?",
+        ["READY_TO_START", answers, summary, matchId]
     );
 
-    const setupContent = allMessages
-        .filter(msg => msg.type === 'setup')
-        .map(msg => ({ role: "user", content: msg.content }));
+    messageId = uuidv4();
+    await mariadbPool.query(
+        `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
+        [messageId, matchId, "user", "score", 1, summary]
+    );
 
-    const summaryResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-            {
-                role: "system",
-                content: `You're assisting in summarizing a golf match setup for a scoring assistant. Return a single concise paragraph describing who is playing, any strokes given, and any provided rules and dollar values of the golf match.`
-            },
-            ...setupContent,
-            { role: "user", content: "Summarize this match setup clearly and concisely. ONLY describe the input the user has provided. Do NOT leave out any detail." }
-        ],
-        temperature: 0.2,
-    });
-
-    if (summaryResponse.choices[0].message.content) {
-        const summary = summaryResponse.choices[0].message.content;
-        const answers = blankAnswers(scorecards);
-
-        await mariadbPool.query(
-            "UPDATE Matches SET status = ?, answers = ?, setup = ? WHERE id = ?",
-            ["READY_TO_START", answers, summary, matchId]
-        );
-
-        messageId = uuidv4();
-        await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", 1, summary]
-        );
-
-        console.log("Summary:", summary);
-
-        await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
-    } else {
-        //Delete the match as we no longer need it for training.
-        await mariadbPool.query(
-            "DELETE FROM Matches WHERE id = ?",
-            [matchId]
-        );
-        console.log("Unable to generate summary for the match", matchId);
-    }
+    await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
 }
 
 async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
