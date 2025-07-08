@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mysql = require("mysql2/promise");
-const { countTokensForMessages } = require('./train/utils')
+const { countTokensForMessages } = require('./utils')
 
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
