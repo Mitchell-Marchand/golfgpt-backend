@@ -13,7 +13,7 @@ const mariadbPool = mysql.createPool({
   connectionLimit: 10,
 });
 
-const OUTPUT_FILE = path.join(__dirname, "finetune.jsonl");
+const OUTPUT_FILE = path.join(__dirname, "finetune-v2.jsonl");
 
 async function main() {
   const [rows] = await mariadbPool.query(`
