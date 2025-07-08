@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+const mysql = require("mysql2/promise");
 
-const mysql = require('mysql2/promise');
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
 const mariadbPool = mysql.createPool({
   host: "ec2-18-232-136-96.compute-1.amazonaws.com",
@@ -17,18 +17,19 @@ const OUTPUT_FILE = path.join(__dirname, "finetune.jsonl");
 
 async function main() {
   const [rows] = await mariadbPool.query(`
-    SELECT threadId, role, content, createdAt, serial
+    SELECT threadId, role, content, createdAt, serial, type
     FROM Messages
-    ORDER BY threadId, createdAt, serial
+    ORDER BY threadId, type, createdAt, serial
   `);
 
   const conversations = new Map();
 
   for (const row of rows) {
-    if (!conversations.has(row.threadId)) {
-      conversations.set(row.threadId, []);
+    const key = `${row.threadId}__${row.type}`;
+    if (!conversations.has(key)) {
+      conversations.set(key, []);
     }
-    conversations.get(row.threadId).push({
+    conversations.get(key).push({
       role: row.role,
       content: row.content,
     });
@@ -36,14 +37,18 @@ async function main() {
 
   const output = fs.createWriteStream(OUTPUT_FILE, { flags: "w" });
 
-  for (const messages of conversations.values()) {
-    const validMessages = messages.filter(m =>
-      m.role === "user" || m.role === "assistant"
+  for (const [key, messages] of conversations.entries()) {
+    const validMessages = messages.filter(
+      (m) => m.role === "user" || m.role === "assistant"
     );
 
-    // Ensure conversation starts with a user message and is paired
     if (validMessages.length >= 2 && validMessages[0].role === "user") {
-      output.write(JSON.stringify({ messages: validMessages }) + "\n");
+      output.write(
+        JSON.stringify({
+          messages: validMessages,
+          metadata: { type: key.split("__")[1] },
+        }) + "\n"
+      );
     }
   }
 

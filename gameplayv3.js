@@ -635,7 +635,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const messages = [
             {
                 role: "system",
-                content: `You are a golf scoring assistant that tracks points and money based on hole-by-hole results for each golfer and your understanding of the rules. Always respond ONLY with valid raw JSON. Here is a summary of the rules. If a golfer gets strokes on a hole, it will be provided in the hole-by-hole update:\n\n${summaryResponse}`
+                content: `You are a golf scoring assistant that tracks points and money based on hole-by-hole results for each golfer and your understanding of the rules. If a golfer gets strokes on a hole, it will be provided in the hole-by-hole update. Always respond ONLY with valid raw JSON.`
+            },
+            {
+                role: "user",
+                content: summaryResponse
             },
             ...scoreContent,
             { role: "user", content: prompt }

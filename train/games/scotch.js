@@ -283,6 +283,12 @@ async function runScotchGame() {
             ["READY_TO_START", answers, summaryResponse.choices[0].message.content, matchId]
         );
 
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", summaryResponse ]
+        );
+
         const answers = blankAnswers(scorecards);
         await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
     } else {
