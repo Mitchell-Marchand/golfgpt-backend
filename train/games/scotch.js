@@ -107,6 +107,13 @@ async function runScotchGame() {
     let prompt = ``;
     let gameIndex = getRandomInt(6);
     let promptIndex = getRandomInt(4);
+    let teamString = teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ");
+
+    if (getRandomInt(3) === 1) {
+        const teamCopy = [...teams];
+        teamCopy[0] = "Me"
+        teamString = teamCopy?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ");
+    }
 
     if (gameIndex === 1) {
         gameName = "bridge";
@@ -119,11 +126,11 @@ async function runScotchGame() {
     } else if (promptIndex === 1) {
         prompt = `${teams?.join(getRandomInt(2) === 1 ? " vs " : " against ")} in ${gameName}, ${points} point game. `
     } else if (promptIndex === 2) {
-        prompt = `${points} point ${gameName} game, ${teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ")}. `
+        prompt = `${points} point ${gameName} game, ${teamString}. `
     } else if (promptIndex === 3) {
-        prompt = `${points} point ${gameName}, ${teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ")}. `
+        prompt = `${points} point ${gameName}, ${teamString}. `
     } else if (promptIndex === 4) {
-        prompt = `${points} point ${gameName}, teams are ${teams?.join(getRandomInt(2) === 1 ? " vs " : getRandomInt(2) === 1 ? " against " : " taking on ")}. `
+        prompt = `${points} point ${gameName}, teams are ${teamString}. `
     }
 
     if (getRandomInt(8) === 1) {
@@ -358,7 +365,7 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
     while (scoredHoles.length < currentScorecard[0].holes.length) {
         //Sometimes repeat a hole
         let holeToScore = currentScorecard[0].holes[scoredHoles.length].holeNumber;
-        if (getRandomInt(currentScorecard[0].holes.length) === 1) {
+        if (getRandomInt(currentScorecard[0].holes.length) <= 5) {
             //Update an existing hole
             holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
         }
