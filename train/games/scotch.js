@@ -324,7 +324,7 @@ async function runScotchGame() {
                 content: `You're assisting in summarizing a golf match setup for a scoring assistant. Return a single concise paragraph describing who is playing, any strokes given, and any provided rules and dollar values of the golf match.`
             },
             ...setupContent,
-            { role: "user", content: "Summarize this match setup clearly and concisely." }
+            { role: "user", content: "Summarize this match setup clearly and concisely. ONLY describe the input the user has provided. Do NOT leave out any detail." }
         ],
         temperature: 0.2,
     });
@@ -836,4 +836,4 @@ async function runSimulations(count) {
     await mariadbPool.end();
 }
 
-runSimulations(50);
+runSimulations(1);
