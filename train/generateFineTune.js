@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mysql = require("mysql2/promise");
+const { countTokensForMessages } = require('./train/utils')
 
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
@@ -44,6 +45,7 @@ async function main() {
     );
 
     if (validMessages.length >= 2 && validMessages[0].role === "user") {
+      console.log("Tokens in conversation", countTokensForMessages(validMessages));
       output.write(
         JSON.stringify({
           messages: validMessages,

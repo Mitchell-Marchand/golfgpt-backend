@@ -3,9 +3,8 @@ const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
-const { encoding_for_model } = require("tiktoken");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, deepEqual, calculateWinPercents } = require('./train/utils')
+const { buildScorecards, blankAnswers, deepEqual, calculateWinPercents, countTokensForMessages } = require('./train/utils')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -27,22 +26,6 @@ const mariadbPool = mysql.createPool({
 function formatDateForSQL(isoString) {
     const date = new Date(isoString);
     return date.toISOString().slice(0, 19).replace('T', ' ');
-}
-
-function countTokensForMessages(messages) {
-    const enc = encoding_for_model("gpt-3.5-turbo-1106")
-    let totalTokens = 0;
-
-    for (const message of messages) {
-        totalTokens += enc.encode(message.role).length;
-        totalTokens += enc.encode(message.content).length;
-        // Add ~4 tokens per message (OpenAI overhead estimate)
-        totalTokens += 4;
-    }
-    // Add priming tokens (per OpenAI docs)
-    totalTokens += 2;
-    enc.free();
-    return totalTokens;
 }
 
 async function canUserAccessMatch(matchId, userId) {

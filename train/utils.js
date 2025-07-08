@@ -1,3 +1,5 @@
+const { encoding_for_model } = require("tiktoken");
+
 function getRandomInt(max) {
     return Math.floor(Math.random() * max) + 1;
 }
@@ -123,6 +125,22 @@ async function delay(ms) {
     return await new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function countTokensForMessages(messages) {
+    const enc = encoding_for_model("gpt-3.5-turbo-1106")
+    let totalTokens = 0;
+
+    for (const message of messages) {
+        totalTokens += enc.encode(message.role).length;
+        totalTokens += enc.encode(message.content).length;
+        // Add ~4 tokens per message (OpenAI overhead estimate)
+        totalTokens += 4;
+    }
+    // Add priming tokens (per OpenAI docs)
+    totalTokens += 2;
+    enc.free();
+    return totalTokens;
+}
+
 function blankAnswers(scorecards) {
     let answers = [];
 
@@ -195,5 +213,6 @@ module.exports = {
     blankAnswers,
     delay,
     deepEqual,
-    calculateWinPercents
+    calculateWinPercents,
+    countTokensForMessages
 }
