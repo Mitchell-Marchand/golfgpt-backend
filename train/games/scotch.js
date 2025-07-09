@@ -500,13 +500,26 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
-            //Check if no longer needed
-            if (autoDoubleMoneyTrigger > 0) {
+            //Check if no longer needed from trigger or match tied
+            if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
                 let change = true;
-                for (let j = 0; j < currentScorecard.length; j++) {
-                    if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
-                        change = false;
-                        break;
+
+                if (autoDoubleMoneyTrigger > 0) {
+                    for (let j = 0; j < currentScorecard.length; j++) {
+                        if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
+                            change = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (change && autoDoubleWhileTiedTrigger) {
+                    change = false;
+                    for (let j = 0; j < currentScorecard.length; j++) {
+                        if (currentScorecard[j].plusMinus !== 0) {
+                            change = true;
+                            break;
+                        }
                     }
                 }
 
