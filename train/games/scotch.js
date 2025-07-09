@@ -401,7 +401,6 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
         currentScorecard = results.scorecards;
 
         const scoresToPrompt = scores.map(({ holeNumber, ...rest }) => rest);
-        console.log("Scores to prompt", JSON.stringify(scoresToPrompt, null, 2));
 
         let prompt = "";
         if (!scoredHoles.includes(holeToScore)) {
@@ -412,6 +411,8 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             //Generate prompt for updated hole result
             prompt = `Updated hole ${holeToScore} results:\n\nScores: ${JSON.stringify(scoresToPrompt, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
         }
+
+        console.log("Prompt", prompt);
 
         let messageId = uuidv4();
         await mariadbPool.query(
