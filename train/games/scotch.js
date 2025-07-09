@@ -280,7 +280,7 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", 1, `Tees by golfer: ${JSON.stringify(tees)}`]
     );*/
 
-    const setupPrompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\n\nRules:\n${prompt || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
+    const setupPrompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${prompt || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
     messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -302,7 +302,7 @@ async function runScotchGame() {
     messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-        [messageId, matchId, "assistant", "setup", 1, JSON.stringify(parsed, null, 2)]
+        [messageId, matchId, "assistant", "setup", 1, JSON.stringify(parsed)]
     );
 
     /*prompt = `Everything looks good, get ready to track the results of the match.`;
@@ -312,7 +312,7 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );*/
 
-    const summary = `I'm playing a golf match and want you to keep score.\nRules:${prompt}`;
+    const summary = `I'm playing a golf match and want you to keep score.\nRules: ${prompt}`;
     const answers = blankAnswers(scorecards);
 
     await mariadbPool.query(
@@ -409,11 +409,11 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         if (!scoredHoles.includes(holeToScore)) {
             //Generate prompt for new hole result
-            prompt = `Hole ${holeToScore} results:\n\nScores: ${JSON.stringify(scoresToPrompt, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`
+            prompt = `Hole ${holeToScore} results:\n\nScores: ${JSON.stringify(scoresToPrompt)}\nQuestion Answers: ${JSON.stringify(answeredQuestions)}`
             scoredHoles.push(holeToScore);
         } else {
             //Generate prompt for updated hole result
-            prompt = `Updated hole ${holeToScore} results:\n\nScores: ${JSON.stringify(scoresToPrompt, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
+            prompt = `Updated hole ${holeToScore} results:\n\nScores: ${JSON.stringify(scoresToPrompt)}\nQuestion Answers: ${JSON.stringify(answeredQuestions)}`;
         }
 
         let scoreId = uuidv4();
@@ -426,7 +426,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", 1, scoreId, `Scorecard before this hole:\n\n${JSON.stringify(cleanScorecard(builtScorecards), null, 2)}`]
+            [messageId, matchId, "user", "score", 1, scoreId, `Current scorecard:\n${JSON.stringify(cleanScorecard(builtScorecards))}`]
         );
 
         messageId = uuidv4();
@@ -438,7 +438,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", 1, scoreId, JSON.stringify(parsed, null, 2)]
+            [messageId, matchId, "assistant", "score", 1, scoreId, JSON.stringify(parsed)]
         );
 
         let status = "IN_PROGRESS";

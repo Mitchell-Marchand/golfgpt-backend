@@ -272,7 +272,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             pastMessages.unshift({ role: "system", content: `The golfer creating the match is named ${golfers[golferIds.indexOf(req.user.id)]}. They might refer to themselves a "Me" or "I".` });
         }*/
 
-        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\n\nRules:\n${rules || "No rules just a regular game"}\n\nRespond ONLY with valid raw JSON.`;
+        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${rules || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
 
         if (currentDisplayName && currentDisplayName?.length > 0) {
             //Update most recent user message with prompt && delete last assistant response
@@ -400,7 +400,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             const messageId = uuidv4();
             await mariadbPool.query(
                 `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-                [messageId, matchId, "assistant", "setup", JSON.stringify({ strokes, questions }, null, 2)]
+                [messageId, matchId, "assistant", "setup", JSON.stringify({ strokes, questions })]
             );
         }
 
@@ -434,7 +434,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const golferIds = JSON.parse(rows[0].golferIds);
 
         let summaryResponse = rows[0].setup;
-        let prompt = `Hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
+        let prompt = `Hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores)}\nQuestion Answers: ${JSON.stringify(answeredQuestions)}`;
 
         let playedHole = false;
         let hasUpdate = false;
@@ -469,7 +469,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }
 
         if (playedHole) {
-            prompt = `Updated hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
+            prompt = `Updated hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores)}\nQuestion Answers: ${JSON.stringify(answeredQuestions)}`;
         }
 
         const [allMessages] = await mariadbPool.query(
@@ -531,7 +531,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             },
             {
                 role: "user",
-                content: `Scorecard before this hole:\n\n${JSON.stringify(cleanScorecard(scorecards), null, 2)}`
+                content: `Current scorecard:\n${JSON.stringify(cleanScorecard(scorecards))}`
             },
             //...scoreContent,
             { role: "user", content: prompt }
@@ -644,7 +644,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", JSON.stringify(parsed, null, 2)]
+            [messageId, matchId, "assistant", "score", JSON.stringify(parsed)]
         );
 
         //If all holes played, updated in results table
