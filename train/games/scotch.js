@@ -145,6 +145,9 @@ async function runScotchGame() {
         }
     }
 
+    //TODO: Explain rules of game sometimes
+    //TODO: Strokes sometimes?
+
     promptIndex = getRandomInt(3);
     if (promptIndex === 1) {
         prompt += `$${pointVal}/point`
