@@ -607,11 +607,19 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         }
 
         if (firstTeamBirdieCount > 0) {
-            firstTeamPoints++;
+            if (secondTeamBirdieCount > 0) {
+                firstTeamPoints += firstTeamBirdieCount;
+            } else {
+                firstTeamPoints++;
+            }
         }
 
         if (secondTeamBirdieCount > 0) {
-            secondTeamPoints++;
+            if (firstTeamBirdieCount > 0) {
+                secondTeamPoints += secondTeamBirdieCount;
+            } else {
+                secondTeamPoints++;
+            }
         }
 
         /*console.log("**HOLE:", i + 1);
@@ -647,7 +655,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
             } else if (firstTeamBirdieCount === 0 && secondTeamBirdieCount > 1) {
                 for (let j = 0; j < secondTeamBirdieCount - 1; j++) {
-                    secondTeamBirdieCount = secondTeamPoints * 2;
+                    secondTeamPoints = secondTeamPoints * 2;
                 }
             }
         }
