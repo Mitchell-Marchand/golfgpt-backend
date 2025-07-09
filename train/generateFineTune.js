@@ -14,7 +14,7 @@ const mariadbPool = mysql.createPool({
   connectionLimit: 10,
 });
 
-const OUTPUT_TRAIN_FILE = path.join(__dirname, "finetune-v2.jsonl");
+const OUTPUT_TRAIN_FILE = path.join(__dirname, "finetune-data.jsonl");
 const OUTPUT_VALIDATION_FILE = path.join(__dirname, "finetune-validation.jsonl");
 
 function shuffleArray(array) {
