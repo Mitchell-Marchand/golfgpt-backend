@@ -54,8 +54,9 @@ async function main() {
     const validMessages = messages.filter(m => m.role === "user" || m.role === "assistant");
     if (validMessages.length >= 2 && validMessages[0].role === "user") {
       const type = messages[0].type;
-      if (type === "score") scoreConvos.push({ key, messages: validMessages });
-      else if (type === "setup") setupConvos.push({ key, messages: validMessages });
+      const simplifiedMessages = validMessages.map(({ role, content }) => ({ role, content }));
+      if (type === "score") scoreConvos.push({ key, messages: simplifiedMessages });
+      else if (type === "setup") setupConvos.push({ key, messages: simplifiedMessages });
     }
   }
 
