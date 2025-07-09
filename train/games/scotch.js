@@ -333,11 +333,12 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
     let currentScorecard = builtScorecards;
     const teams = nameTeams.map(team => team.split(' & '));
 
+    //TODO: Sometimes repeat a hole after match is complete (this will happen often)
     let scoredHoles = [];
     while (scoredHoles.length < currentScorecard[0].holes.length) {
         //Sometimes repeat a hole
         let holeToScore = currentScorecard[0].holes[scoredHoles.length].holeNumber;
-        if (getRandomInt(currentScorecard[0].holes.length) <= 5) {
+        if (getRandomInt(currentScorecard[0].holes.length) <= currentScorecard[0].holes.length / 4) {
             //Update an existing hole
             holeToScore = currentScorecard[0].holes[getRandomInt(scoredHoles.length) - 1].holeNumber;
         }
