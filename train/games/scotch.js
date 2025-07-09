@@ -568,7 +568,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 if (answers[j].answers.includes(nameTeams[0])) {
                     firstTeamPoints++;
                 } else if (answers[j].answers.includes(nameTeams[1])) {
-                    firstTeamPoints++;
+                    secondTeamPoints++;
                 }
             } else if (answers[j].answers.includes(teams[0][0]) && answers[j].answers.includes(teams[0][1])) {
                 firstTeamPoints += 2;
