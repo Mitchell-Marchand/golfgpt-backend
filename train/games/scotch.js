@@ -607,7 +607,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         }
 
         if (firstTeamBirdieCount > 0) {
-            if (secondTeamBirdieCount > 0) {
+            if (secondTeamPoints > 0) {
                 firstTeamPoints += firstTeamBirdieCount;
             } else {
                 firstTeamPoints++;
@@ -615,7 +615,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         }
 
         if (secondTeamBirdieCount > 0) {
-            if (firstTeamBirdieCount > 0) {
+            if (firstTeamPoints > 0) {
                 secondTeamPoints += secondTeamBirdieCount;
             } else {
                 secondTeamPoints++;
