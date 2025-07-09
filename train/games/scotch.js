@@ -828,4 +828,4 @@ async function runSimulations(count) {
     await mariadbPool.end();
 }
 
-runSimulations(1);
+runSimulations(100);

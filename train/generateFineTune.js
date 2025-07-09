@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mysql = require("mysql2/promise");
-const { countTokensForMessages } = require('./utils')
+const { countTokensForMessages } = require('./utils');
 
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
@@ -14,7 +14,15 @@ const mariadbPool = mysql.createPool({
   connectionLimit: 10,
 });
 
-const OUTPUT_FILE = path.join(__dirname, "finetune-v2.jsonl");
+const OUTPUT_TRAIN_FILE = path.join(__dirname, "finetune-v2.jsonl");
+const OUTPUT_VALIDATION_FILE = path.join(__dirname, "finetune-validation.jsonl");
+
+function shuffleArray(array) {
+  return array
+    .map((val) => ({ val, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ val }) => val);
+}
 
 async function main() {
   const [rows] = await mariadbPool.query(`
@@ -34,29 +42,43 @@ async function main() {
     conversations.get(key).push({
       role: row.role,
       content: row.content,
+      type: row.type,
+      threadId: row.threadId,
     });
   }
 
-  const output = fs.createWriteStream(OUTPUT_FILE, { flags: "w" });
-
+  // Group by type
+  const scoreConvos = [];
+  const setupConvos = [];
   for (const [key, messages] of conversations.entries()) {
-    const validMessages = messages.filter(
-      (m) => m.role === "user" || m.role === "assistant"
-    );
-
+    const validMessages = messages.filter(m => m.role === "user" || m.role === "assistant");
     if (validMessages.length >= 2 && validMessages[0].role === "user") {
-      console.log("Tokens in conversation", countTokensForMessages(validMessages));
-      output.write(
-        JSON.stringify({
-          messages: validMessages
-        }) + "\n"
-      );
+      const type = messages[0].type;
+      if (type === "score") scoreConvos.push({ key, messages: validMessages });
+      else if (type === "setup") setupConvos.push({ key, messages: validMessages });
     }
   }
 
-  output.end();
+  // Shuffle and select validation samples
+  const validationScore = shuffleArray(scoreConvos).slice(0, 20);
+  const validationSetup = shuffleArray(setupConvos).slice(0, 5);
+  const validationKeys = new Set([...validationScore, ...validationSetup].map(c => c.key));
+
+  const outputTrain = fs.createWriteStream(OUTPUT_TRAIN_FILE, { flags: "w" });
+  const outputVal = fs.createWriteStream(OUTPUT_VALIDATION_FILE, { flags: "w" });
+
+  // Write to files
+  for (const { key, messages } of [...scoreConvos, ...setupConvos]) {
+    const out = validationKeys.has(key) ? outputVal : outputTrain;
+    console.log(`[${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
+    out.write(JSON.stringify({ messages }) + "\n");
+  }
+
+  outputTrain.end();
+  outputVal.end();
   await mariadbPool.end();
-  console.log(`✅ JSONL file generated at ${OUTPUT_FILE}`);
+  console.log(`✅ Training JSONL: ${OUTPUT_TRAIN_FILE}`);
+  console.log(`✅ Validation JSONL: ${OUTPUT_VALIDATION_FILE}`);
 }
 
 main().catch(console.error);
