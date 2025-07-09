@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, deepEqual, calculateWinPercents, countTokensForMessages } = require('./train/utils')
+const { cleanScorecard, buildScorecards, blankAnswers, deepEqual, calculateWinPercents, countTokensForMessages } = require('./train/utils')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -350,7 +350,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             displayName = displayNameResponse.choices[0].message.content?.trim()?.replaceAll('"', '');
         }
 
-        const summary = `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(golfers)}\n\nRules:${rules}`;
+        const summary = `I'm playing a golf match and want you to keep score.\nRules:${rules}`;
 
         await mariadbPool.query(
             "UPDATE Matches SET strokes = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
@@ -529,7 +529,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 role: "user",
                 content: summaryResponse
             },
-            ...scoreContent,
+            {
+                role: "user",
+                content: `Scorecard before this hole:\n\n${JSON.stringify(cleanScorecard(scorecards), null, 2)}`
+            },
+            //...scoreContent,
             { role: "user", content: prompt }
         ];
 

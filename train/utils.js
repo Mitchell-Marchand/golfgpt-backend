@@ -205,6 +205,17 @@ function calculateWinPercents(scorecards) {
     });
 }
 
+function cleanScorecard(scorecard) {
+    return scorecard.map(golfer => {
+        return {
+            name: golfer.name,
+            plusMinus: golfer.plusMinus,
+            points: golfer.points,
+            holes: (golfer.holes || []).filter(hole => hole.score !== 0)
+        };
+    });
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -214,5 +225,6 @@ module.exports = {
     delay,
     deepEqual,
     calculateWinPercents,
-    countTokensForMessages
+    countTokensForMessages,
+    cleanScorecard
 }

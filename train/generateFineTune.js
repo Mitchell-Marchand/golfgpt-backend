@@ -26,30 +26,37 @@ function shuffleArray(array) {
 
 async function main() {
   const [rows] = await mariadbPool.query(`
-    SELECT threadId, role, content, createdAt, serial, type
+    SELECT threadId, scoreId, role, content, createdAt, serial, type
     FROM Messages
     WHERE training = 1
-    ORDER BY threadId, type, createdAt, serial
+    ORDER BY type, scoreId, threadId, createdAt, serial
   `);
 
   const conversations = new Map();
 
   for (const row of rows) {
-    const key = `${row.threadId}__${row.type}`;
+    let key;
+    if (row.type === "score") {
+      key = `score__${row.scoreId}`;
+    } else {
+      key = `setup__${row.threadId}`;
+    }
+
     if (!conversations.has(key)) {
       conversations.set(key, []);
     }
+
     conversations.get(key).push({
       role: row.role,
       content: row.content,
       type: row.type,
-      threadId: row.threadId,
     });
   }
 
-  // Group by type
+  // Separate into score and setup buckets
   const scoreConvos = [];
   const setupConvos = [];
+
   for (const [key, messages] of conversations.entries()) {
     const validMessages = messages.filter(m => m.role === "user" || m.role === "assistant");
     if (validMessages.length >= 2 && validMessages[0].role === "user") {
@@ -60,8 +67,8 @@ async function main() {
     }
   }
 
-  // Shuffle and select validation samples
-  const validationScore = shuffleArray(scoreConvos).slice(0, 20);
+  // Select validation samples
+  const validationScore = shuffleArray(scoreConvos).slice(0, 30);
   const validationSetup = shuffleArray(setupConvos).slice(0, 5);
   const validationKeys = new Set([...validationScore, ...validationSetup].map(c => c.key));
 

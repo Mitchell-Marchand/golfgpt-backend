@@ -1,7 +1,7 @@
 const { getCourse } = require('../course');
 const { getPlayerNames } = require('../players');
 const { getTees } = require('../tees');
-const { buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
+const { cleanScorecard, buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
 //const { getStrokes } = require('../strokes');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
@@ -312,7 +312,7 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );*/
 
-    const summary = `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(names)}\n\nRules:${prompt}`;
+    const summary = `I'm playing a golf match and want you to keep score.\nRules:${prompt}`;
     const answers = blankAnswers(scorecards);
 
     await mariadbPool.query(
@@ -320,16 +320,16 @@ async function runScotchGame() {
         ["READY_TO_START", answers, summary, matchId]
     );
 
-    messageId = uuidv4();
+    /*messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "score", 1, summary]
-    );
+    );*/
 
-    await simulateGame(matchId, mariadbPool, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
+    await simulateGame(matchId, mariadbPool, summary, builtScorecards, questions, JSON.parse(answers), teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
 }
 
-async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
+async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     let currentScorecard = builtScorecards;
     const teams = nameTeams.map(team => team.split(' & '));
 
@@ -416,16 +416,29 @@ async function simulateGame(matchId, mariadbPool, builtScorecards, allQuestions,
             prompt = `Updated hole ${holeToScore} results:\n\nScores: ${JSON.stringify(scoresToPrompt, null, 2)}\nQuestion Answers: ${JSON.stringify(answeredQuestions, null, 2)}`;
         }
 
+        let scoreId = uuidv4();
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", 1, prompt]
+            `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", 1, scoreId, summary]
         );
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", 1, JSON.stringify(parsed, null, 2)]
+            `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", 1, scoreId, `Scorecard before this hole:\n\n${JSON.stringify(cleanScorecard(builtScorecards), null, 2)}`]
+        );
+
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", 1, scoreId, prompt]
+        );
+
+        messageId = uuidv4();
+        await mariadbPool.query(
+            `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", "score", 1, scoreId, JSON.stringify(parsed, null, 2)]
         );
 
         let status = "IN_PROGRESS";
