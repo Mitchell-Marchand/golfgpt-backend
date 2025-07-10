@@ -267,9 +267,10 @@ async function runScotchGame() {
     );
 
     let messageId = uuidv4();
+    const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game:${prompt}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-        [messageId, matchId, "user", "setup", 1, `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(names)}`]
+        [messageId, matchId, "user", "setup", 1, setupPrompt]
     );
 
     await mariadbPool.query("UPDATE Matches SET status = ?, tees = ?, holeCount = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(tees), holeCount, matchId]);
@@ -278,14 +279,14 @@ async function runScotchGame() {
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", 1, `Tees by golfer: ${JSON.stringify(tees)}`]
-    );*/
+    );
 
     const setupPrompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${prompt || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
     messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", 1, setupPrompt]
-    );
+    );*/
 
     const parsed = {
         strokes,
@@ -312,7 +313,7 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );*/
 
-    const summary = `I'm playing a golf match and want you to keep score.\nRules: ${prompt}`;
+    const summary = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game:${prompt}\n\n`;
     const answers = blankAnswers(scorecards);
 
     await mariadbPool.query(
@@ -418,12 +419,14 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         let scoreId = uuidv4();
         let messageId = uuidv4();
+
+        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(builtScorecards))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", 1, scoreId, summary]
+            [messageId, matchId, "user", "score", 1, scoreId, scorePrompt]
         );
 
-        messageId = uuidv4();
+        /*messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", 1, scoreId, `Current scorecard:\n${JSON.stringify(cleanScorecard(builtScorecards))}`]
@@ -433,7 +436,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", 1, scoreId, prompt]
-        );
+        );*/
 
         messageId = uuidv4();
         await mariadbPool.query(
@@ -845,4 +848,4 @@ async function runSimulations(count) {
     await mariadbPool.end();
 }
 
-runSimulations(10);
+runSimulations(40);

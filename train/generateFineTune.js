@@ -61,24 +61,43 @@ async function main() {
     }
   }
 
-  const validationScore = shuffleArray(scoreConvos).slice(0, 15);
-  const validationSetup = shuffleArray(setupConvos).slice(0, 2);
+  const numValidationScore = Math.floor(scoreConvos.length * 0.10);
+  const numValidationSetup = Math.floor(setupConvos.length * 0.05);
+
+  const validationScore = shuffleArray(scoreConvos).slice(0, numValidationScore);
+  const validationSetup = shuffleArray(setupConvos).slice(0, numValidationSetup);
   const validationKeys = new Set([...validationScore, ...validationSetup].map(c => c.key));
 
-  const outputTrain = fs.createWriteStream(OUTPUT_TRAIN_FILE, { flags: "w" });
-  const outputVal = fs.createWriteStream(OUTPUT_VALIDATION_FILE, { flags: "w" });
+  // Output paths
+  const OUTPUT_DIR = path.join(__dirname, "finetunes");
+  const files = {
+    scoreTrain: fs.createWriteStream(path.join(OUTPUT_DIR, "finetune-data-score.jsonl"), { flags: "w" }),
+    scoreVal: fs.createWriteStream(path.join(OUTPUT_DIR, "finetune-validation-score.jsonl"), { flags: "w" }),
+    setupTrain: fs.createWriteStream(path.join(OUTPUT_DIR, "finetune-data-setup.jsonl"), { flags: "w" }),
+    setupVal: fs.createWriteStream(path.join(OUTPUT_DIR, "finetune-validation-setup.jsonl"), { flags: "w" }),
+  };
 
-  for (const { key, messages } of [...scoreConvos, ...setupConvos]) {
-    const out = validationKeys.has(key) ? outputVal : outputTrain;
-    console.log(`[${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
+  for (const { key, messages } of scoreConvos) {
+    const out = validationKeys.has(key) ? files.scoreVal : files.scoreTrain;
+    console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
     out.write(JSON.stringify({ messages }) + "\n");
   }
 
-  outputTrain.end();
-  outputVal.end();
+  for (const { key, messages } of setupConvos) {
+    const out = validationKeys.has(key) ? files.setupVal : files.setupTrain;
+    console.log(`[SETUP ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
+    out.write(JSON.stringify({ messages }) + "\n");
+  }
+
+  // Close all file streams
+  Object.values(files).forEach(stream => stream.end());
   await mariadbPool.end();
-  console.log(`✅ Training JSONL: ${OUTPUT_TRAIN_FILE}`);
-  console.log(`✅ Validation JSONL: ${OUTPUT_VALIDATION_FILE}`);
+
+  console.log("✅ All four JSONL files written:");
+  console.log("  • finetune-data-score.jsonl");
+  console.log("  • finetune-validation-score.jsonl");
+  console.log("  • finetune-data-setup.jsonl");
+  console.log("  • finetune-validation-setup.jsonl");
 }
 
 main().catch(console.error);
