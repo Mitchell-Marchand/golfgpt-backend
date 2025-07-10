@@ -72,7 +72,6 @@ async function main() {
     const out = validationKeys.has(key) ? outputVal : outputTrain;
     console.log(`[${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
     out.write(JSON.stringify({ messages }) + "\n");
-    break;
   }
 
   outputTrain.end();
