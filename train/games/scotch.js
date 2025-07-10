@@ -267,7 +267,7 @@ async function runScotchGame() {
     );
 
     let messageId = uuidv4();
-    const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game:${prompt}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
+    const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game: ${prompt}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", 1, setupPrompt]
@@ -313,7 +313,7 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );*/
 
-    const summary = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game:${prompt}\n\n`;
+    const summary = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game: ${prompt}\n\n`;
     const answers = blankAnswers(scorecards);
 
     await mariadbPool.query(
@@ -848,4 +848,4 @@ async function runSimulations(count) {
     await mariadbPool.end();
 }
 
-runSimulations(40);
+runSimulations(20);
