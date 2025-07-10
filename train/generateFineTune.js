@@ -61,8 +61,8 @@ async function main() {
     }
   }
 
-  const validationScore = shuffleArray(scoreConvos).slice(0, Math.round(scoreConvos.length / 10));
-  const validationSetup = shuffleArray(setupConvos).slice(0, Math.round(setupConvos.length / 20));
+  const validationScore = shuffleArray(scoreConvos).slice(0, 15);
+  const validationSetup = shuffleArray(setupConvos).slice(0, 2);
   const validationKeys = new Set([...validationScore, ...validationSetup].map(c => c.key));
 
   const outputTrain = fs.createWriteStream(OUTPUT_TRAIN_FILE, { flags: "w" });
