@@ -32,42 +32,35 @@ async function main() {
     ORDER BY type, scoreId, threadId, createdAt, serial
   `);
 
-  const conversations = new Map();
+  const setupConvos = [];
+  const scoreConvos = [];
+
+  const grouped = new Map();
 
   for (const row of rows) {
-    let key;
-    if (row.type === "score") {
-      key = `score__${row.scoreId}`;
-    } else {
-      key = `setup__${row.threadId}`;
-    }
-
-    if (!conversations.has(key)) {
-      conversations.set(key, []);
-    }
-
-    conversations.get(key).push({
+    const key = row.type === "score" ? `score__${row.scoreId}` : `setup__${row.threadId}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push({
       role: row.role,
       content: row.content,
       type: row.type,
     });
   }
 
-  // Separate into score and setup buckets
-  const scoreConvos = [];
-  const setupConvos = [];
+  for (const [key, messages] of grouped.entries()) {
+    const simplified = messages
+      .filter(m => m.role === "user" || m.role === "assistant")
+      .map(({ role, content }) => ({ role, content }));
 
-  for (const [key, messages] of conversations.entries()) {
-    const validMessages = messages.filter(m => m.role === "user" || m.role === "assistant");
-    if (validMessages.length >= 2 && validMessages[0].role === "user") {
-      const type = messages[0].type;
-      const simplifiedMessages = validMessages.map(({ role, content }) => ({ role, content }));
-      if (type === "score") scoreConvos.push({ key, messages: simplifiedMessages });
-      else if (type === "setup") setupConvos.push({ key, messages: simplifiedMessages });
+    if (simplified.length >= 2) {
+      if (key.startsWith("score__")) {
+        scoreConvos.push({ key, messages: simplified });
+      } else if (key.startsWith("setup__")) {
+        setupConvos.push({ key, messages: simplified });
+      }
     }
   }
 
-  // Select validation samples
   const validationScore = shuffleArray(scoreConvos).slice(0, 150);
   const validationSetup = shuffleArray(setupConvos).slice(0, 10);
   const validationKeys = new Set([...validationScore, ...validationSetup].map(c => c.key));
@@ -75,7 +68,6 @@ async function main() {
   const outputTrain = fs.createWriteStream(OUTPUT_TRAIN_FILE, { flags: "w" });
   const outputVal = fs.createWriteStream(OUTPUT_VALIDATION_FILE, { flags: "w" });
 
-  // Write to files
   for (const { key, messages } of [...scoreConvos, ...setupConvos]) {
     const out = validationKeys.has(key) ? outputVal : outputTrain;
     console.log(`[${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
