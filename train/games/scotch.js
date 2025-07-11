@@ -401,9 +401,9 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         }
 
         //Generate plusMinus and points for any holes that this score effects
+        const priorScorecard = [...currentScorecard];
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
-        const priorScorecard = [...currentScorecard];
         currentScorecard = results.scorecards;
 
         let prompt = "";
@@ -448,6 +448,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         let status = "IN_PROGRESS";
         if (scoredHoles.length === currentScorecard[0].holes.length) {
             status = "COMPLETED";
+            console.log(JSON.stringify(priorScorecard, null, 2));
         }
 
         await mariadbPool.query(
