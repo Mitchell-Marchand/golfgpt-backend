@@ -77,11 +77,11 @@ async function main() {
     setupVal: fs.createWriteStream(path.join(OUTPUT_DIR, "finetune-validation-setup.jsonl"), { flags: "w" }),
   };
 
-  for (const { key, messages } of scoreConvos) {
+  /*for (const { key, messages } of scoreConvos) {
     const out = validationKeys.has(key) ? files.scoreVal : files.scoreTrain;
     console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
     out.write(JSON.stringify({ messages }) + "\n");
-  }
+  }*/
 
   for (const { key, messages } of setupConvos) {
     const out = validationKeys.has(key) ? files.setupVal : files.setupTrain;
