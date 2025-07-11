@@ -535,8 +535,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const messages = [
             {
                 role: "system",
-                content: `Based on the rules, current scorecard, score update, and the answers to the questions, 
-                return a valid ONLY a valid JSON array containing the score update.`
+                content: `You're a fine tuned model that knows how to generate the plusMinus and points for each golfer in a golf match based on the rules, current scorecard, score update, and the answers to the questions. Return a valid ONLY a valid JSON array containing the score update.`
             },
             {
                 role: "user",
