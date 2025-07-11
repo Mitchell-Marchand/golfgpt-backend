@@ -303,6 +303,21 @@ async function runScotchGame() {
         [JSON.stringify(parsed?.strokes), isPublic ? 1 : 0, `${points} Point Scotch ($${pointVal})`, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
     );
 
+    let explanation = `These are the correct questions because the user is playing ${points} point scotch, which means`;
+    if (points === 4 || points === 6) {
+        explanation += ` the points are for proximity, low individual${points === 6 ? " (worth 2)" : ""}, low team${points === 6 ? " (worth 2)" : ""}, and birdies. We ask who had proximity because it can't be deduced from the score alone, and since two players on the same team can each get a point for it, we allow up to 2 answers.`;
+    } else {
+        explanation += ` the points are for proximity, longest drive, lowest team putts, low individual, low team, and birdies. We ask who had proximity, longest drive, and fewest team putts because it can't be deduced from the score alone. Since two players on the same team can each get a point for proximity and longest drive, we allow up to 2 answers. Fewest team putts is combined for each team, so the available options are the two teams, not individuals.`;
+    }
+
+    if (doubles) {
+        if (redoubles) {
+            explanation += ` Additionally, the user indicated that the point value could be doubled and then redoubled on each hole, so we have to ask if that happened.`
+        } else {
+            explanation += ` Additionally, the user indicated that the point value could be doubled on each hole, so we have to ask if that happened.`
+        }
+    }
+
     messageId = uuidv4();
     await mariadbPool.query(
         `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
