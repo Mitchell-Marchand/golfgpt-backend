@@ -14,7 +14,7 @@ const router = express.Router();
 //const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
 //const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
 //const model = "ft:gpt-3.5-turbo-1106:personal:test-jul-725-1155:BqvMKYiV";
-const setupModel = "ft:gpt-3.5-turbo-0125:personal::Bry8G8PB"; //200 matches 10% validation
+const setupModel = "ft:gpt-3.5-turbo-0125:personal:scotch-setup-v4:Bs2IEsJz"; //2000 matches 10% validation
 const scoringModel = "ft:gpt-3.5-turbo-0125:personal:scotch-scoring-v3:BrygmwR1"; //60 matches 10% validation
 
 const mariadbPool = mysql.createPool({
