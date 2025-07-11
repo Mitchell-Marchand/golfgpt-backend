@@ -421,8 +421,8 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         let scoreId = uuidv4();
         let messageId = uuidv4();
-
         const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(promptScorecard))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
+
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", 1, scoreId, scorePrompt]

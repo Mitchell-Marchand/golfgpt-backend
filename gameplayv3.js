@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { cleanScorecard, buildScorecards, blankAnswers, deepEqual, calculateWinPercents, countTokensForMessages } = require('./train/utils')
+const { scoringSystemMessage, cleanScorecard, buildScorecards, blankAnswers, deepEqual, calculateWinPercents, countTokensForMessages } = require('./train/utils')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -534,8 +534,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         const messages = [
             {
-                role: "system",
-                content: `You're a fine tuned model that knows how to generate the plusMinus and points for each golfer in a golf match based on the rules, current scorecard, score update, and the answers to the questions. Return a valid ONLY a valid JSON array containing the score update.`
+                "role": "system",
+                "content": scoringSystemMessage
             },
             {
                 role: "user",

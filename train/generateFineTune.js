@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mysql = require("mysql2/promise");
-const { countTokensForMessages } = require('./utils');
+const { countTokensForMessages, scoringSystemMessage } = require('./utils');
 
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
@@ -13,9 +13,6 @@ const mariadbPool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
-
-const OUTPUT_TRAIN_FILE = path.join(__dirname, "finetunes/finetune-data.jsonl");
-const OUTPUT_VALIDATION_FILE = path.join(__dirname, "finetunes/finetune-validation.jsonl");
 
 function shuffleArray(array) {
   return array
@@ -77,7 +74,7 @@ async function main() {
       .map(({ role, content }) => ({ role, content }));
 
     if (simplified.length >= 2) {
-      if (key.startsWith("score__")) {
+      if (key.startsWith("score__") && scoreConvos.length < 2000) {
         scoreConvos.push({ key, messages: simplified });
       } else if (key.startsWith("setup__")) {
         setupConvos.push({ key, messages: simplified });
@@ -101,11 +98,15 @@ async function main() {
     setupVal: fs.createWriteStream(path.join(OUTPUT_DIR, "finetune-validation-setup.jsonl"), { flags: "w" }),
   };
 
-  /*for (const { key, messages } of scoreConvos) {
+  for (const { key, messages } of scoreConvos) {
     const out = validationKeys.has(key) ? files.scoreVal : files.scoreTrain;
-    console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
-    out.write(JSON.stringify({ messages }) + "\n");
-  }*/
+  
+    // Inject scoring system message at the beginning
+    const updatedMessages = [{ role: "system", content: scoringSystemMessage }, ...messages];
+  
+    console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(updatedMessages));
+    out.write(JSON.stringify({ messages: updatedMessages }) + "\n");
+  }
 
   for (const { key, messages } of setupConvos) {
     const out = validationKeys.has(key) ? files.setupVal : files.setupTrain;
