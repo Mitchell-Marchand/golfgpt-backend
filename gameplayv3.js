@@ -277,7 +277,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         //const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${rules || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
         const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
 
-        if (currentDisplayName && currentDisplayName?.length > 0) {
+        /*if (currentDisplayName && currentDisplayName?.length > 0) {
             //Update most recent user message with prompt && delete last assistant response
             const rulesPromptId = pastMessages[pastMessages.length - 1].id;
 
@@ -287,7 +287,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             );
 
             pastMessages.pop();
-        }
+        }*/
 
         const messages = [
             //{ role: "system", content: "You are a JSON-only assistant. Respond with raw JSON only. Do not include any other text, no explanations, and no formatting. Output must begin with { and end with }. If your output does not match this, it is invalid." },
@@ -344,7 +344,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You're an assistant who can return a display name for a golf match. Your job is to generate short, clear display names.`
+                    content: `You're an assistant who can return a creative but professional display name for a golf match. Your job is to generate short, clear display names.`
                 },
                 { role: "user", content: `Based on these rules, generate a display name. Limit it to 6 words or fewer: ${rules}` }
             ],
