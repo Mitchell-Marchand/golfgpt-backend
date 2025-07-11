@@ -491,7 +491,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         const scorePrompt = `${summaryResponse}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(scorecards))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`;
 
-        const [allMessages] = await mariadbPool.query(
+        /*const [allMessages] = await mariadbPool.query(
             "SELECT type, content, role FROM Messages WHERE threadId = ? ORDER BY createdAt ASC",
             [matchId]
         );
@@ -532,7 +532,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             } else {
                 summaryResponse = "No summary available.";
             }
-        }
+        }*/
 
         const messages = [
             /*{
