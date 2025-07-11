@@ -401,10 +401,9 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         }
 
         console.log("HOLE TO SCORE:", holeToScore);
-        console.log("Completed holes: ", cleanScorecard(currentScorecard)[0].holes.length)
+        const promptScorecard = cleanScorecard(currentScorecard);
 
         //Generate plusMinus and points for any holes that this score effects
-        const priorScorecard = [...currentScorecard];
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
         currentScorecard = results.scorecards;
@@ -424,7 +423,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         let scoreId = uuidv4();
         let messageId = uuidv4();
 
-        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(priorScorecard))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
+        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(promptScorecard))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", 1, scoreId, scorePrompt]
@@ -451,8 +450,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         let status = "IN_PROGRESS";
         if (scoredHoles.length === currentScorecard[0].holes.length) {
             status = "COMPLETED";
-            console.log(JSON.stringify(priorScorecard, null, 2));
-            console.log(prompt);
+            console.log(JSON.stringify(promptScorecard, null, 2));
         }
 
         await mariadbPool.query(
