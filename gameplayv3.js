@@ -543,8 +543,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             { role: "user", content: prompt }*/
         ];
 
-        console.log("Summary Response", summaryResponse);
-        console.log("Prompt:", prompt);
+        console.log("scorePrompt", scorePrompt);
 
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
