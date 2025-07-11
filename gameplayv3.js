@@ -326,6 +326,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         console.log("parsed", JSON.stringify(parsed, null, 2))
+        console.log("setupPrompt", setupPrompt);
 
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, parsed?.strokes, holes);
 
