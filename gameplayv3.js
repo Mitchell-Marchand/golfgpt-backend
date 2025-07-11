@@ -267,8 +267,8 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const scorecards = JSON.parse(rows2[0].scorecards);
         const nineScorecards = JSON.parse(rows2[0].nineScorecards);
-        const allMessages = await mariadbPool.query("SELECT content, role FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
-        const pastMessages = allMessages[0].map(m => ({ role: m.role, content: m.content }));
+        //const allMessages = await mariadbPool.query("SELECT content, role FROM Messages WHERE threadId = ? ORDER BY createdAt ASC", [matchId]);
+        //const pastMessages = allMessages[0].map(m => ({ role: m.role, content: m.content }));
 
         /*if (golferIds?.includes(req.user.id)) {
             pastMessages.unshift({ role: "system", content: `The golfer creating the match is named ${golfers[golferIds.indexOf(req.user.id)]}. They might refer to themselves a "Me" or "I".` });

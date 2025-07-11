@@ -26,10 +26,18 @@ function shuffleArray(array) {
 
 async function main() {
   const [rows] = await mariadbPool.query(`
-    SELECT threadId, scoreId, role, content, createdAt, serial, type
-    FROM Messages
-    WHERE training = 1
-    ORDER BY type, scoreId, threadId, createdAt, serial
+    SELECT 
+      m.threadId,
+      m.scoreId,
+      m.role,
+      mc.content,
+      m.createdAt,
+      m.serial,
+      m.type
+    FROM Messages m
+    LEFT JOIN MessageContents mc ON mc.messageId = m.id
+    WHERE m.training = 1
+    ORDER BY m.type, m.scoreId, m.threadId, m.createdAt, m.serial
   `);
 
   const setupConvos = [];
