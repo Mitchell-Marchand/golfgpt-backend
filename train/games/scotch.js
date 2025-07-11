@@ -331,7 +331,7 @@ async function runScotchGame() {
 }
 
 async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQuestions, allAnswers, nameTeams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
-    let currentScorecard = builtScorecards;
+    let currentScorecard = [...builtScorecards];
     const teams = nameTeams.map(team => team.split(' & '));
 
     //TODO: Sometimes repeat a hole after match is complete (this will happen often)
