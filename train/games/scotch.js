@@ -571,7 +571,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
 
                 if (isDoubled) {
-                    explanationPieces.push(`the rules state the money goes to ${autoDoubleValue} when someone goes down ${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole.`)
+                    explanationPieces.push(`the rules state the money goes to ${autoDoubleValue} when someone goes down ${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole`)
                 }
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
@@ -819,7 +819,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
         let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
-            holeNumber: scores[0].holeNumber,
+            holeNumber: currentScorecard[0].holes[i].holeNumber,
             explanation: explanationString
         })
     }
