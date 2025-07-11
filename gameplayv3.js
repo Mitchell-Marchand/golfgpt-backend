@@ -297,8 +297,12 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "setup", setupPrompt]
+            `INSERT INTO Messages (id, threadId, role, type) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", "setup"]
+        );
+        await mariadbPool.query(
+            `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+            [messageId, setupPrompt]
         );
 
         const tokenCount = countTokensForMessages(messages);
@@ -406,8 +410,12 @@ router.post("/confirm", authenticateUser, async (req, res) => {
 
             const messageId = uuidv4();
             await mariadbPool.query(
-                `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-                [messageId, matchId, "assistant", "setup", JSON.stringify({ strokes, questions })]
+                `INSERT INTO Messages (id, threadId, role, type) VALUES (?, ?, ?, ?)`,
+                [messageId, matchId, "assistant", "setup"]
+            );
+            await mariadbPool.query(
+                `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+                [messageId, JSON.stringify({ strokes, questions })]
             );
         }
 
@@ -553,8 +561,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         let messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", prompt]
+            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score"]
+        );
+        await mariadbPool.query(
+            `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+            [messageId, scorePrompt]
         );
 
         let parsed;
@@ -651,8 +663,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", JSON.stringify(parsed)]
+            `INSERT INTO Messages (id, threadId, role, type) VALUES (?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", "score"]
+        );
+        await mariadbPool.query(
+            `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+            [messageId, JSON.stringify(parsed)]
         );
 
         //If all holes played, updated in results table
