@@ -313,7 +313,7 @@ async function runScotchGame() {
         [messageId, matchId, "user", "setup", prompt]
     );*/
 
-    const summary = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game: ${prompt}\n\n`;
+    const summary = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game: ${prompt}`;
     const answers = blankAnswers(scorecards);
 
     await mariadbPool.query(

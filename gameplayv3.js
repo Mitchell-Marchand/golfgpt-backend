@@ -13,7 +13,9 @@ const router = express.Router();
 //const model = "gpt-3.5-turbo"
 //const model = "ft:gpt-3.5-turbo-1106:personal:golf-gpt-v3:BaGb45nx";
 //const model = "ft:gpt-4o-2024-08-06:personal:golf-gpt-v2:BaG7XCTi";
-const model = "ft:gpt-3.5-turbo-1106:personal:test-jul-725-1155:BqvMKYiV";
+//const model = "ft:gpt-3.5-turbo-1106:personal:test-jul-725-1155:BqvMKYiV";
+const setupModel = "ft:gpt-3.5-turbo-0125:personal:scotch-setup-v1:Brvjfd7x";
+const scoringModel = "ft:gpt-3.5-turbo-0125:personal:scotch-scoring-v1:BrwQEeY1";
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
@@ -178,11 +180,11 @@ router.post("/begin", authenticateUser, async (req, res) => {
             [matchId, userId]
         );
 
-        const messageId = uuidv4();
+        /*const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup", `I'm playing a golf match and want you to keep score. Golfers: ${JSON.stringify(golfers)}`]
-        );
+        );*/
 
         res.json({ success: true, matchId });
     } catch (err) {
@@ -272,7 +274,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             pastMessages.unshift({ role: "system", content: `The golfer creating the match is named ${golfers[golferIds.indexOf(req.user.id)]}. They might refer to themselves a "Me" or "I".` });
         }*/
 
-        const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${rules || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
+        //const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${rules || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
+        const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
 
         if (currentDisplayName && currentDisplayName?.length > 0) {
             //Update most recent user message with prompt && delete last assistant response
@@ -280,7 +283,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             await mariadbPool.query(
                 "UPDATE Messages SET content = ? WHERE id = ?",
-                [prompt, rulesPromptId]
+                [setupPrompt, rulesPromptId]
             );
 
             pastMessages.pop();
@@ -288,14 +291,14 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const messages = [
             { role: "system", content: "You are a golf scoring assistant that determines strokes and proper questions to be asked each hole for a match. Always respond ONLY with valid raw JSON." },
-            ...pastMessages,
-            { role: "user", content: prompt }
+            //...pastMessages,
+            { role: "user", content: setupPrompt }
         ];
 
         let messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "setup", prompt]
+            [messageId, matchId, "user", "setup", setupPrompt]
         );
 
         const tokenCount = countTokensForMessages(messages);
@@ -304,7 +307,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         let parsed;
         if (!expected) {
             const completion = await openai.chat.completions.create({
-                model,
+                model: setupModel,
                 messages,
                 temperature: 0.2
             });
@@ -350,7 +353,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             displayName = displayNameResponse.choices[0].message.content?.trim()?.replaceAll('"', '');
         }
 
-        const summary = `I'm playing a golf match and want you to keep score.\nRules:${rules}`;
+        //const summary = `I'm playing a golf match and want you to keep score.\nRules:${rules}`;
+        const summary = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}`;
 
         await mariadbPool.query(
             "UPDATE Matches SET strokes = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
@@ -472,6 +476,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             prompt = `Updated hole ${holeNumber} results:\n\nScores: ${JSON.stringify(scores)}\nQuestion Answers: ${JSON.stringify(answeredQuestions)}`;
         }
 
+        const scorePrompt = `${summaryResponse}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(scorecards))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`;
+
         const [allMessages] = await mariadbPool.query(
             "SELECT type, content, role FROM Messages WHERE threadId = ? ORDER BY createdAt ASC",
             [matchId]
@@ -527,14 +533,14 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             },
             {
                 role: "user",
-                content: summaryResponse
+                content: scorePrompt
             },
-            {
+            /*{
                 role: "user",
                 content: `Current scorecard:\n${JSON.stringify(cleanScorecard(scorecards))}`
             },
-            //...scoreContent,
-            { role: "user", content: prompt }
+            ...scoreContent,
+            { role: "user", content: prompt }*/
         ];
 
         console.log("Summary Response", summaryResponse);
@@ -552,7 +558,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         let parsed;
         if (!expected) {
             const completion = await openai.chat.completions.create({
-                model,
+                model: scoringModel,
                 messages,
                 temperature: 0.0
             });
@@ -963,7 +969,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
 
         const oldSummary = copyRows[0].setup;
 
-        const prompt = `Here is the description of a prior golf match:\n\n${oldSummary}\n\n
+        /*const prompt = `Here is the description of a prior golf match:\n\n${oldSummary}\n\n
         Now create a new version of this description using these golfers instead:\n\n${JSON.stringify(golfers)}\n\n
         Return a concise updated summary. If a golfer is not included in the new list, do not include them in the 
         summary. Do not assume the same number of golfers are playing. Only include the names of the golfers if they 
@@ -984,7 +990,8 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
             temperature: 0.3
         });
 
-        const newSummary = completion.choices[0].message.content.trim();
+        const newSummary = completion.choices[0].message.content.trim();*/
+        const newSummary = oldSummary.split("Here are the rules of the game: ")[1];
 
         res.json({ success: true, setup: newSummary });
     } catch (err) {
