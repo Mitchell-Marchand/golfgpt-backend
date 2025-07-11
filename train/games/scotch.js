@@ -403,6 +403,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
+        const priorScorecard = [...currentScorecard];
         currentScorecard = results.scorecards;
 
         let prompt = "";
@@ -420,7 +421,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         let scoreId = uuidv4();
         let messageId = uuidv4();
 
-        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(builtScorecards))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
+        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(priorScorecard))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", 1, scoreId, scorePrompt]
