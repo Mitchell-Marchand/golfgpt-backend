@@ -272,7 +272,7 @@ async function runScotchGame() {
     let messageId = uuidv4();
     const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game: ${prompt}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
     await mariadbPool.query(
-        `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO Messages (id, threadId, role, type, training) VALUES (?, ?, ?, ?, ?)`,
         [messageId, matchId, "user", "setup", 1]
     );
     await mariadbPool.query(
