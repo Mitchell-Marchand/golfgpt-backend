@@ -400,7 +400,6 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             }
         }
 
-        console.log("HOLE TO SCORE:", holeToScore);
         const promptScorecard = cleanScorecard(currentScorecard);
 
         //Generate plusMinus and points for any holes that this score effects
@@ -450,7 +449,6 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         let status = "IN_PROGRESS";
         if (scoredHoles.length === currentScorecard[0].holes.length) {
             status = "COMPLETED";
-            console.log(JSON.stringify(promptScorecard, null, 2));
         }
 
         await mariadbPool.query(
