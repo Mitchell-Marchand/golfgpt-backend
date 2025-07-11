@@ -817,7 +817,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value and total points for each golfer, ${teams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${teams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: scores[0].holeNumber,
             explanation: explanationString
