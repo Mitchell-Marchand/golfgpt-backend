@@ -303,7 +303,7 @@ async function runScotchGame() {
         [JSON.stringify(parsed?.strokes), isPublic ? 1 : 0, `${points} Point Scotch ($${pointVal})`, JSON.stringify(parsed?.questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
     );
 
-    let explanation = `These are the correct questions because the user is playing ${points} point scotch, which means`;
+    /*let explanation = `These are the correct questions because the user is playing ${points} point scotch, which means`;
     if (points === 4 || points === 6) {
         explanation += ` the points are for proximity, low individual${points === 6 ? " (worth 2)" : ""}, low team${points === 6 ? " (worth 2)" : ""}, and birdies. We ask who had proximity because it can't be deduced from the score alone, and since two players on the same team can each get a point for it, we allow up to 2 answers.`;
     } else {
@@ -316,7 +316,7 @@ async function runScotchGame() {
         } else {
             explanation += ` Additionally, the user indicated that the point value could be doubled on each hole, so we have to ask if that happened.`
         }
-    }
+    }*/
 
     messageId = uuidv4();
     await mariadbPool.query(
@@ -423,6 +423,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
+        const explanation = results.explanation;
         currentScorecard = results.scorecards;
 
         let prompt = "";
@@ -458,10 +459,12 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             [messageId, matchId, "user", "score", 1, scoreId, prompt]
         );*/
 
+        const assistantResponse = `Reasoning: ${explanation}\n\nJSON Output: ${JSON.stringify(parsed)}`;
+
         messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", 1, scoreId, JSON.stringify(parsed)]
+            [messageId, matchId, "assistant", "score", 1, scoreId, assistantResponse]
         );
 
         let status = "IN_PROGRESS";
@@ -479,6 +482,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     const originalScorecard = structuredClone(currentScorecard);
     let expected = [];
+    let explanations = [];
 
     //Add scores to currentScorecard
     for (let i = 0; i < currentScorecard.length; i++) {
@@ -507,6 +511,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         let secondTeamPoints = 0;
         let firstTeamMoney = 0;
         let secondTeamMoney = 0;
+        let explanation = '';
 
         if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
@@ -518,33 +523,54 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
 
             if (needsToDouble && !isDoubled) {
+                explanation = `the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole.`
                 isDoubled = true;
                 pointWorth = autoDoubleValue;
             } else if (isDoubled && !needsToDouble) {
+                explanation = `the rules state the money goes to $${autoDoubleValue} while the match tied, it was not at the start of this hole.`
                 isDoubled = false;
                 pointWorth = pointVal;
+            }
+
+            if (explanation) {
+                explanations.push(explanation);
             }
         }
 
         //Determine if we're ay autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
+            let explanation = '';
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
+                explanation = `the rules state the money goes to ${autoDoubleValue} when we get to the back 9, and this hole is on the back 9.`
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
             } else if (autoDoubleMoneyTrigger > 0) {
                 //Check if any golfer is above the trigger
+                let triggerName = '';
+                let triggerVal = '';
                 for (let j = 0; j < currentScorecard.length; j++) {
                     if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
                         pointWorth = autoDoubleValue;
+                        triggerName = currentScorecard[j].name;
+                        triggerVal = currentScorecard[j].plusMinus;
                         isDoubled = true;
                         break;
                     }
                 }
+
+                if (isDoubled) {
+                    explanation = `the rules state the money goes to ${autoDoubleValue} when someone goes down ${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole.`
+                }
+            }
+
+            if (explanation) {
+                explanations.push(explanation);
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
                 let change = true;
+                let explanation = '';
 
                 if (autoDoubleMoneyTrigger > 0) {
                     for (let j = 0; j < currentScorecard.length; j++) {
@@ -768,7 +794,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
     return {
         scorecards: currentScorecard,
-        expected
+        expected,
+        explanation: explanations.join(", also ")
     }
 }
 
