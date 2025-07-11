@@ -533,15 +533,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }*/
 
         const messages = [
-            /*{
+            {
                 role: "system",
-                content: `You are a golf scoring assistant that tracks points and money based on hole-by-hole 
-                results for each golfer and your understanding of the rules. If a golfer gets strokes on a hole, 
-                it will be provided in the hole-by-hole update. Always respond ONLY with valid raw JSON. 
-                Respond with a JSON array containing objects with key value pairs for the "points", "plusMinus", 
-                "holeNumber", "score", and "name" for each golfer on this hole and each golfer any other hole 
-                this score affects.`
-            },*/
+                content: `Based on the rules, current scorecard, score update, and the answers to the questions, 
+                return a valid ONLY a valid JSON array containing the score update.`
+            },
             {
                 role: "user",
                 content: scorePrompt
