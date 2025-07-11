@@ -460,6 +460,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         );*/
 
         const assistantResponse = `Reasoning: ${explanation}\n\nJSON Output: ${JSON.stringify(parsed)}`;
+        console.log("Assistant response:", assistantResponse);
 
         messageId = uuidv4();
         await mariadbPool.query(
@@ -482,7 +483,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     const originalScorecard = structuredClone(currentScorecard);
     let expected = [];
-    let explanations = [];
+    let holeExplanations = [];
 
     //Add scores to currentScorecard
     for (let i = 0; i < currentScorecard.length; i++) {
@@ -511,7 +512,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         let secondTeamPoints = 0;
         let firstTeamMoney = 0;
         let secondTeamMoney = 0;
-        let explanation = '';
+        let explanationPieces = [];
 
         if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
@@ -523,25 +524,20 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
 
             if (needsToDouble && !isDoubled) {
-                explanation = `the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole.`
+                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole.`)
                 isDoubled = true;
                 pointWorth = autoDoubleValue;
             } else if (isDoubled && !needsToDouble) {
-                explanation = `the rules state the money goes to $${autoDoubleValue} while the match tied, it was not at the start of this hole.`
+                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, it was not at the start of this hole.`)
                 isDoubled = false;
                 pointWorth = pointVal;
-            }
-
-            if (explanation) {
-                explanations.push(explanation);
             }
         }
 
         //Determine if we're ay autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
-            let explanation = '';
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
-                explanation = `the rules state the money goes to ${autoDoubleValue} when we get to the back 9, and this hole is on the back 9.`
+                explanationPieces.push(`the rules state the money goes to ${autoDoubleValue} when we get to the back 9, and this hole is on the back 9.`)
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
             } else if (autoDoubleMoneyTrigger > 0) {
@@ -559,20 +555,15 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
 
                 if (isDoubled) {
-                    explanation = `the rules state the money goes to ${autoDoubleValue} when someone goes down ${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole.`
+                    explanationPieces.push(`the rules state the money goes to ${autoDoubleValue} when someone goes down ${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole.`)
                 }
-            }
-
-            if (explanation) {
-                explanations.push(explanation);
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
                 let change = true;
-                let explanation = '';
 
-                if (autoDoubleMoneyTrigger > 0) {
+                if (autoDoubleMoneyTrigger > 0) {;
                     for (let j = 0; j < currentScorecard.length; j++) {
                         if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
                             change = false;
@@ -609,27 +600,43 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
         if (points === 4) {
             if (getLowScoreWinners(teamScores).team1Wins) {
+                explanationPieces.push(`${teams[0]} both got 1 point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
                 firstTeamPoints++;
             } else if (getLowScoreWinners(teamScores).team2Wins) {
+                explanationPieces.push(`${teams[1]} both got the point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
                 secondTeamPoints++;
+            } else {
+                explanationPieces.push(`No one got a point for low individual because there was a tie between the lowest score of the two teams`)
             }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints++;
+                explanationPieces.push(`${teams[0]} got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${teams[1]}`)
             } else if (getTeamTotals(teamScores[0]) > getTeamTotals(teamScores[1])) {
                 secondTeamPoints++;
+                explanationPieces.push(`${teams[1]} got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${teams[0]}`)
+            } else {
+                explanationPieces.push(`No one got a point for low team because there was a tie between the combined scores of the two teams`);
             }
         } else {
             if (getLowScoreWinners(teamScores).team1Wins) {
                 firstTeamPoints += 2;
+                explanationPieces.push(`${teams[0]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
             } else if (getLowScoreWinners(teamScores).team2Wins) {
                 secondTeamPoints += 2;
+                explanationPieces.push(`${teams[1]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
+            } else {
+                explanationPieces.push(`No one got any points for low individual because there was a tie between the lowest score of the two teams`)
             }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints += 2;
+                explanationPieces.push(`${teams[0]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${teams[1]}`)
             } else if (getTeamTotals(teamScores[0]) > getTeamTotals(teamScores[1])) {
                 secondTeamPoints += 2;
+                explanationPieces.push(`${teams[1]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${teams[0]}`)
+            } else {
+                explanationPieces.push(`No one got any points for low team because there was a tie between the combined scores of the two teams`);
             }
         }
 
@@ -638,33 +645,46 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             if (answers[j].question === "Was there a press or double press?") {
                 if (answers[j].answers.includes("Double Press")) {
                     doubleValue = 3;
+                    explanationPieces.push(`points are doubled and then doubled again becaused there was a double press on the hole`);
                 } else if (answers[j].answers.includes("Press")) {
                     doubleValue = 2;
+                    explanationPieces.push(`points are doubled becaused there was a press on the hole`);
                 }
             } else if (answers[j].question === "Was there a press?") {
                 if (answers[j].answers.includes("Yes")) {
                     doubleValue = 2;
+                    explanationPieces.push(`points are doubled becaused there was a press on the hole`);
                 }
             } else if (answers[j].question === "Which team had the fewest putts?") {
                 if (answers[j].answers.includes(nameTeams[0])) {
                     firstTeamPoints++;
+                    explanationPieces.push(`${teams[0]} got a point because they had the lowest combined putts`)
                 } else if (answers[j].answers.includes(nameTeams[1])) {
                     secondTeamPoints++;
+                    explanationPieces.push(`${teams[1]} got a point because they had the lowest combined putts`)
+                } else {
+                    explanationPieces.push(`No one got a point for the lowest number of putts`)
                 }
             } else if (answers[j].answers.includes(teams[0][0]) && answers[j].answers.includes(teams[0][1])) {
                 firstTeamPoints += 2;
+                explanationPieces.push(`${teams[0]} each got 2 points because they both had a point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
                 pointsNeededToSweep++;
             } else if (answers[j].answers.includes(teams[1][0]) && answers[j].answers.includes(teams[1][1])) {
                 secondTeamPoints += 2;
+                explanationPieces.push(`${teams[1]} each got 2 points because they both had a point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
                 pointsNeededToSweep++;
             } else if (answers[j].answers.includes(teams[0][0])) {
                 firstTeamPoints++;
+                explanationPieces.push(`${teams[0]} each got 1 point because ${teams[0][0]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             } else if (answers[j].answers.includes(teams[0][1])) {
                 firstTeamPoints++;
+                explanationPieces.push(`${teams[0]} each got 1 point because ${teams[0][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             } else if (answers[j].answers.includes(teams[1][0])) {
                 secondTeamPoints++;
+                explanationPieces.push(`${teams[1]} each got 1 point because ${teams[1][0]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             } else if (answers[j].answers.includes(teams[1][1])) {
                 secondTeamPoints++;
+                explanationPieces.push(`${teams[1]} each got 1 point because ${teams[1][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             }
         }
 
@@ -688,18 +708,34 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         }
 
         if (firstTeamBirdieCount > 0) {
-            if (secondTeamPoints > 0) {
+            if (secondTeamPoints > 0 || !miracle) {
                 firstTeamPoints += firstTeamBirdieCount;
+                explanationPieces.push(`${teams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
             } else {
                 firstTeamPoints++;
+                let explanation = `${teams[0]} each got 1 point for the birdie`;
+                
+                if (miracle && secondTeamPoints === 0 && firstTeamBirdieCount > 1) {
+                    explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
+                }
+
+                explanationPieces.push(explanation);
             }
         }
 
         if (secondTeamBirdieCount > 0) {
             if (firstTeamPoints > 0) {
                 secondTeamPoints += secondTeamBirdieCount;
+                explanationPieces.push(`${teams[1]} each got ${secondTeamBirdieCount} point${secondTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${secondTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
             } else {
                 secondTeamPoints++;
+                let explanation = `${teams[1]} each got 1 point for the birdie`;
+                
+                if (miracle && firstTeamPoints === 0 && secondTeamBirdieCount > 1) {
+                    explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
+                }
+
+                explanationPieces.push(explanation);
             }
         }
 
@@ -739,6 +775,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                     secondTeamPoints = secondTeamPoints * 2;
                 }
             }
+
+            explanationPieces.push(`one of the teams got 0 points so the points double`);
         }
 
         for (let j = 0; j < doubleValue - 1; j++) {
@@ -762,9 +800,16 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 currentScorecard[j].holes[i].points = secondTeamPoints;
             }
         }
+
+        let explanationString = `${explanationPieces.join(", also")}. So doing the math of the point value and total points for each golfer, ${teams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${teams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
+        holeExplanations.push({
+            holeNumber: scores[0].holeNumber,
+            explanation: explanationString
+        })
     }
 
     //Build expected array based on differences between currentScorecard and originalScorecard
+    let updatedExplanations = [];
     for (let i = 0; i < currentScorecard[0].holes.length; i++) {
         let hasChange = false;
 
@@ -788,6 +833,13 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 })
             }
 
+            for (let j = 0; j < holeExplanations.length; j++) {
+                if (holeExplanations[j].holeNumber === currentScorecard[0].holes[i].holeNumber) {
+                    updatedExplanations.push(`Hole ${holeExplanations[j].holeNumber}: ${holeExplanations[j].explanation}`);
+                    break;
+                }
+            }
+
             expected.push(...expectedUpdate);
         }
     }
@@ -795,7 +847,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
     return {
         scorecards: currentScorecard,
         expected,
-        explanation: explanations.join(", also ")
+        explanation: updatedExplanations.join(".")
     }
 }
 
