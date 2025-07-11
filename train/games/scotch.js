@@ -2,7 +2,7 @@ const { getCourse } = require('../course');
 const { getPlayerNames } = require('../players');
 const { getTees } = require('../tees');
 const { cleanScorecard, buildScorecards, getRandomInt, pickTeam, blankAnswers } = require('../utils');
-//const { getStrokes } = require('../strokes');
+const { getStrokes } = require('../strokes');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
@@ -43,12 +43,16 @@ async function runScotchGame() {
         return;
     }
 
-    //TODO: Copy functionality to new script
-    //const strokes = getStrokes(names, holes);
-    const strokes = names.map(name => ({
-        name,
-        pops: []
-    }));
+    let strokeObject = getStrokes(names, holes);
+    let strokes = strokeObject.strokes;
+    let strokePrompt = strokeObject.prompt;
+    if (getRandomInt(3) === 1) {
+        strokePrompt = "";
+        strokes = names.map(name => ({
+            name,
+            pops: []
+        }));
+    }
 
     const teams = pickTeam(names, 2);
     const pointIndex = getRandomInt(10) + 3;
@@ -144,9 +148,6 @@ async function runScotchGame() {
             prompt += `2 points for low team, 2 points for low individual, 1 point for proximity, 1 point for birdies, 1 point for longest drive, and 1 point for team fewest putts. `
         }
     }
-
-    //TODO: Explain rules of game sometimes
-    //TODO: Strokes sometimes?
 
     promptIndex = getRandomInt(3);
     if (promptIndex === 1) {
@@ -256,8 +257,10 @@ async function runScotchGame() {
         }
     }
 
-    //TODO: If strokes.prompt, add it to prompt here
-    console.log("Prompt:", prompt);
+    if (strokePrompt) {
+        prompt += ` ${strokePrompt}`;
+    }
+    //console.log("Prompt:", prompt);
 
     //Create the game...
     const matchId = uuidv4();

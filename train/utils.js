@@ -216,9 +216,29 @@ function cleanScorecard(scorecard) {
     });
 }
 
+const setupSystemMessage = `You are a fine-tuned model that prepares a golf match for scoring by interpreting the match rules and assigning strokes and scoring questions.
+
+Your task is to analyze the golfers, teams, and game format provided by the user, and generate two outputs:
+1. A "strokes" array containing objects with each golfer's name and any strokes they receive on any hole by hole number or allocation (handicap).
+2. A "questions" array containing which questions need to be asked on each hole, including the question text, expected number of answers, the possible answers, and the specific holes to ask them on.
+
+The rules may include small variations in format (e.g. 4pt Scotch with just proximity, 8pt with putts and drives, presses, stroking off the low, giving strokes back, pops by hole number vs easiest/hardest, etc.). These rule variations directly affect how strokes are distributed and what questions need to be asked during scoring.
+
+You must learn how to map these small changes in phrasing or game setup into correct logic for generating the strokes and questions for the match.
+
+You will be given:
+- A list of golfer names
+- A natural language description of the rules of the match
+
+You must output only a valid JSON object with the following two keys:
+- "strokes": an array of objects with fields "name" and "pops" (array containing any strokes)
+- "questions": an array of objects with "question", "answers", "numberOfAnswers", and "holes"
+
+Do not output any explanation or formatting outside the JSON object.`;
+
 const scoringSystemMessage = `You are a fine-tuned model designed to calculate golf match scoring using logic and math.
 
-Your role is to apply match rules and current gameplay context to determine each golfer’s updated "plusMinus" and "points". You must understand and execute the underlying scoring logic — not just match patterns or format.
+Your role is to apply match rules and current gameplay context to determine each golfer's updated "plusMinus" and "points". You must understand and execute the underlying scoring logic — not just match patterns or format.
 
 Each match may use different rule formats (e.g., 4pt Scotch, 6pt with proximity, 8pt with putts and drives, skins, or presses). These small variations change how points are earned or lost. It is your job to interpret those rules and apply the correct math to calculate scores.
 
@@ -251,5 +271,6 @@ module.exports = {
     calculateWinPercents,
     countTokensForMessages,
     cleanScorecard,
-    scoringSystemMessage
+    scoringSystemMessage,
+    setupSystemMessage
 }

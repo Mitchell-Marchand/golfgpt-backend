@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mysql = require("mysql2/promise");
-const { countTokensForMessages, scoringSystemMessage } = require('./utils');
+const { countTokensForMessages, scoringSystemMessage, setupSystemMessage } = require('./utils');
 
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
@@ -110,8 +110,12 @@ async function main() {
 
   for (const { key, messages } of setupConvos) {
     const out = validationKeys.has(key) ? files.setupVal : files.setupTrain;
-    console.log(`[SETUP ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(messages));
-    out.write(JSON.stringify({ messages }) + "\n");
+
+    // Inject scoring system message at the beginning
+    const updatedMessages = [{ role: "system", content: setupSystemMessage }, ...messages];
+
+    console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(updatedMessages));
+    out.write(JSON.stringify({ messages: updatedMessages }) + "\n");
   }
 
   // Close all file streams
