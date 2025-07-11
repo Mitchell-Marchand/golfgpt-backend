@@ -290,7 +290,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         const messages = [
-            { role: "system", content: "You are a golf scoring assistant that determines strokes and proper questions to be asked each hole for a match. Always respond ONLY with valid raw JSON." },
+            { role: "system", content: "You are a JSON-only assistant. Respond with raw JSON only. Do not include any other text, no explanations, and no formatting. Output must begin with { and end with }. If your output does not match this, it is invalid." },
             //...pastMessages,
             { role: "user", content: setupPrompt }
         ];
