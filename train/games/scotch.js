@@ -616,10 +616,10 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
         if (points === 4) {
             if (getLowScoreWinners(teamScores).team1Wins) {
-                explanationPieces.push(`${teams[0]} both got 1 point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
+                explanationPieces.push(`${nameTeams[0]} both got 1 point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
                 firstTeamPoints++;
             } else if (getLowScoreWinners(teamScores).team2Wins) {
-                explanationPieces.push(`${teams[1]} both got the point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
+                explanationPieces.push(`${nameTeams[1]} both got the point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
                 secondTeamPoints++;
             } else {
                 explanationPieces.push(`No one got a point for low individual because there was a tie between the lowest score of the two teams`)
@@ -627,30 +627,30 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints++;
-                explanationPieces.push(`${teams[0]} got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${teams[1]}`)
+                explanationPieces.push(`${nameTeams[0]} both got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${nameTeams[1]}`)
             } else if (getTeamTotals(teamScores[0]) > getTeamTotals(teamScores[1])) {
                 secondTeamPoints++;
-                explanationPieces.push(`${teams[1]} got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${teams[0]}`)
+                explanationPieces.push(`${nameTeams[1]} both got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${nameTeams[0]}`)
             } else {
                 explanationPieces.push(`No one got a point for low team because there was a tie between the combined scores of the two teams`);
             }
         } else {
             if (getLowScoreWinners(teamScores).team1Wins) {
                 firstTeamPoints += 2;
-                explanationPieces.push(`${teams[0]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
+                explanationPieces.push(`${nameTeams[0]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
             } else if (getLowScoreWinners(teamScores).team2Wins) {
                 secondTeamPoints += 2;
-                explanationPieces.push(`${teams[1]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
+                explanationPieces.push(`${nameTeams[1]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
             } else {
                 explanationPieces.push(`No one got any points for low individual because there was a tie between the lowest score of the two teams`)
             }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints += 2;
-                explanationPieces.push(`${teams[0]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${teams[1]}`)
+                explanationPieces.push(`${nameTeams[0]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${nameTeams[1]}`)
             } else if (getTeamTotals(teamScores[0]) > getTeamTotals(teamScores[1])) {
                 secondTeamPoints += 2;
-                explanationPieces.push(`${teams[1]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${teams[0]}`)
+                explanationPieces.push(`${nameTeams[1]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${nameTeams[0]}`)
             } else {
                 explanationPieces.push(`No one got any points for low team because there was a tie between the combined scores of the two teams`);
             }
@@ -674,33 +674,33 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             } else if (answers[j].question === "Which team had the fewest putts?") {
                 if (answers[j].answers.includes(nameTeams[0])) {
                     firstTeamPoints++;
-                    explanationPieces.push(`${teams[0]} got a point because they had the lowest combined putts`)
+                    explanationPieces.push(`${nameTeams[0]} got a point because they had the lowest combined putts`)
                 } else if (answers[j].answers.includes(nameTeams[1])) {
                     secondTeamPoints++;
-                    explanationPieces.push(`${teams[1]} got a point because they had the lowest combined putts`)
+                    explanationPieces.push(`${nameTeams[1]} got a point because they had the lowest combined putts`)
                 } else {
                     explanationPieces.push(`No one got a point for the lowest number of putts`)
                 }
             } else if (answers[j].answers.includes(teams[0][0]) && answers[j].answers.includes(teams[0][1])) {
                 firstTeamPoints += 2;
-                explanationPieces.push(`${teams[0]} each got 2 points because they both had a point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
+                explanationPieces.push(`${nameTeams[0]} each got 2 points because they both had a point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
                 pointsNeededToSweep++;
             } else if (answers[j].answers.includes(teams[1][0]) && answers[j].answers.includes(teams[1][1])) {
                 secondTeamPoints += 2;
-                explanationPieces.push(`${teams[1]} each got 2 points because they both had a point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
+                explanationPieces.push(`${nameTeams[1]} each got 2 points because they both had a point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
                 pointsNeededToSweep++;
             } else if (answers[j].answers.includes(teams[0][0])) {
                 firstTeamPoints++;
-                explanationPieces.push(`${teams[0]} each got 1 point because ${teams[0][0]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
+                explanationPieces.push(`${nameTeams[0]} each got 1 point because ${teams[0][0]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             } else if (answers[j].answers.includes(teams[0][1])) {
                 firstTeamPoints++;
-                explanationPieces.push(`${teams[0]} each got 1 point because ${teams[0][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
+                explanationPieces.push(`${nameTeams[0]} each got 1 point because ${teams[0][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             } else if (answers[j].answers.includes(teams[1][0])) {
                 secondTeamPoints++;
-                explanationPieces.push(`${teams[1]} each got 1 point because ${teams[1][0]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
+                explanationPieces.push(`${nameTeams[1]} each got 1 point because ${teams[1][0]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             } else if (answers[j].answers.includes(teams[1][1])) {
                 secondTeamPoints++;
-                explanationPieces.push(`${teams[1]} each got 1 point because ${teams[1][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
+                explanationPieces.push(`${nameTeams[1]} each got 1 point because ${teams[1][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
             }
         }
 
@@ -726,10 +726,10 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         if (firstTeamBirdieCount > 0) {
             if (secondTeamPoints > 0 || !miracle) {
                 firstTeamPoints += firstTeamBirdieCount;
-                explanationPieces.push(`${teams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
+                explanationPieces.push(`${nameTeams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
             } else {
                 firstTeamPoints++;
-                let explanation = `${teams[0]} each got 1 point for the birdie`;
+                let explanation = `${nameTeams[0]} each got 1 point for the birdie`;
                 
                 if (miracle && secondTeamPoints === 0 && firstTeamBirdieCount > 1) {
                     explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
@@ -742,10 +742,10 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         if (secondTeamBirdieCount > 0) {
             if (firstTeamPoints > 0) {
                 secondTeamPoints += secondTeamBirdieCount;
-                explanationPieces.push(`${teams[1]} each got ${secondTeamBirdieCount} point${secondTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${secondTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
+                explanationPieces.push(`${nameTeams[1]} each got ${secondTeamBirdieCount} point${secondTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${secondTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
             } else {
                 secondTeamPoints++;
-                let explanation = `${teams[1]} each got 1 point for the birdie`;
+                let explanation = `${nameTeams[1]} each got 1 point for the birdie`;
                 
                 if (miracle && firstTeamPoints === 0 && secondTeamBirdieCount > 1) {
                     explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
@@ -817,7 +817,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also")}. So doing the math of the point value and total points for each golfer, ${teams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${teams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value and total points for each golfer, ${teams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${teams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: scores[0].holeNumber,
             explanation: explanationString
