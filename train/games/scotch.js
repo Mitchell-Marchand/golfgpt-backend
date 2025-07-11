@@ -400,6 +400,9 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             }
         }
 
+        console.log("HOLE TO SCORE:", holeToScore);
+        console.log("Completed holes: ", cleanScorecard(currentScorecard)[0].holes.length)
+
         //Generate plusMinus and points for any holes that this score effects
         const priorScorecard = [...currentScorecard];
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
@@ -449,6 +452,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         if (scoredHoles.length === currentScorecard[0].holes.length) {
             status = "COMPLETED";
             console.log(JSON.stringify(priorScorecard, null, 2));
+            console.log(prompt);
         }
 
         await mariadbPool.query(
