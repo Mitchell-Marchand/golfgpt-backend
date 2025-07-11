@@ -540,11 +540,11 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
 
             if (needsToDouble && !isDoubled) {
-                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole.`)
+                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole`)
                 isDoubled = true;
                 pointWorth = autoDoubleValue;
             } else if (isDoubled && !needsToDouble) {
-                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, it was not at the start of this hole.`)
+                //explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, but it was not at the start of this hole`)
                 isDoubled = false;
                 pointWorth = pointVal;
             }
