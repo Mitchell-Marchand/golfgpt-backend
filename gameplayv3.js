@@ -275,7 +275,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         }*/
 
         //const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${rules || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
-        const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
+        //const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
 
         /*if (currentDisplayName && currentDisplayName?.length > 0) {
             //Update most recent user message with prompt && delete last assistant response
@@ -289,13 +289,15 @@ router.post("/create", authenticateUser, async (req, res) => {
             pastMessages.pop();
         }*/
 
+        const setupPrompt = `Here are the rules of a golf match: `;
+
         const messages = [
             //{ role: "system", content: "You are a JSON-only assistant. Respond with raw JSON only. Do not include any other text, no explanations, and no formatting. Output must begin with { and end with }. If your output does not match this, it is invalid." },
             //...pastMessages,
             { role: "user", content: setupPrompt }
         ];
 
-        let messageId = uuidv4();
+        /*let messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type) VALUES (?, ?, ?, ?)`,
             [messageId, matchId, "user", "setup"]
@@ -303,7 +305,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         await mariadbPool.query(
             `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
             [messageId, setupPrompt]
-        );
+        );*/
 
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
@@ -408,7 +410,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
                 ["READY_TO_START", blankAnswers(scorecards), displayName, matchId]
             );
 
-            const messageId = uuidv4();
+            /*const messageId = uuidv4();
             await mariadbPool.query(
                 `INSERT INTO Messages (id, threadId, role, type) VALUES (?, ?, ?, ?)`,
                 [messageId, matchId, "assistant", "setup"]
@@ -416,7 +418,7 @@ router.post("/confirm", authenticateUser, async (req, res) => {
             await mariadbPool.query(
                 `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
                 [messageId, JSON.stringify({ strokes, questions })]
-            );
+            );*/
         }
 
         res.json({ success: true, scorecards });
@@ -559,7 +561,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
 
-        let messageId = uuidv4();
+        /*let messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, content) VALUES (?, ?, ?, ?)`,
             [messageId, matchId, "user", "score"]
@@ -567,7 +569,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         await mariadbPool.query(
             `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
             [messageId, scorePrompt]
-        );
+        );*/
 
         let parsed;
         if (!expected) {
@@ -661,7 +663,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             [JSON.stringify(scorecards), summary, JSON.stringify(answers), status, matchId]
         );
 
-        messageId = uuidv4();
+        /*const messageId = uuidv4();
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type) VALUES (?, ?, ?, ?)`,
             [messageId, matchId, "assistant", "score"]
@@ -669,7 +671,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         await mariadbPool.query(
             `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
             [messageId, JSON.stringify(parsed)]
-        );
+        );*/
 
         //If all holes played, updated in results table
         if (allHolesPlayed) {
