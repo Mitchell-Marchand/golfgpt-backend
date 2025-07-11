@@ -272,8 +272,12 @@ async function runScotchGame() {
     let messageId = uuidv4();
     const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${names.join(", ")}\n\nHere are the rules of the game: ${prompt}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
     await mariadbPool.query(
-        `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-        [messageId, matchId, "user", "setup", 1, setupPrompt]
+        `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?)`,
+        [messageId, matchId, "user", "setup", 1]
+    );
+    await mariadbPool.query(
+        `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+        [messageId, setupPrompt]
     );
 
     await mariadbPool.query("UPDATE Matches SET status = ?, tees = ?, holeCount = ? WHERE id = ?", ["TEES_PROVIDED", JSON.stringify(tees), holeCount, matchId]);
@@ -320,8 +324,12 @@ async function runScotchGame() {
 
     messageId = uuidv4();
     await mariadbPool.query(
-        `INSERT INTO Messages (id, threadId, role, type, training, content) VALUES (?, ?, ?, ?, ?, ?)`,
-        [messageId, matchId, "assistant", "setup", 1, JSON.stringify(parsed)]
+        `INSERT INTO Messages (id, threadId, role, type, training) VALUES (?, ?, ?, ?, ?)`,
+        [messageId, matchId, "assistant", "setup", 1]
+    );
+    await mariadbPool.query(
+        `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+        [messageId, JSON.stringify(parsed)]
     );
 
     /*prompt = `Everything looks good, get ready to track the results of the match.`;
@@ -443,8 +451,12 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(promptScorecard))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
 
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "user", "score", 1, scoreId, scorePrompt]
+            `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "user", "score", 1, scoreId]
+        );
+        await mariadbPool.query(
+            `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+            [messageId, scorePrompt]
         );
 
         /*messageId = uuidv4();
@@ -464,8 +476,12 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         messageId = uuidv4();
         await mariadbPool.query(
-            `INSERT INTO Messages (id, threadId, role, type, training, scoreId, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [messageId, matchId, "assistant", "score", 1, scoreId, assistantResponse]
+            `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
+            [messageId, matchId, "assistant", "score", 1, scoreId]
+        );
+        await mariadbPool.query(
+            `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+            [messageId, assistantResponse]
         );
 
         let status = "IN_PROGRESS";
