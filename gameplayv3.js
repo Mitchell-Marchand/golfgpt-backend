@@ -325,6 +325,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             parsed = expected;
         }
 
+        console.log("parsed", JSON.stringify(parsed, null, 2))
+
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, parsed?.strokes, holes);
 
         console.log("Built a scorecard");
