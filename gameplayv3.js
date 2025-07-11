@@ -275,7 +275,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         }*/
 
         //const prompt = `Based on the following description of the golf match we're playing, generate a JSON object with the questions and stroke holes needed to score it.\nRules:\n${rules || "No rules just a regular game"}\nRespond ONLY with valid raw JSON.`;
-        //const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
+        const setupPrompt = `I'm playing a golf match and want you to keep score.\n\nGolfers: ${golfers.join(", ")}\n\nHere are the rules of the game: ${rules}\n\nGenerate a JSON object with the questions and stroke holes needed to score it. Respond ONLY with valid raw JSON.`;
 
         /*if (currentDisplayName && currentDisplayName?.length > 0) {
             //Update most recent user message with prompt && delete last assistant response
@@ -288,8 +288,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             pastMessages.pop();
         }*/
-
-        const setupPrompt = `Here are the rules of a golf match: `;
 
         const messages = [
             //{ role: "system", content: "You are a JSON-only assistant. Respond with raw JSON only. Do not include any other text, no explanations, and no formatting. Output must begin with { and end with }. If your output does not match this, it is invalid." },
