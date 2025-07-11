@@ -62,7 +62,7 @@ async function main() {
   }
 
   const numValidationScore = Math.floor(scoreConvos.length * 0.10);
-  const numValidationSetup = Math.floor(setupConvos.length * 0.05);
+  const numValidationSetup = Math.floor(setupConvos.length * 0.10);
 
   const validationScore = shuffleArray(scoreConvos).slice(0, numValidationScore);
   const validationSetup = shuffleArray(setupConvos).slice(0, numValidationSetup);
