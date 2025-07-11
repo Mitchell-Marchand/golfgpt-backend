@@ -25,27 +25,43 @@ function shuffleArray(array) {
 }
 
 async function main() {
-  const [rows] = await mariadbPool.query(`
+  const [messages] = await mariadbPool.query(`
     SELECT 
+      m.id,
       m.threadId,
       m.scoreId,
       m.role,
-      mc.content,
       m.createdAt,
       m.serial,
       m.type
     FROM Messages m
-    LEFT JOIN MessageContents mc ON mc.messageId = m.id
     WHERE m.training = 1
     ORDER BY m.type, m.scoreId, m.threadId, m.createdAt, m.serial
   `);
+
+  // Step 2: Fetch content only for relevant messageIds
+  const messageIds = messages.map(m => m.id);
+
+  let contents = [];
+  if (messageIds.length > 0) {
+    [contents] = await mariadbPool.query(
+      `SELECT messageId, content FROM MessageContents WHERE messageId IN (?)`,
+      [messageIds]
+    );
+  }
+
+  // Step 3: Merge content into messages
+  const contentMap = new Map(contents.map(c => [c.messageId, c.content]));
+  for (let m of messages) {
+    m.content = contentMap.get(m.id) || null;
+  }
 
   const setupConvos = [];
   const scoreConvos = [];
 
   const grouped = new Map();
 
-  for (const row of rows) {
+  for (const row of messages) {
     const key = row.type === "score" ? `score__${row.scoreId}` : `setup__${row.threadId}`;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push({
