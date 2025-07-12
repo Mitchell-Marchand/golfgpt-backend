@@ -45,6 +45,10 @@ async function runScotchGame() {
 
     let strokeObject = getStrokes(names, holes);
     let strokes = strokeObject.strokes;
+
+    console.log("stroke object", JSON.stringify(strokeObject, null, 2));
+    return;
+
     let strokePrompt = strokeObject.prompt;
     if (getRandomInt(3) === 1) {
         strokePrompt = "";
@@ -260,7 +264,8 @@ async function runScotchGame() {
     if (strokePrompt) {
         prompt += ` ${strokePrompt}`;
     }
-    //console.log("Prompt:", prompt);
+
+    console.log("Prompt:", prompt);
 
     //Create the game...
     const matchId = uuidv4();
