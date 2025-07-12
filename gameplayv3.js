@@ -16,8 +16,9 @@ const router = express.Router();
 //const model = "ft:gpt-3.5-turbo-1106:personal:test-jul-725-1155:BqvMKYiV";
 //const setupModel = "ft:gpt-3.5-turbo-0125:personal:scotch-setup-v4:Bs2IEsJz"; //2000 matches 10% validation
 //const scoringModel = "ft:gpt-3.5-turbo-0125:personal:scotch-scoring-v3:BrygmwR1"; //60 matches 10% validation
-const setupModel = "ft:gpt-3.5-turbo-0125:personal:scotch-setup-v52:BsFjBob8"; //800 matches, 10% validation, system prompts
+//const setupModel = "ft:gpt-3.5-turbo-0125:personal:scotch-setup-v52:BsFjBob8"; //900 matches, 10% validation, system prompts
 const scoringModel = "ft:gpt-3.5-turbo-0125:personal:scotch-score-v5:BsGKE2YI"; //800 conversations, 10%, system prompt
+const setupModel = "ft:gpt-3.5-turbo-0125:personal:scotch-setup-v6:BsJuRsCA"; //pops, 900 matches, 10% validation, system prompts
 
 const mariadbPool = mysql.createPool({
     host: 'ec2-18-232-136-96.compute-1.amazonaws.com',
