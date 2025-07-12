@@ -129,7 +129,7 @@ async function main() {
     }
   }
 
-  for (const { key, messages } of setupConvos) {
+  /*for (const { key, messages } of setupConvos) {
     const out = validationKeys.has(key) ? files.setupVal : files.setupTrain;
 
     // Inject scoring system message at the beginning
@@ -137,7 +137,7 @@ async function main() {
 
     console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(updatedMessages));
     out.write(JSON.stringify({ messages: updatedMessages }) + "\n");
-  }
+  }*/
 
   // Close all file streams
   Object.values(files).forEach(stream => stream.end());
