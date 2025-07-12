@@ -852,9 +852,9 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             for (let j = 0; j < holeExplanations.length; j++) {
                 if (holeExplanations[j].holeNumber === currentScorecard[0].holes[i].holeNumber) {
                     if (holeExplanations[j].holeNumber === scores[0].holeNumber) {
-                        updatedExplanations.push(`Hole ${holeExplanations[j].holeNumber}: ${holeExplanations[j].explanation}`);
+                        updatedExplanations.push(`HOLE ${holeExplanations[j].holeNumber}: ${holeExplanations[j].explanation}`);
                     } else {
-                        updatedExplanations.push(`Hole ${holeExplanations[j].holeNumber} (Changed due to update): ${holeExplanations[j].explanation}`);
+                        updatedExplanations.push(`HOLE ${holeExplanations[j].holeNumber} (Changed due to update): ${holeExplanations[j].explanation}`);
                     }
                     
                     break;
@@ -868,7 +868,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
     return {
         scorecards: currentScorecard,
         expected,
-        explanation: updatedExplanations.join(".")
+        explanation: updatedExplanations.join(". ")
     }
 }
 
