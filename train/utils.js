@@ -259,7 +259,7 @@ Each golfer object in the JSON must include:
 - "plusMinus"
 
 Do not include any explanation, commentary, or non-JSON output. The math must be correct.`;*/
-const scoringSystemMessage = "Return ONLY the JSON Output with no explanation."
+const scoringSystemMessage = "Return ONLY the JSON Output with NO explanation."
 
 module.exports = {
     getRandomInt,
