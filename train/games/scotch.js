@@ -261,7 +261,7 @@ async function runScotchGame() {
     if (strokePrompt) {
         prompt += ` ${strokePrompt}`;
     }
-    
+
     console.log("Prompt:", prompt);
 
     //Create the game...
@@ -452,8 +452,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         let scoreId = uuidv4();
         let messageId = uuidv4();
-        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(promptScorecard))}\n\n${prompt}\n\nReturn the results for each golfer with new plusMinus and points data on this hole and any other hole this result affects.`
-
+        const scorePrompt = `${summary}\n\nHere's the current scorecard: ${JSON.stringify(cleanScorecard(promptScorecard))}\n\n${prompt}`
         await mariadbPool.query(
             `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
             [messageId, matchId, "user", "score", 1, scoreId]
@@ -462,6 +461,40 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
             [messageId, scorePrompt]
         );
+
+        //TODO: Separate into individual messages for results of each golfer
+        for (let j = 0; j < nameTeams.length; j++) {
+            const team = nameTeams[j];
+            for (let k = 0; k < team.length; k++) {
+                const golfer = team[k];
+                const results = expected.filter(obj => obj.name === golfer);
+                let assistantResponse = [];
+
+                for (let m = 0; m < results.length; m++) {
+                    assistantResponse.push([`Hole ${results[m].holeNumber}`, results[m].plusMinus, results[m].points]);
+                }
+
+                messageId = uuidv4();
+                await mariadbPool.query(
+                    `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
+                    [messageId, matchId, "user", "score", 1, scoreId]
+                );
+                await mariadbPool.query(
+                    `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+                    [messageId, `What are the updated plusMinus and points for ${golfer}?`]
+                );
+
+                messageId = uuidv4();
+                await mariadbPool.query(
+                    `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
+                    [messageId, matchId, "assistant", "score", 1, scoreId]
+                );
+                await mariadbPool.query(
+                    `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
+                    [messageId, JSON.stringify(assistantResponse)]
+                );
+            }
+        }
 
         /*messageId = uuidv4();
         await mariadbPool.query(
@@ -475,7 +508,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             [messageId, matchId, "user", "score", 1, scoreId, prompt]
         );*/
 
-        const assistantResponse = `Reasoning: ${explanation}\n\nJSON Output: ${JSON.stringify(parsed)}`;
+        /*const assistantResponse = `Reasoning: ${explanation}\n\nJSON Output: ${JSON.stringify(parsed)}`;
 
         messageId = uuidv4();
         await mariadbPool.query(
@@ -485,7 +518,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         await mariadbPool.query(
             `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
             [messageId, assistantResponse]
-        );
+        );*/
 
         let status = "IN_PROGRESS";
         if (scoredHoles.length === currentScorecard[0].holes.length) {
@@ -582,7 +615,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
                 let change = true;
 
-                if (autoDoubleMoneyTrigger > 0) {;
+                if (autoDoubleMoneyTrigger > 0) {
+                    ;
                     for (let j = 0; j < currentScorecard.length; j++) {
                         if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
                             change = false;
@@ -733,7 +767,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             } else {
                 firstTeamPoints++;
                 let explanation = `${nameTeams[0]} each got 1 point for the birdie`;
-                
+
                 if (miracle && secondTeamPoints === 0 && firstTeamBirdieCount > 1) {
                     explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
                 }
@@ -749,7 +783,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             } else {
                 secondTeamPoints++;
                 let explanation = `${nameTeams[1]} each got 1 point for the birdie`;
-                
+
                 if (miracle && firstTeamPoints === 0 && secondTeamBirdieCount > 1) {
                     explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
                 }
@@ -859,7 +893,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                     } else {
                         updatedExplanations.push(`HOLE ${holeExplanations[j].holeNumber} (Changed due to update): ${holeExplanations[j].explanation}`);
                     }
-                    
+
                     break;
                 }
             }
