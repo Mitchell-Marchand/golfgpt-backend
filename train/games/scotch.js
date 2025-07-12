@@ -261,6 +261,8 @@ async function runScotchGame() {
     if (strokePrompt) {
         prompt += ` ${strokePrompt}`;
     }
+    
+    console.log("Prompt:", prompt);
 
     //Create the game...
     const matchId = uuidv4();
