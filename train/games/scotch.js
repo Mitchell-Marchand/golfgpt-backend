@@ -300,7 +300,7 @@ async function runScotchGame() {
         questions
     }
 
-    console.log("parsed", JSON.stringify(parsed));
+    //console.log("parsed", JSON.stringify(parsed));
 
     const builtScorecards = buildScorecards(allScorecards, tees, parsed?.strokes, holeCount);
 
