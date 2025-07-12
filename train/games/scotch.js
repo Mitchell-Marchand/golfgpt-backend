@@ -467,7 +467,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             const team = nameTeams[j];
             for (let k = 0; k < team.length; k++) {
                 const golfer = team[k];
-                const results = expected.filter(obj => obj.name === golfer);
+                const results = parsed.filter(obj => obj.name === golfer);
                 let assistantResponse = [];
 
                 for (let m = 0; m < results.length; m++) {
