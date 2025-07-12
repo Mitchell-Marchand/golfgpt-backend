@@ -463,37 +463,42 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         );
 
         //TODO: Separate into individual messages for results of each golfer
-        for (let j = 0; j < nameTeams.length; j++) {
-            const team = nameTeams[j];
-            for (let k = 0; k < team.length; k++) {
-                const golfer = team[k];
-                const results = parsed.filter(obj => obj.name === golfer);
-                let assistantResponse = [];
+        const golferNames = nameTeams.flat();
+        const golferMap = new Map();
 
-                for (let m = 0; m < results.length; m++) {
-                    assistantResponse.push([`Hole ${results[m].holeNumber}`, results[m].plusMinus, results[m].points]);
-                }
-
-                messageId = uuidv4();
-                await mariadbPool.query(
-                    `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
-                    [messageId, matchId, "user", "score", 1, scoreId]
-                );
-                await mariadbPool.query(
-                    `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
-                    [messageId, `What are the updated plusMinus and points for ${golfer}?`]
-                );
-
-                messageId = uuidv4();
-                await mariadbPool.query(
-                    `INSERT INTO Messages (id, threadId, role, type, training, scoreId) VALUES (?, ?, ?, ?, ?, ?)`,
-                    [messageId, matchId, "assistant", "score", 1, scoreId]
-                );
-                await mariadbPool.query(
-                    `INSERT INTO MessageContents (messageId, content) VALUES (?, ?)`,
-                    [messageId, JSON.stringify(assistantResponse)]
-                );
+        // Preprocess parsed results by golfer name
+        for (const result of parsed) {
+            if (!golferMap.has(result.name)) {
+                golferMap.set(result.name, []);
             }
+            golferMap.get(result.name).push([
+                `Hole ${result.holeNumber}`,
+                result.plusMinus,
+                result.points
+            ]);
+        }
+
+        for (const golfer of golferNames) {
+            const assistantResponse = golferMap.get(golfer) || [];
+
+            const userMessageId = uuidv4();
+            const assistantMessageId = uuidv4();
+
+            await mariadbPool.query(`
+                INSERT INTO Messages (id, threadId, role, type, training, scoreId)
+                VALUES (?, ?, 'user', 'score', 1, ?), (?, ?, 'assistant', 'score', 1, ?)
+            `, [
+                userMessageId, matchId, scoreId,
+                assistantMessageId, matchId, scoreId
+            ]);
+
+            await mariadbPool.query(`
+                INSERT INTO MessageContents (messageId, content)
+                VALUES (?, ?), (?, ?)
+            `, [
+                userMessageId, `What are the updated plusMinus and points for ${golfer}?`,
+                assistantMessageId, JSON.stringify(assistantResponse)
+            ]);
         }
 
         /*messageId = uuidv4();
