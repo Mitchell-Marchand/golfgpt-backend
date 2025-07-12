@@ -472,7 +472,6 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         );*/
 
         const assistantResponse = `Reasoning: ${explanation}\n\nJSON Output: ${JSON.stringify(parsed)}`;
-        console.log("Assistant response:", assistantResponse);
 
         messageId = uuidv4();
         await mariadbPool.query(
