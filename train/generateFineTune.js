@@ -99,13 +99,34 @@ async function main() {
   };
 
   for (const { key, messages } of scoreConvos) {
-    const out = validationKeys.has(key) ? files.scoreVal : files.scoreTrain;
-  
-    // Inject scoring system message at the beginning
-    const updatedMessages = [{ role: "system", content: scoringSystemMessage }, ...messages];
-  
-    console.log(`[SCORE ${validationKeys.has(key) ? "VALID" : "TRAIN"}] ${key}: Tokens =`, countTokensForMessages(updatedMessages));
-    out.write(JSON.stringify({ messages: updatedMessages }) + "\n");
+    const isValidation = validationKeys.has(key);
+    const out = isValidation ? files.scoreVal : files.scoreTrain;
+
+    // Clone messages so we can safely modify
+    const cloned = messages.map(m => ({ ...m }));
+
+    // In validation, inject system message and strip reasoning
+    if (isValidation) {
+      const userMessage = cloned.find(m => m.role === "user");
+      const assistantMessage = cloned.find(m => m.role === "assistant");
+
+      if (assistantMessage?.content?.includes("JSON Output:")) {
+        assistantMessage.content = assistantMessage.content.split("JSON Output:").pop().trim();
+      }
+
+      const updatedMessages = [
+        { role: "system", content: scoringSystemMessage },
+        userMessage,
+        assistantMessage,
+      ];
+
+      console.log(`[SCORE VALID] ${key}: Tokens =`, countTokensForMessages(updatedMessages));
+      out.write(JSON.stringify({ messages: updatedMessages }) + "\n");
+    } else {
+      // Training: keep as-is, no system message
+      console.log(`[SCORE TRAIN] ${key}: Tokens =`, countTokensForMessages(cloned));
+      out.write(JSON.stringify({ messages: cloned }) + "\n");
+    }
   }
 
   for (const { key, messages } of setupConvos) {

@@ -236,7 +236,7 @@ You must output only a valid JSON object with the following two keys:
 
 Do not output any explanation or formatting outside the JSON object.`;
 
-const scoringSystemMessage = `You are a fine-tuned model designed to calculate golf match scoring using logic and math.
+/*const scoringSystemMessage = `You are a fine-tuned model designed to calculate golf match scoring using logic and math.
 
 Your role is to apply match rules and current gameplay context to determine each golfer's updated "plusMinus" and "points". You must understand and execute the underlying scoring logic — not just match patterns or format.
 
@@ -258,7 +258,8 @@ Each golfer object in the JSON must include:
 - "points"
 - "plusMinus"
 
-Do not include any explanation, commentary, or non-JSON output. The math must be correct.`;
+Do not include any explanation, commentary, or non-JSON output. The math must be correct.`;*/
+const scoringSystemMessage = "Return ONLY the JSON Output with no explanation."
 
 module.exports = {
     getRandomInt,
