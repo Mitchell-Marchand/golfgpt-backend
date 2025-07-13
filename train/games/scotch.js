@@ -487,7 +487,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         for (const golfer of golferNames) {
             const assistantJSONResponse = golferMap.get(golfer) || [];
-            const assistantResponse = `EXPLANATION:\n${filterGolferResultsInText(explanation, golfer)}\n\nJSON OUTPUT:\n${JSON.stringify(assistantJSONResponse)}`
+            const assistantResponse = `EXPLANATION: ${filterGolferResultsInText(explanation, golfer)}\n\nJSON OUTPUT: ${JSON.stringify(assistantJSONResponse)}`
 
             const userMessageId = uuidv4();
             const assistantMessageId = uuidv4();
