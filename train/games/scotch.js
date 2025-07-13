@@ -435,8 +435,14 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         //Generate plusMinus and points for any holes that this score effects
         const results = getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle);
         const parsed = results.expected;
-        const explanation = results.explanation;
+        let explanation = results.explanation;
         currentScorecard = results.scorecards;
+
+        if (parsed.length > teams.flat().length) {
+            explanation += ' This update also caused values to change for this golfer on other holes.';
+        } else {
+            explanation += '.';
+        }
 
         let prompt = "";
         const scoresToPrompt = scores.map(({ holeNumber, ...rest }) => rest);
@@ -479,8 +485,9 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         }
 
         for (const golfer of golferNames) {
-            const assistantResponse = golferMap.get(golfer) || [];
-
+            const assistantJSONResponse = golferMap.get(golfer) || [];
+            const assistantResponse = `EXPLANATION: ${explanation}\n\nJSON OUTPUT: ${JSON.stringify(assistantJSONResponse)}`
+            
             const userMessageId = uuidv4();
             const assistantMessageId = uuidv4();
 
@@ -497,8 +504,10 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
                 VALUES (?, ?), (?, ?)
             `, [
                 userMessageId, `What are the updated plusMinus and points for ${golfer}?`,
-                assistantMessageId, JSON.stringify(assistantResponse)
+                assistantMessageId, assistantResponse
             ]);
+
+            console.log(`EXPLANATION: ${explanation}\n\nJSON OUTPUT: ${JSON.stringify(assistantJSONResponse)}`)
         }
 
         /*messageId = uuidv4();
@@ -619,6 +628,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
                 let change = true;
+                let changeDueToString = ` but since no one was down ${autoDoubleMoneyTrigger} or more the money per point did is not increased for this hole`;
 
                 if (autoDoubleMoneyTrigger > 0) {
                     ;
@@ -635,12 +645,14 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                     for (let j = 0; j < currentScorecard.length; j++) {
                         if (currentScorecard[j].plusMinus !== 0) {
                             change = true;
+                            changeDueToString = ` but since the match is no longer tied the money per point did is not increased for this hole`;
                             break;
                         }
                     }
                 }
 
                 if (change) {
+                    explanationPieces.push(`money per point was incresed on the last hole${changeDueToString}`)
                     pointWorth = pointVal;
                     isDoubled = false;
                 }
