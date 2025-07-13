@@ -463,7 +463,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         );
 
         //TODO: Separate into individual messages for results of each golfer
-        const golferNames = nameTeams.flat();
+        const golferNames = teams.flat();
         const golferMap = new Map();
 
         // Preprocess parsed results by golfer name
