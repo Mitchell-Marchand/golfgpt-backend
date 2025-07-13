@@ -952,11 +952,12 @@ function filterGolferResultsInText(fullString, golferName) {
 
         for (const pointMatch of pointsBlock.matchAll(golferMatchRegex)) {
             const [_, namesStr, points, plusMinus] = pointMatch;
-            const names = namesStr.split('&').map((n) => n.trim());
 
-            if (names.includes(golferName)) {
+            const names = namesStr.split("&").map((n) => n.trim());
+
+            if (names.includes(golferName.trim())) {
                 resultLine = `${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`;
-                break; // stop once found
+                break;
             }
         }
 
