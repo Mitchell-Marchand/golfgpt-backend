@@ -937,36 +937,40 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
 function filterGolferResultsInText(fullString, golferName) {
     const summaryRegex =
-        /So when added up, since the point value on this hole is \$\d+(?:\.\d{1,2})?(?:, and points cancel eachother out when calculating plusMinus,)? ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\), and ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)/g;
+        /So when added up, since the point value on this hole is \$\d+(?:\.\d{1,2})?(?:, and points cancel each other out when calculating plusMinus)?(.*?), ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\), and ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)/g;
 
-    let updated = fullString;
-    const matches = [...fullString.matchAll(summaryRegex)];
-
-    for (const match of matches) {
-        const [fullMatch, team1Names, team1Points, team1Money, team2Names, team2Points, team2Money] = match;
-
+    return fullString.replace(summaryRegex, (
+        fullMatch,
+        extraClause,
+        team1Names,
+        team1Points,
+        team1Money,
+        team2Names,
+        team2Points,
+        team2Money
+    ) => {
         const teams = [
-            { names: team1Names.split("&").map(n => n.trim()), points: team1Points, money: team1Money },
-            { names: team2Names.split("&").map(n => n.trim()), points: team2Points, money: team2Money },
+            {
+                names: team1Names.split("&").map((n) => n.trim()),
+                points: team1Points,
+                money: team1Money,
+            },
+            {
+                names: team2Names.split("&").map((n) => n.trim()),
+                points: team2Points,
+                money: team2Money,
+            },
         ];
-
-        let replacement = null;
 
         for (const team of teams) {
             if (team.names.includes(golferName)) {
-                replacement = `${golferName} got ${team.points} points and ${team.money} plusMinus (money won or lost).`;
-                break;
+                const leadIn = `So when added up, since the point value on this hole is $${parseInt(team.money) < 0 ? Math.abs(parseInt(team.money)) : team.money}${extraClause || ""},`;
+                return `${leadIn} ${golferName} got ${team.points} points and ${team.money} plusMinus (money won or lost).`;
             }
         }
 
-        if (!replacement) {
-            throw new Error(`Golfer "${golferName}" not found in: ${fullMatch}`);
-        }
-
-        updated = updated.replace(fullMatch, replacement);
-    }
-
-    return updated;
+        throw new Error(`Golfer "${golferName}" not found in: ${fullMatch}`);
+    });
 }
 
 function getTeamTotals(teamScores) {
