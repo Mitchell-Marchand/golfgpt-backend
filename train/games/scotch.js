@@ -931,7 +931,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
     return {
         scorecards: currentScorecard,
         expected,
-        explanation: updatedExplanations.join(".\n")
+        explanation: updatedExplanations.join(". ")
     }
 }
 
