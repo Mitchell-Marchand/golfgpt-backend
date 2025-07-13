@@ -439,7 +439,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         currentScorecard = results.scorecards;
 
         if (parsed.length > teams.flat().length) {
-            explanation += ' This update also caused values to change for this golfer on other holes.';
+            explanation += " I've returned the updated plusMinus for multiple holes because this score update changes their values.";
         } else {
             explanation += '.';
         }
