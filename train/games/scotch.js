@@ -439,7 +439,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         currentScorecard = results.scorecards;
 
         if (parsed.length > teams.flat().length) {
-            explanation += " I've returned the updated plusMinus for additional holes because this score update changes their values.";
+            explanation += ". I've returned the updated plusMinus for additional holes because this score update changes their values.";
         } else {
             explanation += '.';
         }
@@ -487,7 +487,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         for (const golfer of golferNames) {
             const assistantJSONResponse = golferMap.get(golfer) || [];
-            const assistantResponse = `EXPLANATION: ${filterGolferResultsInText(explanation, golfer)}\n\nJSON OUTPUT: ${JSON.stringify(assistantJSONResponse)}`
+            const assistantResponse = `EXPLANATION:\n${filterGolferResultsInText(explanation, golfer)}\n\nJSON OUTPUT:\n${JSON.stringify(assistantJSONResponse)}`
 
             const userMessageId = uuidv4();
             const assistantMessageId = uuidv4();
@@ -931,7 +931,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
     return {
         scorecards: currentScorecard,
         expected,
-        explanation: updatedExplanations.join(". ")
+        explanation: updatedExplanations.join(".\n")
     }
 }
 
