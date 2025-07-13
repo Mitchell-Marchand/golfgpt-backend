@@ -508,9 +508,9 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
                 assistantMessageId, assistantResponse
             ]);
 
-            /*if (assistantJSONResponse.length > 1) {
+            //if (assistantJSONResponse.length > 1) {
                 console.log(`ORIGINAL STRING: ${explanation}\n\nRESULT: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
-            }*/
+            //}
         }
 
         /*messageId = uuidv4();
