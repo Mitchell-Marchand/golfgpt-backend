@@ -928,12 +928,15 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
 function filterGolferResultsInText(fullString, golferName) {
     const splitSections = fullString.split("So doing the math of the point value on this hole");
-    const resultSections = [splitSections[0]]; // Keep first part (everything before any "math" section)
+    const resultSections = [splitSections[0]]; // Keep everything before first math section
 
-    const regex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) points and (-?\d+) plusMinus \(money won or lost\)/g;
+    // Match relaxed: allow "points" or "pointpoints"
+    const regex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
 
     for (let i = 1; i < splitSections.length; i++) {
         const section = splitSections[i];
+
+        // Find all matches
         const matches = [...section.matchAll(regex)];
         const matchingLines = [];
 
@@ -943,12 +946,15 @@ function filterGolferResultsInText(fullString, golferName) {
             if (names.includes(golferName)) {
                 matchingLines.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
             }
+
+            // Remove the original match from the section
+            section = section.replace(fullMatch, '');
         }
 
-        // Replace the entire "math" section with only matching golfer results
-        const updatedSection = section.replace(regex, '').trim();
         const insert = matchingLines.join(' ') || `${golferName} had no result on this hole.`;
-        resultSections.push(`So doing the math of the point value on this hole ${insert} ${updatedSection}`);
+        const cleaned = section.trim().replace(/^[$,\s]+/, ''); // remove leftover punctuation
+
+        resultSections.push(`So doing the math of the point value on this hole ${insert}${cleaned ? ' ' + cleaned : ''}`);
     }
 
     return resultSections.join('');
