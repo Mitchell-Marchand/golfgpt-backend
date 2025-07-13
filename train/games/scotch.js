@@ -486,8 +486,8 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
 
         for (const golfer of golferNames) {
             const assistantJSONResponse = golferMap.get(golfer) || [];
-            const assistantResponse = `EXPLANATION: ${explanation}\n\nJSON OUTPUT: ${JSON.stringify(assistantJSONResponse)}`
-            
+            const assistantResponse = filterGolferResultsInText(`EXPLANATION: ${explanation}\n\nJSON OUTPUT: ${JSON.stringify(assistantJSONResponse)}`, golfer)
+
             const userMessageId = uuidv4();
             const assistantMessageId = uuidv4();
 
@@ -715,15 +715,15 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             if (answers[j].question === "Was there a press or double press?") {
                 if (answers[j].answers.includes("Double Press")) {
                     doubleValue = 3;
-                    explanationPieces.push(`points are doubled and then doubled again becaused there was a double press on the hole`);
+                    explanationPieces.push(`points are doubled and then doubled again because there was a double press on the hole`);
                 } else if (answers[j].answers.includes("Press")) {
                     doubleValue = 2;
-                    explanationPieces.push(`points are doubled becaused there was a press on the hole`);
+                    explanationPieces.push(`points are doubled because there was a press on the hole`);
                 }
             } else if (answers[j].question === "Was there a press?") {
                 if (answers[j].answers.includes("Yes")) {
                     doubleValue = 2;
-                    explanationPieces.push(`points are doubled becaused there was a press on the hole`);
+                    explanationPieces.push(`points are doubled because there was a press on the hole`);
                 }
             } else if (answers[j].question === "Which team had the fewest putts?") {
                 if (answers[j].answers.includes(nameTeams[0])) {
@@ -924,6 +924,34 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         expected,
         explanation: updatedExplanations.join(". ")
     }
+}
+
+function filterGolferResultsInText(fullString, golferName) {
+    const splitSections = fullString.split("So doing the math of the point value on this hole");
+    const resultSections = [splitSections[0]]; // Keep first part (everything before any "math" section)
+
+    const regex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) points and (-?\d+) plusMinus \(money won or lost\)/g;
+
+    for (let i = 1; i < splitSections.length; i++) {
+        const section = splitSections[i];
+        const matches = [...section.matchAll(regex)];
+        const matchingLines = [];
+
+        for (const match of matches) {
+            const [fullMatch, namesStr, points, plusMinus] = match;
+            const names = namesStr.split('&').map(n => n.trim());
+            if (names.includes(golferName)) {
+                matchingLines.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
+            }
+        }
+
+        // Replace the entire "math" section with only matching golfer results
+        const updatedSection = section.replace(regex, '').trim();
+        const insert = matchingLines.join(' ') || `${golferName} had no result on this hole.`;
+        resultSections.push(`So doing the math of the point value on this hole ${insert} ${updatedSection}`);
+    }
+
+    return resultSections.join('');
 }
 
 function getTeamTotals(teamScores) {
