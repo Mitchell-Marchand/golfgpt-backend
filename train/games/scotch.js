@@ -682,7 +682,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 explanationPieces.push(`${nameTeams[1]} both got the point for low individual because they're a team and it's worth one point in 4 point scotch and one or both of them had the lowest score`)
                 secondTeamPoints++;
             } else {
-                explanationPieces.push(`No one got a point for low individual because there was a tie between the lowest score of the two teams`)
+                explanationPieces.push(`no one got a point for low individual because there was a tie between the lowest score of the two teams`)
             }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
@@ -692,7 +692,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 secondTeamPoints++;
                 explanationPieces.push(`${nameTeams[1]} both got 1 point for low team because it's worth one point in 4 point scotch and their combined score is lower than the combined score of ${nameTeams[0]}`)
             } else {
-                explanationPieces.push(`No one got a point for low team because there was a tie between the combined scores of the two teams`);
+                explanationPieces.push(`no one got a point for low team because there was a tie between the combined scores of the two teams`);
             }
         } else {
             if (getLowScoreWinners(teamScores).team1Wins) {
@@ -702,7 +702,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 secondTeamPoints += 2;
                 explanationPieces.push(`${nameTeams[1]} both got 2 points for low individual because they're a team and it's worth two points in ${points} point scotch and one or both of them had the lowest score`)
             } else {
-                explanationPieces.push(`No one got any points for low individual because there was a tie between the lowest score of the two teams`)
+                explanationPieces.push(`no one got any points for low individual because there was a tie between the lowest score of the two teams`)
             }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
@@ -712,7 +712,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 secondTeamPoints += 2;
                 explanationPieces.push(`${nameTeams[1]} got 2 points for low team because it's worth two points in 6 point scotch and their combined score is lower than the combined score of ${nameTeams[0]}`)
             } else {
-                explanationPieces.push(`No one got any points for low team because there was a tie between the combined scores of the two teams`);
+                explanationPieces.push(`no one got any points for low team because there was a tie between the combined scores of the two teams`);
             }
         }
 
