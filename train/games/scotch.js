@@ -836,9 +836,11 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         if (secondTeamPoints === 0 && firstTeamPoints >= pointsNeededToSweep) {
             firstTeamPoints = firstTeamPoints * 2;
             swept = true;
+            explanationPieces.push(`it is a sweep because ${nameTeams[1]} got 0 points and ${nameTeams[0]} got every type of point possible so the points double`);
         } else if (firstTeamPoints === 0 && secondTeamPoints >= pointsNeededToSweep) {
             secondTeamPoints = secondTeamPoints * 2;
             swept = true;
+            explanationPieces.push(`it is a sweep because ${nameTeams[0]} got 0 points and ${nameTeams[1]} got every type of point possible so the points double`);
         }
 
         if (miracle && swept) {
@@ -851,8 +853,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                     secondTeamPoints = secondTeamPoints * 2;
                 }
             }
-
-            explanationPieces.push(`since one of the teams got 0 points and the other got every type of point possible it is a miracle/sweep and the points double`);
         }
 
         for (let j = 0; j < doubleValue - 1; j++) {
