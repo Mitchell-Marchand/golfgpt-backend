@@ -937,11 +937,13 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
 function filterGolferResultsInText(fullString, golferName) {
     const summaryRegex =
-        /So when added up, since the point value on this hole is \$\d+(?:\.\d{1,2})?(?:, and points cancel each other out when calculating plusMinus)?(.*?), ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\), and ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)/g;
+        /So when added up, since the point value on this hole is (\$\d+(?:\.\d{1,2})?)(, and points cancel each other out when calculating plusMinus)?(.*?), ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\), and ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)\.?/g;
 
     return fullString.replace(summaryRegex, (
         fullMatch,
-        extraClause,
+        pointValue,
+        cancelClause = '',
+        middleClause = '',
         team1Names,
         team1Points,
         team1Money,
@@ -951,12 +953,12 @@ function filterGolferResultsInText(fullString, golferName) {
     ) => {
         const teams = [
             {
-                names: team1Names.split("&").map((n) => n.trim()),
+                names: team1Names.split("&").map(n => n.trim()),
                 points: team1Points,
                 money: team1Money,
             },
             {
-                names: team2Names.split("&").map((n) => n.trim()),
+                names: team2Names.split("&").map(n => n.trim()),
                 points: team2Points,
                 money: team2Money,
             },
@@ -964,8 +966,7 @@ function filterGolferResultsInText(fullString, golferName) {
 
         for (const team of teams) {
             if (team.names.includes(golferName)) {
-                const leadIn = `So when added up, since the point value on this hole is $${parseInt(team.money) < 0 ? Math.abs(parseInt(team.money)) : team.money}${extraClause || ""},`;
-                return `${leadIn} ${golferName} got ${team.points} points and ${team.money} plusMinus (money won or lost).`;
+                return `So when added up, since the point value on this hole is ${pointValue}${cancelClause || ''}${middleClause}, ${golferName} got ${team.points} points and ${team.money} plusMinus (money won or lost).`;
             }
         }
 
