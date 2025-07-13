@@ -507,7 +507,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
                 assistantMessageId, assistantResponse
             ]);
 
-            console.log(filterGolferResultsInText(explanation, golfer))
+            console.log(`ORIGINAL STRING: ${explanation}\nRETURNED (for ${golfer} as name): ${filterGolferResultsInText(explanation, golfer)}\n\n`)
         }
 
         /*messageId = uuidv4();
