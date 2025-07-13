@@ -880,7 +880,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also ")}${doubleString ? `, also ${doubleString}` : ""}. So doing the math of the point value on this hole ($${pointWorth}) and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}${doubleString ? `, also ${doubleString}` : ""}. So when added up, since the point value on this hole is $${pointWorth},${firstTeamPoints > 0 && secondTeamPoints > 0 ? " and points cancel eachother out when calculating plusMinus," : ""} ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             explanation: explanationString
@@ -936,37 +936,34 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 }
 
 function filterGolferResultsInText(fullString, golferName) {
-    const resultRegex =
-        /So doing the math of the point value on this hole\s*(\(\$\d+(?:\.\d{1,2})?\))\s*and total points for each golfer,([\s\S]*?)(?=(?:HOLE \d+|$))/g;
+    const summaryRegex =
+        /So when added up, since the point value on this hole is \$\d+(?:\.\d{1,2})?(?:, and points cancel eachother out when calculating plusMinus,)? ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\), and ([A-Za-z\s&]+?) each got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)/g;
 
     let updated = fullString;
-    const matches = [...fullString.matchAll(resultRegex)];
+    const matches = [...fullString.matchAll(summaryRegex)];
 
     for (const match of matches) {
-        const [fullMatch, dollarAmount, pointsBlock] = match;
+        const [fullMatch, team1Names, team1Points, team1Money, team2Names, team2Points, team2Money] = match;
 
-        const golferMatchRegex =
-            /([A-Za-z\s&]+?) (?:each|both) got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)/gi;
+        const teams = [
+            { names: team1Names.split("&").map(n => n.trim()), points: team1Points, money: team1Money },
+            { names: team2Names.split("&").map(n => n.trim()), points: team2Points, money: team2Money },
+        ];
 
-        let resultLine = null;
+        let replacement = null;
 
-        for (const pointMatch of pointsBlock.matchAll(golferMatchRegex)) {
-            const [_, namesStr, points, plusMinus] = pointMatch;
-
-            const names = namesStr.split("&").map((n) => n.trim());
-
-            if (names.includes(golferName.trim())) {
-                resultLine = `${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`;
+        for (const team of teams) {
+            if (team.names.includes(golferName)) {
+                replacement = `${golferName} got ${team.points} points and ${team.money} plusMinus (money won or lost).`;
                 break;
             }
         }
 
-        if (!resultLine) {
-            throw new Error(`Expected to find result for golfer "${golferName}" in: ${fullMatch}`);
+        if (!replacement) {
+            throw new Error(`Golfer "${golferName}" not found in: ${fullMatch}`);
         }
 
-        const insert = `So doing the math of the point value on this hole ${dollarAmount} ${resultLine}`;
-        updated = updated.replace(fullMatch, insert);
+        updated = updated.replace(fullMatch, replacement);
     }
 
     return updated;
