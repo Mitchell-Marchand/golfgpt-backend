@@ -509,7 +509,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             ]);
 
             //if (assistantJSONResponse.length > 1) {
-            console.log(`ORIGINAL STRING: ${explanation}\n\nRESULT: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
+            //console.log(`ORIGINAL STRING: ${explanation}\n\nRESULT: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
             //}
         }
 
@@ -880,7 +880,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also ")}${doubleString ? `, also ${doubleString}` : ""}. So when added up, since the point value on this hole is $${pointWorth},${firstTeamPoints > 0 && secondTeamPoints > 0 ? " and points cancel eachother out when calculating plusMinus," : ""} ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}${doubleString ? `, also ${doubleString}` : ""}. So when added up, since the point value on this hole is $${pointWorth},${firstTeamPoints > 0 && secondTeamPoints > 0 ? " and points cancel each other out when calculating plusMinus," : ""} ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             explanation: explanationString
