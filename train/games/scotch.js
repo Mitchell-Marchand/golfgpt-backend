@@ -443,7 +443,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         } else {
             explanation += '.';
         }
-        console.log("Parsed length:", parsed.length, teams.flat().length)
+        //console.log("Parsed length:", parsed.length, teams.flat().length)
 
         let prompt = "";
         const scoresToPrompt = scores.map(({ holeNumber, ...rest }) => rest);
