@@ -928,31 +928,29 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
 function filterGolferResultsInText(fullString, golferName) {
     const splitSections = fullString.split("So doing the math of the point value on this hole");
-    const resultSections = [splitSections[0]]; // Keep everything before first math section
+    const resultSections = [splitSections[0]]; // Everything before first "math" section
 
-    // Match relaxed: allow "points" or "pointpoints"
+    // Allow typos like "pointpoints"
     const regex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
 
     for (let i = 1; i < splitSections.length; i++) {
-        const section = splitSections[i];
-
-        // Find all matches
+        let section = splitSections[i]; // ✅ declare as `let` so we can modify it
         const matches = [...section.matchAll(regex)];
         const matchingLines = [];
 
         for (const match of matches) {
             const [fullMatch, namesStr, points, plusMinus] = match;
             const names = namesStr.split('&').map(n => n.trim());
+
             if (names.includes(golferName)) {
                 matchingLines.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
             }
 
-            // Remove the original match from the section
-            section = section.replace(fullMatch, '');
+            section = section.replace(fullMatch, ''); // ✅ remove all matched lines
         }
 
         const insert = matchingLines.join(' ') || `${golferName} had no result on this hole.`;
-        const cleaned = section.trim().replace(/^[$,\s]+/, ''); // remove leftover punctuation
+        const cleaned = section.trim().replace(/^[$,\s]+/, ''); // clean extra punctuation/space
 
         resultSections.push(`So doing the math of the point value on this hole ${insert}${cleaned ? ' ' + cleaned : ''}`);
     }
