@@ -74,7 +74,7 @@ async function main() {
       .map(({ role, content }) => ({ role, content }));
 
     if (simplified.length >= 2) {
-      if (key.startsWith("score__")/* && scoreConvos.length < 1000*/) {
+      if (key.startsWith("score__") && scoreConvos.length < 1000) {
         scoreConvos.push({ key, messages: simplified });
       } else if (key.startsWith("setup__") && setupConvos.length < 1000) {
         setupConvos.push({ key, messages: simplified });
