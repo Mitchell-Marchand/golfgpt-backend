@@ -716,6 +716,57 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
+        let firstTeamBirdieCount = 0;
+        let secondTeamBirdieCount = 0;
+
+        if (teamScores[0][0] < currentScorecard[0].holes[i].par) {
+            firstTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[0][0];
+        }
+
+        if (teamScores[0][1] < currentScorecard[0].holes[i].par) {
+            firstTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[0][1];
+        }
+
+        if (teamScores[1][0] < currentScorecard[0].holes[i].par) {
+            secondTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[1][0];
+        }
+
+        if (teamScores[1][1] < currentScorecard[0].holes[i].par) {
+            secondTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[1][1];
+        }
+
+        if (firstTeamBirdieCount > 0) {
+            if (secondTeamPoints > 0 || !miracle) {
+                firstTeamPoints += firstTeamBirdieCount;
+                explanationPieces.push(`${nameTeams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
+            } else {
+                firstTeamPoints++;
+                let explanation = `${nameTeams[0]} each got 1 point for the birdie`;
+
+                if (miracle && secondTeamPoints === 0 && firstTeamBirdieCount > 1) {
+                    explanation += ` and the extra birdies don't count as individual points because each extra birdie just doubles the points`
+                }
+
+                explanationPieces.push(explanation);
+            }
+        }
+
+        if (secondTeamBirdieCount > 0) {
+            if (firstTeamPoints > 0) {
+                secondTeamPoints += secondTeamBirdieCount;
+                explanationPieces.push(`${nameTeams[1]} each got ${secondTeamBirdieCount} point${secondTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${secondTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
+            } else {
+                secondTeamPoints++;
+                let explanation = `${nameTeams[1]} each got 1 point for the birdie`;
+
+                if (miracle && firstTeamPoints === 0 && secondTeamBirdieCount > 1) {
+                    explanation += ` and the extra birdies don't count as individual points because each extra birdie just doubles the points`
+                }
+
+                explanationPieces.push(explanation);
+            }
+        }
+
         let doubleValue = 1
         for (let j = 0; j < answers.length; j++) {
             if (answers[j].question === "Was there a press or double press?") {
@@ -761,57 +812,6 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             } else if (answers[j].answers.includes(teams[1][1])) {
                 secondTeamPoints++;
                 explanationPieces.push(`${nameTeams[1]} each got 1 point because ${teams[1][1]} had the point for ${answers[j].question?.includes("proximity") ? "proximity" : "longest drive"}`)
-            }
-        }
-
-        let firstTeamBirdieCount = 0;
-        let secondTeamBirdieCount = 0;
-
-        if (teamScores[0][0] < currentScorecard[0].holes[i].par) {
-            firstTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[0][0];
-        }
-
-        if (teamScores[0][1] < currentScorecard[0].holes[i].par) {
-            firstTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[0][1];
-        }
-
-        if (teamScores[1][0] < currentScorecard[0].holes[i].par) {
-            secondTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[1][0];
-        }
-
-        if (teamScores[1][1] < currentScorecard[0].holes[i].par) {
-            secondTeamBirdieCount += currentScorecard[0].holes[i].par - teamScores[1][1];
-        }
-
-        if (firstTeamBirdieCount > 0) {
-            if (secondTeamPoints > 0 || !miracle) {
-                firstTeamPoints += firstTeamBirdieCount;
-                explanationPieces.push(`${nameTeams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
-            } else {
-                firstTeamPoints++;
-                let explanation = `${nameTeams[0]} each got 1 point for the birdie`;
-
-                if (miracle && secondTeamPoints === 0 && firstTeamBirdieCount > 1) {
-                    explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
-                }
-
-                explanationPieces.push(explanation);
-            }
-        }
-
-        if (secondTeamBirdieCount > 0) {
-            if (firstTeamPoints > 0) {
-                secondTeamPoints += secondTeamBirdieCount;
-                explanationPieces.push(`${nameTeams[1]} each got ${secondTeamBirdieCount} point${secondTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${secondTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
-            } else {
-                secondTeamPoints++;
-                let explanation = `${nameTeams[1]} each got 1 point for the birdie`;
-
-                if (miracle && firstTeamPoints === 0 && secondTeamBirdieCount > 1) {
-                    explanation += ` and the extra birdies don't count as individual points because each extra birdie just double the points`
-                }
-
-                explanationPieces.push(explanation);
             }
         }
 
