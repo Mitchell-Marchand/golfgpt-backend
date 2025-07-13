@@ -509,7 +509,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             ]);
 
             if (assistantJSONResponse.length > 1) {
-                console.log(`EXPLANATION: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
+                console.log(`ORIGINAL STRING: ${filterGolferResultsInText(explanation, golfer)}\n\nRESULT: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
             }
         }
 
