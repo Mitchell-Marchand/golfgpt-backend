@@ -579,6 +579,8 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         let firstTeamMoney = 0;
         let secondTeamMoney = 0;
         let explanationPieces = [];
+        let doublePieces = [];
+        let doubleString = '';
 
         if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
@@ -590,7 +592,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
 
             if (needsToDouble && !isDoubled) {
-                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole`)
+                doublePieces.push(`the rules state the money goes to $${autoDoubleValue} while the match tied, and it was at the start of this hole`)
                 isDoubled = true;
                 pointWorth = autoDoubleValue;
             } else if (isDoubled && !needsToDouble) {
@@ -603,7 +605,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         //Determine if we're ay autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
-                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} when we get to the back 9, and this hole is on the back 9`)
+                doublePieces.push(`the rules state the money goes to $${autoDoubleValue} when we get to the back 9, and this hole is on the back 9`)
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
             } else if (autoDoubleMoneyTrigger > 0) {
@@ -621,7 +623,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
 
                 if (isDoubled) {
-                    explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} when someone goes down $${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole`)
+                    doublePieces.push(`the rules state the money goes to $${autoDoubleValue} when someone goes down $${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole`)
                 }
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
@@ -652,11 +654,15 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
 
                 if (change) {
-                    explanationPieces.push(`money per point was incresed on the last hole${changeDueToString}`)
+                    doublePieces.push(`money per point was incresed on the last hole${changeDueToString}`)
                     pointWorth = pointVal;
                     isDoubled = false;
                 }
             }
+        }
+
+        if (doublePieces.length > 0) {
+            doubleString = doublePieces.join(", also ");
         }
 
         const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
@@ -871,7 +877,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value on this hole ($${pointVal}) and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}${doubleString ?  `, also ${doubleString}` : ""}. So doing the math of the point value on this hole ($${pointVal}) and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             explanation: explanationString
