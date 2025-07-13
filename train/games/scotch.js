@@ -439,10 +439,11 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
         currentScorecard = results.scorecards;
 
         if (parsed.length > teams.flat().length) {
-            explanation += " I've returned the updated plusMinus for multiple holes because this score update changes their values.";
+            explanation += " I've returned the updated plusMinus for additional holes because this score update changes their values.";
         } else {
             explanation += '.';
         }
+        console.log("Parsed length:", parsed.length, teams.flat().length)
 
         let prompt = "";
         const scoresToPrompt = scores.map(({ holeNumber, ...rest }) => rest);
