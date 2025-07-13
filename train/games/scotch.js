@@ -603,7 +603,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         //Determine if we're ay autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
-                explanationPieces.push(`the rules state the money goes to ${autoDoubleValue} when we get to the back 9, and this hole is on the back 9.`)
+                explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} when we get to the back 9, and this hole is on the back 9`)
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
             } else if (autoDoubleMoneyTrigger > 0) {
@@ -621,14 +621,14 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
 
                 if (isDoubled) {
-                    explanationPieces.push(`the rules state the money goes to ${autoDoubleValue} when someone goes down ${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole`)
+                    explanationPieces.push(`the rules state the money goes to $${autoDoubleValue} when someone goes down $${autoDoubleMoneyTrigger}, and ${triggerName} was down $${Math.abs(triggerVal)} at the start of this hole`)
                 }
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
                 let change = true;
-                let changeDueToString = ` but since no one was down ${autoDoubleMoneyTrigger} or more the money per point did is not increased for this hole`;
+                let changeDueToString = ` but since no one was down $${autoDoubleMoneyTrigger} or more the money per point did is not increased for this hole`;
 
                 if (autoDoubleMoneyTrigger > 0) {
                     ;
@@ -927,30 +927,28 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 }
 
 function filterGolferResultsInText(fullString, golferName) {
-    const splitPattern = /So doing the math of the point value on this hole.*?(?=(HOLE \d+:|$))/gs;
+    const mathRegex = /So doing the math of the point value on this hole\s*(\(\$\d+\))\s*and total points for each golfer,([\s\S]*?)(?=(HOLE \d+:|$))/g;
     let result = fullString;
-    const matches = [...fullString.matchAll(splitPattern)];
 
-    for (const match of matches) {
-        const fullMathChunk = match[0]; // full "So doing the math..." sentence
+    result = result.replace(mathRegex, (_, dollarAmount, pointsText) => {
         const resultRegex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
-        const golferResults = [];
+        const matches = [...pointsText.matchAll(resultRegex)];
+        const matchingLines = [];
 
-        for (const rMatch of fullMathChunk.matchAll(resultRegex)) {
-            const [_, namesStr, points, plusMinus] = rMatch;
+        for (const match of matches) {
+            const [_, namesStr, points, plusMinus] = match;
             const names = namesStr.split('&').map(n => n.trim());
             if (names.includes(golferName)) {
-                golferResults.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
+                matchingLines.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
             }
         }
 
-        const replacement = `So doing the math of the point value on this hole ${golferResults.length > 0
-                ? golferResults.join(' ')
-                : `${golferName} had no result on this hole.`
-            }`;
+        const insert = matchingLines.length > 0
+            ? matchingLines.join(' ')
+            : `${golferName} had no result on this hole.`;
 
-        result = result.replace(fullMathChunk, replacement);
-    }
+        return `So doing the math of the point value on this hole ${dollarAmount} ${insert}`;
+    });
 
     return result;
 }
