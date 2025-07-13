@@ -47,7 +47,7 @@ async function runScotchGame() {
     let strokes = strokeObject.strokes;
 
     let strokePrompt = strokeObject.prompt;
-    if (getRandomInt(3) === 1) {
+    if (getRandomInt(1) === 1) {
         strokePrompt = "";
         strokes = names.map(name => ({
             name,
@@ -462,7 +462,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             [messageId, scorePrompt]
         );
 
-        //TODO: Separate into individual messages for results of each golfer
+        //Separate into individual messages for results of each golfer
         const golferNames = teams.flat();
         const golferMap = new Map();
 
