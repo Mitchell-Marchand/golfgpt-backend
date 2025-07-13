@@ -880,7 +880,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also ")}${doubleString ?  `, also ${doubleString}` : ""}. So doing the math of the point value on this hole ($${pointWorth}) and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}${doubleString ? `, also ${doubleString}` : ""}. So doing the math of the point value on this hole ($${pointWorth}) and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} point${firstTeamPoints !== 1 ? "s" : ""} and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} point${secondTeamPoints !== 1 ? "s" : ""} and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             explanation: explanationString
@@ -936,31 +936,44 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 }
 
 function filterGolferResultsInText(fullString, golferName) {
-    const mathRegex = /So doing the math of the point value on this hole\s*(\(\$\d+\))\s*and total points for each golfer,([\s\S]*?)(?=(HOLE \d+:|$))/g;
-    let result = fullString;
+    const resultRegex =
+        /So doing the math of the point value on this hole\s*(\(\$\d+\))\s*and total points for each golfer,([\s\S]*?)(?=(?:(?:\w+ & \w+ (?:each|both) got)|(?:HOLE \d+)|(?:$)))/g;
 
-    result = result.replace(mathRegex, (_, dollarAmount, pointsText) => {
-        const resultRegex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
-        const matches = [...pointsText.matchAll(resultRegex)];
-        const matchingLines = [];
+    let updated = fullString;
+    const matches = [...fullString.matchAll(resultRegex)];
 
-        for (const match of matches) {
-            const [_, namesStr, points, plusMinus] = match;
-            const names = namesStr.split('&').map(n => n.trim());
+    for (const match of matches) {
+        const [fullMatch, dollarAmount, pointsBlock] = match;
+
+        const golferMatchRegex =
+            /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
+
+        const resultLines = [];
+        for (const pointMatch of pointsBlock.matchAll(golferMatchRegex)) {
+            const [_, namesStr, points, plusMinus] = pointMatch;
+            const names = namesStr.split('&').map((n) => n.trim());
+
             if (names.includes(golferName)) {
-                matchingLines.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
+                resultLines.push(
+                    `${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`
+                );
             }
         }
 
-        const insert = matchingLines.length > 0
-            ? matchingLines.join(' ')
-            : `${golferName} had no result on this hole.`;
+        const insert =
+            resultLines.length > 0
+                ? `So doing the math of the point value on this hole ${dollarAmount} ${resultLines.join(
+                    ' '
+                )}`
+                : `So doing the math of the point value on this hole ${dollarAmount} ${golferName} had no result on this hole.`;
 
-        return `So doing the math of the point value on this hole ${dollarAmount} ${insert}`;
-    });
+        // Replace just the fullMatch, not the extra text that follows
+        updated = updated.replace(fullMatch, insert);
+    }
 
-    return result;
+    return updated;
 }
+
 
 function getTeamTotals(teamScores) {
     return teamScores.reduce((sum, num) => sum + num, 0);
