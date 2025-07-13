@@ -852,7 +852,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
                 }
             }
 
-            explanationPieces.push(`one of the teams got 0 points so the points double`);
+            explanationPieces.push(`one of the teams got 0 points and the other got every type of point possible so the points double`);
         }
 
         for (let j = 0; j < doubleValue - 1; j++) {
