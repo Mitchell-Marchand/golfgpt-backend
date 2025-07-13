@@ -780,7 +780,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
         if (firstTeamBirdieCount > 0) {
             if (secondTeamPoints > 0 || !miracle) {
                 firstTeamPoints += firstTeamBirdieCount;
-                explanationPieces.push(`${nameTeams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
+                explanationPieces.push(`${nameTeams[0]} each got ${firstTeamBirdieCount} point${firstTeamBirdieCount > 1 ? "s" : ""} for birdies because their scores that were under par were a combined ${firstTeamBirdieCount} under${miracle ? " and the other team got at least one point" : " and miracles aren't allowed so extra birdies don't double"}`)
             } else {
                 firstTeamPoints++;
                 let explanation = `${nameTeams[0]} each got 1 point for the birdie`;
@@ -871,7 +871,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
             }
         }
 
-        let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
+        let explanationString = `${explanationPieces.join(", also ")}. So doing the math of the point value on this hole ($${pointVal}) and total points for each golfer, ${nameTeams[0]} each got ${firstTeamPoints} points and ${firstTeamMoney} plusMinus (money won or lost), and ${nameTeams[1]} each got ${secondTeamPoints} points and ${secondTeamMoney} plusMinus (money won or lost)`;
         holeExplanations.push({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             explanation: explanationString
