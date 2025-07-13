@@ -927,35 +927,32 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 }
 
 function filterGolferResultsInText(fullString, golferName) {
-    const parts = fullString.split(/So doing the math of the point value on this hole/);
-    const output = [parts[0]];
+    const splitPattern = /So doing the math of the point value on this hole.*?(?=(HOLE \d+:|$))/gs;
+    let result = fullString;
+    const matches = [...fullString.matchAll(splitPattern)];
 
-    const resultRegex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
+    for (const match of matches) {
+        const fullMathChunk = match[0]; // full "So doing the math..." sentence
+        const resultRegex = /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
+        const golferResults = [];
 
-    for (let i = 1; i < parts.length; i++) {
-        let section = parts[i];
-        const matches = [...section.matchAll(resultRegex)];
-        const matchingLines = [];
-
-        for (const match of matches) {
-            const [fullMatch, namesStr, points, plusMinus] = match;
+        for (const rMatch of fullMathChunk.matchAll(resultRegex)) {
+            const [_, namesStr, points, plusMinus] = rMatch;
             const names = namesStr.split('&').map(n => n.trim());
-
             if (names.includes(golferName)) {
-                matchingLines.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
+                golferResults.push(`${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`);
             }
-
-            // Remove this entire result clause from the section
-            section = section.replace(fullMatch, '');
         }
 
-        const cleanSection = section.replace(/^[$,\s]+/, '').trim();
-        const insert = matchingLines.join(' ') || `${golferName} had no result on this hole.`;
+        const replacement = `So doing the math of the point value on this hole ${golferResults.length > 0
+                ? golferResults.join(' ')
+                : `${golferName} had no result on this hole.`
+            }`;
 
-        output.push(`So doing the math of the point value on this hole ${insert}${cleanSection ? ' ' + cleanSection : ''}`);
+        result = result.replace(fullMathChunk, replacement);
     }
 
-    return output.join('');
+    return result;
 }
 
 function getTeamTotals(teamScores) {
