@@ -509,7 +509,7 @@ async function simulateGame(matchId, mariadbPool, summary, builtScorecards, allQ
             ]);
 
             //if (assistantJSONResponse.length > 1) {
-                console.log(`ORIGINAL STRING: ${explanation}\n\nRESULT: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
+            console.log(`ORIGINAL STRING: ${explanation}\n\nRESULT: ${filterGolferResultsInText(explanation, golfer)}\n\n`)
             //}
         }
 
@@ -937,7 +937,7 @@ function getUpdatedHoles(currentScorecard, allAnswers, scores, nameTeams, teams,
 
 function filterGolferResultsInText(fullString, golferName) {
     const resultRegex =
-        /So doing the math of the point value on this hole\s*(\(\$\d+\))\s*and total points for each golfer,([\s\S]*?)(?=(?:(?:\w+ & \w+ (?:each|both) got)|(?:HOLE \d+)|(?:$)))/g;
+        /So doing the math of the point value on this hole\s*(\(\$\d+(?:\.\d{1,2})?\))\s*and total points for each golfer,([\s\S]*?)(?=(?:HOLE \d+|$))/g;
 
     let updated = fullString;
     const matches = [...fullString.matchAll(resultRegex)];
@@ -946,34 +946,30 @@ function filterGolferResultsInText(fullString, golferName) {
         const [fullMatch, dollarAmount, pointsBlock] = match;
 
         const golferMatchRegex =
-            /([A-Za-z\s&]+?) (?:each|both) got (\d+) point(?:s|points)? and (-?\d+) plusMinus \(money won or lost\)/gi;
+            /([A-Za-z\s&]+?) (?:each|both) got (\d+) points? and (-?\d+) plusMinus \(money won or lost\)/gi;
 
-        const resultLines = [];
+        let resultLine = null;
+
         for (const pointMatch of pointsBlock.matchAll(golferMatchRegex)) {
             const [_, namesStr, points, plusMinus] = pointMatch;
             const names = namesStr.split('&').map((n) => n.trim());
 
             if (names.includes(golferName)) {
-                resultLines.push(
-                    `${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`
-                );
+                resultLine = `${golferName} got ${points} points and ${plusMinus} plusMinus (money won or lost).`;
+                break; // stop once found
             }
         }
 
-        const insert =
-            resultLines.length > 0
-                ? `So doing the math of the point value on this hole ${dollarAmount} ${resultLines.join(
-                    ' '
-                )}`
-                : `So doing the math of the point value on this hole ${dollarAmount} ${golferName} had no result on this hole.`;
+        if (!resultLine) {
+            throw new Error(`Expected to find result for golfer "${golferName}" in: ${fullMatch}`);
+        }
 
-        // Replace just the fullMatch, not the extra text that follows
+        const insert = `So doing the math of the point value on this hole ${dollarAmount} ${resultLine}`;
         updated = updated.replace(fullMatch, insert);
     }
 
     return updated;
 }
-
 
 function getTeamTotals(teamScores) {
     return teamScores.reduce((sum, num) => sum + num, 0);
