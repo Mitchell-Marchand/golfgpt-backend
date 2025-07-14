@@ -580,7 +580,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 const sendCopy = [...messages, { role: "user", content: `What are the updated plusMinus and points for ${scorecards[i].name}?` }]
                 const completion = await openai.chat.completions.create({
                     model: scoringModel,
-                    sendCopy,
+                    messages: sendCopy,
                     temperature: 0.0
                 });
 
