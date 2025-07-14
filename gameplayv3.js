@@ -557,7 +557,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             { role: "user", content: prompt }*/
         ];
 
-        console.log("scorePrompt", scorePrompt);
+        //console.log("scorePrompt", scorePrompt);
 
         const tokenCount = countTokensForMessages(messages);
         console.log(`Sending ${tokenCount} tokens to OpenAI.`);
@@ -574,21 +574,38 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         let parsed;
         if (!expected) {
-            const completion = await openai.chat.completions.create({
-                model: scoringModel,
-                messages,
-                temperature: 0.0
-            });
+            parsed = [];
+            for (let i = 0; i < scorecards.length; i++) {
+                const sendCopy = [...messages, { role: "user", content: `What are the updated plusMinus and points for ${scorecards[i].name}?` }]
+                const completion = await openai.chat.completions.create({
+                    model: scoringModel,
+                    sendCopy,
+                    temperature: 0.0
+                });
 
-            const raw = completion.choices[0].message.content.trim();
-            console.log("raw:", raw);
+                const raw = completion.choices[0].message.content.trim();
+                console.log("raw:", raw);
 
-            try {
-                const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
-                parsed = JSON.parse(cleaned);
-            } catch (err) {
-                console.error("Failed to parse JSON:", raw);
-                return res.status(500).json({ error: "Model response was not valid JSON." });
+                try {
+                    const cleaned = raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, '');
+                    const updateArrays = JSON.parse(cleaned);
+                    const scoreEntry = scores.find(s => s.name === scorecards[i].name);
+                    if (!scoreEntry) continue;
+
+                    for (const [holeLabel, plusMinus, points] of updateArrays) {
+                        const holeNumber = parseInt(holeLabel.replace(/\D/g, ""), 10);
+                        parsed.push({
+                            name: scorecards[i].name,
+                            holeNumber,
+                            score: scoreEntry.score,
+                            plusMinus,
+                            points
+                        });
+                    }
+                } catch (err) {
+                    console.error("Failed to parse JSON:", raw);
+                    return res.status(500).json({ error: "Model response was not valid JSON." });
+                }
             }
         } else {
             parsed = expected;
