@@ -1,3 +1,5 @@
+const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../utils');
+
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     //Add scores to currentScorecard
     for (let i = 0; i < currentScorecard.length; i++) {

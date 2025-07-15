@@ -269,6 +269,37 @@ function extractJsonBlock(responseText) {
         .trim();                      // clean up whitespace
 }
 
+function getTeamTotals(teamScores) {
+    return teamScores.reduce((sum, num) => sum + num, 0);
+}
+
+function getLowScoreWinners(teamScores) {
+    const [team1Scores, team2Scores] = teamScores;
+
+    const team1Wins = team1Scores.some(score1 =>
+        team2Scores.every(score2 => score1 < score2)
+    );
+
+    const team2Wins = team2Scores.some(score2 =>
+        team1Scores.every(score1 => score2 < score1)
+    );
+
+    return { team1Wins, team2Wins };
+}
+
+function getTeamScoresOnHole(teams, currentScorecard, i) {
+    const result = teams.map(team => {
+        return team.map(playerName => {
+            const playerCard = currentScorecard.find(p => p.name === playerName);
+            if (!playerCard) return null;
+            const hole = playerCard.holes[i];
+            return hole?.score ?? null;
+        });
+    });
+
+    return result;
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -281,6 +312,9 @@ module.exports = {
     countTokensForMessages,
     cleanScorecard,
     extractJsonBlock,
+    getTeamTotals,
+    getLowScoreWinners,
+    getTeamScoresOnHole,
     scoringSystemMessage,
     setupSystemMessage
 }
