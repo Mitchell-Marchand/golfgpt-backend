@@ -245,3 +245,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
 
     return currentScorecard;
 }
+
+module.exports = {
+    scotch
+}
