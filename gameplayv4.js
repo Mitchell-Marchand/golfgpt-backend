@@ -275,6 +275,8 @@ router.post("/create", authenticateUser, async (req, res) => {
         let config;
         let questions = [];
 
+        console.log("Type:", raw);
+
         if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation, comments, or additional markdown. Rules: ${rules}\n\nJSON Object: ${scotchConfig}`;
             const rawConfig = await openai.chat.completions.create({
@@ -293,6 +295,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             });
 
             try {
+                console.log("JSON:", rawConfig.choices[0].message.content.trim());
                 config = JSON.parse(rawConfig.choices[0].message.content.trim());
                 questions.push({
                     question: `Who got the point for proximity?`,
@@ -350,8 +353,8 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         await mariadbPool.query(
-            "UPDATE Matches SET strokes = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
-            [JSON.stringify(strokes), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
+            "UPDATE Matches SET strokes = ?, config = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            [JSON.stringify(strokes), JSON.stringify(config), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
         res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName });
@@ -413,7 +416,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const golferIds = JSON.parse(rows[0].golferIds);
         const config = JSON.parse(rows[0].config);
 
-        //TODO: Update scorecards with config, scores, questionAnswers
+        //Update scorecards with config, scores, questionAnswers
         for (let i = 0; i < answers?.length; i++) {
             if (answers[i].hole === holeNumber) {
                 answers[i].answers = answeredQuestions;
