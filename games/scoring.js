@@ -1,4 +1,4 @@
-const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../train/uitls');
+const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../train/utils');
 
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     //Add scores to currentScorecard
