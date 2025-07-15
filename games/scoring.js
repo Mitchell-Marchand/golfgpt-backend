@@ -2,7 +2,7 @@ const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../tr
 
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     //Add scores to currentScorecard
-    console.log("scores", JSON.stringify(scores, null, 2));
+    console.log("allAnswers", JSON.stringify(allAnswers, null, 2));
     for (let i = 0; i < currentScorecard.length; i++) {
         currentScorecard[i].plusMinus = 0;
         currentScorecard[i].points = 0;
