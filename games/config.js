@@ -9,7 +9,9 @@ const scotchConfig = `{
     autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to either the match being tied, or someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     miracle //true or false (default is true) whether or not extra birdies double (these are also called miracles)
-}`;
+    presses //true or false (default is true) whether or not presses are allowed
+    doublePresses //true or false (default is true) whether or not double presses are allowed
+    }`;
 
 module.exports = {
     scotchConfig
