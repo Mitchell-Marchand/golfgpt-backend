@@ -813,18 +813,13 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
 
         const oldSummary = copyRows[0].setup;
 
-        /*const prompt = `Here is the description of a prior golf match:\n\n${oldSummary}\n\n
-        Now create a new version of this description using these golfers instead:\n\n${JSON.stringify(golfers)}\n\n
-        Return a concise updated summary. If a golfer is not included in the new list, do not include them in the 
-        summary. Do not assume the same number of golfers are playing. Only include the names of the golfers if they 
-        are mentioned in the original summary.`;
-
+        const prompt = `Here is a list of golfer who are playing a match. Update this prompt to use their names instead of the ones it currently has. Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}`
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: "You are a golf match assistant. Rewrite the match description using the new golfer names."
+                    content: "You are an expert in changing prompts to swap in and out names. Swap the names in this prompt and return the new prompt and ONLY the new prompt."
                 },
                 {
                     role: "user",
@@ -834,9 +829,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
             temperature: 0.3
         });
 
-        const newSummary = completion.choices[0].message.content.trim();*/
-        const newSummary = oldSummary.split("Here are the rules of the game: ")[1];
-
+        const newSummary = completion.choices[0].message.content.trim();
         res.json({ success: true, setup: newSummary });
     } catch (err) {
         console.error("Error in /matches/copy-setup:", err);
