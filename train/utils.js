@@ -261,6 +261,14 @@ Each golfer object in the JSON must include:
 Do not include any explanation, commentary, or non-JSON output. The math must be correct.`;*/
 const scoringSystemMessage = "You're a golf scoring model. Given match rules, scorecard, and hole update, return a JSON array of arrays with ['Hole *', points, plusMinus] for the specified golfer ONLY. Do not return anything else."
 
+function extractJsonBlock(responseText) {
+    return responseText
+        .replace(/^```json\s*/i, '')  // remove starting ```json (case-insensitive)
+        .replace(/^```\s*/i, '')      // or just ``` if no "json"
+        .replace(/```$/, '')          // remove trailing ```
+        .trim();                      // clean up whitespace
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -272,6 +280,7 @@ module.exports = {
     calculateWinPercents,
     countTokensForMessages,
     cleanScorecard,
+    extractJsonBlock,
     scoringSystemMessage,
     setupSystemMessage
 }

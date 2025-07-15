@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
 const { scotchConfig } = require("./games/config");
 const { scotch } = require("./games/scoring")
 
@@ -295,8 +295,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             });
 
             try {
-                console.log("JSON:", rawConfig.choices[0].message.content.trim());
-                config = JSON.parse(rawConfig.choices[0].message.content.trim());
+                console.log("JSON:", extractJsonBlock(rawConfig.choices[0].message.content));
+                config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
                 questions.push({
                     question: `Who got the point for proximity?`,
                     answers: golfers,
