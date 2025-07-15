@@ -567,7 +567,7 @@ router.get("/golfers", authenticateUser, async (req, res) => {
         const [rows] = await mariadbPool.query(
             `SELECT golfers, golferIds FROM Matches 
          WHERE createdBy = ? 
-         ORDER BY updatedAt DESC LIMIT 6`,
+         ORDER BY updatedAt DESC LIMIT 5`,
             [userId]
         );
 
