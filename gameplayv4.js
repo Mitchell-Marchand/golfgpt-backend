@@ -271,7 +271,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             temperature: 0.0
         });
 
-        const raw = gameType.choices[0].message.content.trim();
+        const raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
         let config;
         let questions = [];
 
