@@ -164,9 +164,8 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         let doubleValue = 1
-        console.log("hole answers", JSON.stringify(answers, null, 2));
         for (let j = 0; j < answers.length; j++) {
-            if (answers[j].question === "Was there a press or double press?") {
+            if (answers[j].question === "Was there a press or a double press?") {
                 if (answers[j].answers.includes("Double Press")) {
                     doubleValue = 3;
                 } else if (answers[j].answers.includes("Press")) {
