@@ -2,7 +2,6 @@ const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../tr
 
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     //Add scores to currentScorecard
-    console.log("allAnswers", JSON.stringify(allAnswers, null, 2));
     for (let i = 0; i < currentScorecard.length; i++) {
         currentScorecard[i].plusMinus = 0;
         currentScorecard[i].points = 0;
@@ -165,6 +164,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         let doubleValue = 1
+        console.log("hole answers", JSON.stringify(answers, null, 2));
         for (let j = 0; j < answers.length; j++) {
             if (answers[j].question === "Was there a press or double press?") {
                 if (answers[j].answers.includes("Double Press")) {
