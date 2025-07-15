@@ -2,6 +2,7 @@ const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../tr
 
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     //Add scores to currentScorecard
+    console.log("scores", JSON.stringify(scores, null, 2));
     for (let i = 0; i < currentScorecard.length; i++) {
         currentScorecard[i].plusMinus = 0;
         currentScorecard[i].points = 0;
@@ -28,9 +29,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         let secondTeamPoints = 0;
         let firstTeamMoney = 0;
         let secondTeamMoney = 0;
-        let explanationPieces = [];
-        let doublePieces = [];
-        let doubleString = '';
 
         if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
