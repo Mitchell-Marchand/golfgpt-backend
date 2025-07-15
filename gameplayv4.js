@@ -278,7 +278,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         console.log("Type:", raw);
 
         if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
-            const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation, comments, or additional markdown. Rules: ${rules}\n\nJSON Object: ${scotchConfig}`;
+            const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${scotchConfig}`;
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [
