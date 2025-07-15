@@ -304,7 +304,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                     holes: "all"
                 });
 
-                if (config.pointVal === 8) {
+                if (config.points === 8) {
                     questions.push({
                         question: `Who had the longest drive?`,
                         answers: golfers,
