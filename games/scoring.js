@@ -167,7 +167,7 @@ function trackSkins(scorecards, skinsConfig, golfers) {
                 if (golfers[j] !== skin.name) {
                     const scorecard = scorecards.find(card => card.name === golfers[j]);
                     const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
-                    hole.plusMinus -= (skinValue / (golfers.length - 1));
+                    hole.plusMinus -= Math.round((skinValue / (golfers.length - 1)) * 100) / 100;
                 }
             }
         }
