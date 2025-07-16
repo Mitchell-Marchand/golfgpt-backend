@@ -120,6 +120,8 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
 }
 
 function trackSkins(scorecards, skinsConfig, golfers) {
+    console.log("scorecards before skins", JSON.stringify(scorecards, null, 2));
+
     let skins = [];
     let pot = 0;
     if (skinsConfig.fromPot) {
@@ -154,6 +156,9 @@ function trackSkins(scorecards, skinsConfig, golfers) {
             }
         }
     }
+
+    console.log("skins", JSON.stringify(skins, null, 2));
+    console.log("pot", pot);
 
     if (skins.length > 0) {
         const skinValue = Math.round(pot / skins.length * 100) / 100;
