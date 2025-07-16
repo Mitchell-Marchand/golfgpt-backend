@@ -5,11 +5,10 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         const teamsWithAnds = teams || getTeamsFromAnswers(answers[i], golfers);
         const questions = answers.find(obj => obj.hole === scorecards[0].holes[i].holeNumber);
 
-        console.log(teamsWithAnds);
-
         for (let j = 0; j < questions?.answers?.length; j++) {
             const question = questions.answers[j];
             if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
+                console.log("TEAM VALIDITY", strippedJunk.chipIns?.team);
                 if (strippedJunk.chipIns?.team && teamsWithAnds.length > 0) {
                     //Add plusMinus for team scores
                     const teamNames = teamsWithAnds.map(team => team.split(' & '))
