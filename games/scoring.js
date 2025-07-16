@@ -33,6 +33,8 @@ function junk(scorecards, answers, strippedJunk, golfers) {
 
         }
     }
+
+    return scorecards;
 }
 
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
