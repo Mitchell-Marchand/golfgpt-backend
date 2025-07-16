@@ -1,7 +1,6 @@
 const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers } = require('../train/utils');
 
 function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golfers, value, isTeam) {
-    console.log("holeNumber", holeNumber);
     if (isTeam && teamsWithAnds.length > 0) {
         //Add plusMinus for team scores
         const teamNames = teamsWithAnds.map(team => team.split(' & '))
@@ -52,6 +51,73 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
     return scorecards;
 }
 
+function trackSnake(scorecards, answers, teamsWithAnds, snakeConfig, golfers) {
+    let lastToThreePutt = false;
+    let lastHole = 0;
+    let pot = 0;
+    for (let i = 0; i < answers.length; i++) {
+        const questions = answers[i];
+        for (let j = 0; j < questions?.answers?.length; j++) {
+            const question = questions.answers[j];
+            if (question.question?.includes("three-putt") && question.answers?.length > 0) {
+                lastToThreePutt = question.answers[0];
+                lastHole = questions.hole;
+                pot += Math.abs(snakeConfig.value);
+            }
+        }
+    }
+
+    if (lastToThreePutt) {
+        //Determine if team pentalty, and whether shared or full pot per opponent
+        if (snakeConfig?.teams) {
+            //team snake
+            const teamNames = teamsWithAnds.map(team => team.split(' & '))
+            let winningTeam = teamNames[0];
+            let losingTeam = teamNames[1];
+
+            if (winningTeam.includes(question.answers[k])) {
+                winningTeam = teamNames[1];
+                losingTeam = teamNames[0]
+            }
+
+            let penalty = pot;
+            if (snakeConfig.sharedPenalty) {
+                penalty =  Math.round(pot / (winningTeam.length - 1) * 100) / 100;
+            }
+
+            const winnersEachGet = penalty;
+            const losersEachPay = (penalty * winningTeam.length) / losingTeam.length;
+
+            for (let i = 0; i < golfers.length; i++) {
+                const golferCard = scorecards.find(g => g.name === golfers[i]);
+                const hole = golferCard.holes.find(h => h.holeNumber === lastHole);
+                if (winningTeam.includes(golfers[i])) {
+                    hole.plusMinus += winnersEachGet || 0;
+                } else {
+                    hole.plusMinus += losersEachPay || 0;
+                }
+            }
+        } else {
+            let penalty = pot;
+            if (snakeConfig.sharedPenalty) {
+                penalty = Math.round(pot / (golfers.length - 1) * 100) / 100;
+            }
+
+            const golferCard = scorecards.find(g => g.name === lastToThreePutt);
+            const hole = golferCard.holes.find(h => h.holeNumber === lastHole);
+            hole.plusMinus -= (pot * (golfers.length - 1)) || 0;
+
+            for (let i = 0; i < golfers.length; i++) {
+                if (golfers[i] !== lastToThreePutt) {
+                    const golferCard = scorecards.find(g => g.name === golfers[i]);
+                    const hole = golferCard.holes.find(h => h.holeNumber === lastHole);
+                    hole.plusMinus += penalty || 0;
+                }
+            }
+        }
+    }
+}
+
 function junk(scorecards, answers, strippedJunk, golfers, teams) {
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         const teamsWithAnds = teams || getTeamsFromAnswers(answers[i], golfers);
@@ -60,10 +126,44 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         for (let j = 0; j < questions?.answers?.length; j++) {
             const question = questions.answers[j];
             if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.chipIns.value, strippedJunk.chipIns.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.chipIns?.value, strippedJunk.chipIns?.team);
+            }
+
+            if (strippedJunk.greenies?.valid && question.question?.includes("greenie") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.team);
+            }
+
+            if (strippedJunk.sandies?.valid && question.question?.includes("sandie") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.sandies?.value, strippedJunk.sandies?.team);
+            }
+
+            if (strippedJunk.polies?.valid && question.question?.includes("polie") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.polies?.value, strippedJunk.polies?.team);
+            }
+
+            if (strippedJunk.barkies?.valid && question.question?.includes("barkie") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.barkies?.value, strippedJunk.barkies?.team);
+            }
+
+            if (strippedJunk.arnies?.valid && question.question?.includes("Arnie") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.arnies?.value, strippedJunk.arnies?.team);
+            }
+
+            if (strippedJunk.oozle?.valid && question.question?.includes("first to hole out") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.oozle?.value, strippedJunk.oozle?.team);
+            }
+
+            if (strippedJunk.fish?.valid && question.question?.includes("a water hazard") && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.fish?.value * -1, strippedJunk.fish?.team);
             }
         }
     }
+
+    if (strippedJunk.snake?.valid) {
+        scorecards = trackSnake(scorecards, answers, strippedJunk.snake, golfers);
+    }
+
+    //TODO: Skins
 
     return scorecards;
 }

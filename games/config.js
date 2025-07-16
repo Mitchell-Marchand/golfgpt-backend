@@ -21,15 +21,12 @@ const junkConfig = `{
         value //number (default 0) defining the dollar value for the pot each time someone three puts or becomes the snake
         teams //true or false (default false) whether or not the snake is for the whole team
         sharedPenalty //true or false (default false) whether the user pays each golfer the pot amount or distributes the amount amongst everyone
-        fourPuttsDouble //true or false (default false) whether or not someone 4 putting doubles the pot
-        resetsAtBack //true or false (default false) whether or not the snake resets at the back 9
     },
     skins: {
         valid //true or false (default false) if the user says that skins have a monetary value
         value //number (default 0) the value of a skin
         fromPot //true or false (default true) - true if each golfer is in for a fixed amount that is then split amongst the skins, or false if each skin is just worth a certain dollar amount from each golfer
         potValue //number (default 0) the amount that each golfer puts in the pot or "buys in" for skins
-        teams //true or false (default false) whether or not the skins are for the whole team 
         validation //true or false (default false) whether or not a skin needs to be "validated" or "proven" with a par on the next hole
     },
     polies: {

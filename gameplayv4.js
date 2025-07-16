@@ -369,7 +369,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 questions.push({
                     question: `Who got closest to the pin?`,
                     answers: golfers,
-                    numberOfAnswers: 1,
+                    numberOfAnswers: sideConfig.greenies?.teams ? 2 : 1,
                     holes: "par3s"
                 });
             }
@@ -385,7 +385,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             if (sideConfig.sandies?.valid) {
                 questions.push({
-                    question: `Did anyone get a sandies?`,
+                    question: `Did anyone get a sandie?`,
                     answers: golfers,
                     numberOfAnswers: 4,
                     holes: "all"
@@ -433,6 +433,15 @@ router.post("/create", authenticateUser, async (req, res) => {
                     question: `Did anyone hit into a water hazard?`,
                     answers: golfers,
                     numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.snake?.valid) {
+                questions.push({
+                    question: `Did anyone three-putt or worse?`,
+                    answers: golfers,
+                    numberOfAnswers: 1,
                     holes: "all"
                 });
             }
