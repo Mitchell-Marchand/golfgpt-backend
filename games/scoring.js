@@ -60,7 +60,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         for (let j = 0; j < questions?.answers?.length; j++) {
             const question = questions.answers[j];
             if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, question.hole, teamsWithAnds, golfers, strippedJunk.chipIns.value, strippedJunk.chipIns.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.chipIns.value, strippedJunk.chipIns.team);
             }
         }
     }
