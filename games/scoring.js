@@ -14,6 +14,7 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
             }
 
             const totalPot = losingTeam.length * value || 0;
+            console.log("totalPot for holenumber", totalPot, holeNumber);
 
             if (totalPot !== 0) {
                 const winnersEachGet = Math.round(totalPot / winningTeam.length * 100) / 100;
