@@ -287,13 +287,19 @@ function getLowScoreWinners(teamScores) {
     return { team1Wins, team2Wins };
 }
 
-function getTeamScoresOnHole(teams, currentScorecard, i) {
+function getTeamScoresOnHole(teams, currentScorecard, i, onlyGrossCount) {
     const result = teams.map(team => {
         return team.map(playerName => {
             const playerCard = currentScorecard.find(p => p.name === playerName);
             if (!playerCard) return null;
             const hole = playerCard.holes[i];
-            return hole?.score ?? null;
+            const netScore = hole?.score - hole?.strokes
+
+            if (hole?.score === 0 || (onlyGrossCount && netScore < par)) {
+                return hole?.score ?? null;
+            } else {
+                return netScore;
+            }
         });
     });
 

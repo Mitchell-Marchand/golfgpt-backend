@@ -5,8 +5,8 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
-const { scotchConfig, junkConfig } = require("./games/config");
-const { scotch, junk } = require("./games/scoring")
+const { scotchConfig, junkConfig, vegasConfig } = require("./games/config");
+const { scotch, junk, vegas } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -252,8 +252,8 @@ router.post("/create", authenticateUser, async (req, res) => {
         //Step 1: Determine game type
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
-            "king of the hill", "standard match play", "bingo bango bongo", "standard stroke play", "stableford",
-            "stableford quota", "666", "9 point", "scramble", "shamble", "bramble", "chapman"
+            "middle-outside", "king of the hill", "standard match play", "bingo bango bongo", "standard stroke play",
+            "stableford", "stableford quota", "666", "9 point", "scramble", "shamble", "bramble", "chapman", "alt shot"
         ];
 
         const gameType = await openai.chat.completions.create({
@@ -336,6 +336,28 @@ router.post("/create", authenticateUser, async (req, res) => {
                         })
                     }
                 }
+            } catch (err) {
+                return res.status(500).json({ error: "Error building match, please try again." });
+            }
+        } else if (raw === "vegas" || raw === "daytona") {
+            const prompt = `Based on the following rules of a vegas match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${vegasConfig}`;
+            const rawConfig = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                temperature: 0.0
+            });
+
+            try {
+                config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -568,7 +590,14 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 config.autoDoubleWhileTiedTrigger,
                 config.autoDoubleValue,
                 config.autoDoubleStays,
-                config.miracle
+                config.miracle,
+                config.onlyGrossBirdies
+            );
+        } else if (configType === "vegas" || configType === "daytona") {
+            scorecards = vegas(
+                scorecards,
+                scores,
+                config
             );
         }
 

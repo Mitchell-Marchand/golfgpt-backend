@@ -83,13 +83,31 @@ const scotchConfig = `{
     autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     miracle //true or false (default is true) whether or not extra birdies double (these are also called miracles)
-    presses //true or false (default is true) whether or not presses are allowed
-    doublePresses //true or false (default is true) whether or not double presses are allowed
+    presses //true or false (default is true) whether or not presses/cups/rolls/bridges/hammers are allowed
+    doublePresses //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
+    onlyGrossBirdies //true or false (default is false) whether or not only gross birdies count
+}`;
+
+const vegasConfig = `{
+    teams //an array consisting of the teams, always with each team as one string with player names separared by '&', e.g. ["Player A & Player B", "Player C & "Player D"]. ONLY use the exact names of the golfers provided. If no teams are provided, generate them yourself with the available names
+    pointVal //number (default is 1). dollar value of points in the match
+    autoDoubles //true or false (default is false). whether or not the money increases automatically at any point in the match
+    autoDoubleAfterNineTrigger //true or false (default is false). whether or not the money automatically increases after nine holes
+    autoDoubleMoneyTrigger //number (default is 0). how much money someone has to be down for the bet to automatically increase
+    autoDoubleWhileTiedTrigger //true or false (default is false). whether or not the money automatically increases while the match is tied
+    autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
+    autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
+    birdiesFlip //true or false (default is false) whether or not gross birdies flip the scores of the other team
+    additionalBirdiesDouble //true or false (default is true) whether or not addidional birdies double the points
+    presses //true or false (default is true) whether or not presses/cups/rolls/bridges/hammers are allowed
+    doublePresses //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
+    onlyGrossBirdies //true or false (default is false) whether or not only gross birdies count
 }`;
 
 //NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)
 
 module.exports = {
     scotchConfig,
-    junkConfig
+    junkConfig,
+    vegasConfig
 }
