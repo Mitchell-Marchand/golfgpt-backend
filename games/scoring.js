@@ -5,7 +5,6 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
         //Add plusMinus for team scores
         const teamNames = teamsWithAnds.map(team => team.split(' & '))
         for (let k = 0; k < question.answers?.length; k++) {
-            console.log("answers n stuff", JSON.stringify(question.answers[k]))
             let winningTeam = teamNames[0];
             let losingTeam = teamNames[1];
 
@@ -15,21 +14,18 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
             }
 
             const totalPot = losingTeam.length * value || 0;
-            //console.log("totalPot for holenumber", totalPot, holeNumber);
 
             if (totalPot !== 0) {
                 const winnersEachGet = Math.round(totalPot / winningTeam.length * 100) / 100;
                 for (let m = 0; m < winningTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === winningTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
-                    //console.log(`Updating ${winningTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by ${value}`)
                     hole.plusMinus += winnersEachGet;
                 }
 
                 for (let m = 0; m < losingTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === losingTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
-                    //console.log(`Updating ${losingTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by -${value}`)
                     hole.plusMinus -= value || 0;
                 }
             }
@@ -197,7 +193,6 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
             }
 
             if (strippedJunk.greenies?.valid && question.question?.includes("closest to the pin") && question.answers?.length > 0) {
-                //console.log("about to calculate CTPs", JSON.stringify(scorecards, null, 2));
                 scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.teams);
             }
 
@@ -269,6 +264,11 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         let firstTeamMoney = 0;
         let secondTeamMoney = 0;
 
+        const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
+        if (teamScores[0].includes(0) || teamScores[1].includes(0)) {
+            continue;
+        }
+
         if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
@@ -331,12 +331,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                     isDoubled = false;
                 }
             }
-        }
-
-        const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
-
-        if (teamScores[0].includes(0) || teamScores[1].includes(0)) {
-            continue;
         }
 
         const answers = allAnswers[i].answers;
@@ -469,8 +463,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         firstTeamMoney = (firstTeamPoints - secondTeamPoints) * pointWorth;
         secondTeamMoney = (secondTeamPoints - firstTeamPoints) * pointWorth;
 
-        console.log("first, second team money", firstTeamMoney, secondTeamMoney);
-
         for (let j = 0; j < currentScorecard.length; j++) {
             if (teams[0].includes(currentScorecard[j].name)) {
                 //currentScorecard[j].plusMinus += firstTeamMoney;
@@ -485,8 +477,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             }
         }
     }
-
-    //console.log("scorecard after scotch", JSON.stringify(currentScorecard, null, 2))
 
     return currentScorecard;
 }
