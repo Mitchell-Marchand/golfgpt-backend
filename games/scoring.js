@@ -128,10 +128,12 @@ function trackSkins(scorecards, skinsConfig, golfers) {
 
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         let skin = false;
+        let scoreToBeat = false;
         for (let j = 0; j < golfers.length; j++) {
             const scorecard = scorecards.find(card => card.name === golfers[j]);
             const hole = scorecard.holes[i];
-            if (hole.score > 0 && (!skin || skin?.score > hole.score)) {
+            if (hole.score > 0 && (!skin || skin?.score > hole.score) && (!scoreToBeat || hole.score < scoreToBeat)) {
+                scoreToBeat = hole.score;
                 skin = { name: golfers[j], score: hole.score, holeNumber: hole.holeNumber }
             } else if (skin && hole.score === skin.score) {
                 skin = false;
