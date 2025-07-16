@@ -83,7 +83,7 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
 
             let penalty = pot;
             if (snakeConfig.sharedPenalty) {
-                penalty =  Math.round(pot / (winningTeam.length - 1) * 100) / 100;
+                penalty = Math.round(pot / (winningTeam.length - 1) * 100) / 100;
             }
 
             const winnersEachGet = penalty;
@@ -120,13 +120,11 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
 }
 
 function trackSkins(scorecards, skinsConfig, golfers) {
-    console.log("scorecards before skins", JSON.stringify(scorecards, null, 2));
-
     let skins = [];
     let pot = 0;
     if (skinsConfig.fromPot) {
         pot = golfers.length * skinsConfig.potValue || 0;
-    } 
+    }
 
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         let skin = false;
@@ -157,11 +155,9 @@ function trackSkins(scorecards, skinsConfig, golfers) {
         }
     }
 
-    console.log("skins", JSON.stringify(skins, null, 2));
-    console.log("pot", pot);
-
     if (skins.length > 0) {
         const skinValue = Math.round(pot / skins.length * 100) / 100;
+        console.log("skin value", skinValue);
         for (let i = 0; i < skins.length; i++) {
             const skin = skins[i];
             const scorecard = scorecards.find(card => card.name === skin.name);
@@ -169,11 +165,9 @@ function trackSkins(scorecards, skinsConfig, golfers) {
             hole.plusMinus += skinValue;
 
             for (let j = 0; j < golfers.length; j++) {
-                if (golfers[j] !== skin.name) {
-                    const scorecard = scorecards.find(card => card.name === golfers[j]);
-                    const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
-                    hole.plusMinus -= Math.round((skinValue / (golfers.length - 1)) * 100) / 100;
-                }
+                const scorecard = scorecards.find(card => card.name === golfers[j]);
+                const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
+                hole.plusMinus -= Math.round((skinValue / (golfers.length)) * 100) / 100;
             }
         }
     }
