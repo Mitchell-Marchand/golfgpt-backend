@@ -358,6 +358,24 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
+
+                if (config.presses) {
+                    if (config.doublePresses) {
+                        questions.push({
+                            question: `Was there a press or a double press?`,
+                            answers: ["Press", "Double Press"],
+                            numberOfAnswers: 1,
+                            holes: "all"
+                        })
+                    } else {
+                        questions.push({
+                            question: `Was there a press?`,
+                            answers: ["No", "Yes"],
+                            numberOfAnswers: 1,
+                            holes: "all"
+                        })
+                    }
+                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
