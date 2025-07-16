@@ -132,7 +132,7 @@ function trackSkins(scorecards, skinsConfig, golfers) {
             const scorecard = scorecards.find(card => card.name === golfers[j]);
             const hole = scorecard.holes[i];
             if (hole.score > 0 && (!skin || skin?.score > hole.score)) {
-                skin = { name: golfers[i], score: hole.score, holeNumber: hole.holeNumber }
+                skin = { name: golfers[j], score: hole.score, holeNumber: hole.holeNumber }
             } else if (skin && hole.score === skin.score) {
                 skin = false;
             }
