@@ -106,7 +106,7 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
 
             const golferCard = scorecards.find(g => g.name === lastToThreePutt);
             const hole = golferCard.holes.find(h => h.holeNumber === lastHole);
-            hole.plusMinus -= (pot * (golfers.length - 1)) || 0;
+            hole.plusMinus -= (penalty * (golfers.length - 1)) || 0;
 
             for (let i = 0; i < golfers.length; i++) {
                 if (golfers[i] !== lastToThreePutt) {
