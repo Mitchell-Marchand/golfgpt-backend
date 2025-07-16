@@ -150,13 +150,13 @@ function trackSkins(scorecards, skinsConfig, golfers) {
         if (skin) {
             skins.push(skin);
             if (!skinsConfig.fromPot) {
-                pot += skinsConfig.potValue || 0
+                pot += (skinsConfig.value * (golfers.length - 1)) || 0
             }
         }
     }
 
     if (skins.length > 0) {
-        const skinValue = pot / skins.length;
+        const skinValue = Math.round(pot / skins.length * 100) / 100;
         for (let i = 0; i < skins.length; i++) {
             const skin = skins[i];
             const scorecard = scorecards.find(card => card.name === skin.name);
