@@ -1,6 +1,7 @@
 const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers } = require('../train/utils');
 
 function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golfers, value, isTeam) {
+    console.log("holeNumber", holeNumber);
     if (isTeam && teamsWithAnds.length > 0) {
         //Add plusMinus for team scores
         const teamNames = teamsWithAnds.map(team => team.split(' & '))
