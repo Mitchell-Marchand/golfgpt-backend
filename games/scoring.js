@@ -22,14 +22,14 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
                 for (let m = 0; m < winningTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === winningTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
-                    console.log(`Updating ${winningTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by ${value}`)
+                    //console.log(`Updating ${winningTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by ${value}`)
                     hole.plusMinus += winnersEachGet;
                 }
 
                 for (let m = 0; m < losingTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === losingTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
-                    console.log(`Updating ${losingTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by -${value}`)
+                    //console.log(`Updating ${losingTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by -${value}`)
                     hole.plusMinus -= value || 0;
                 }
             }
@@ -197,6 +197,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
             }
 
             if (strippedJunk.greenies?.valid && question.question?.includes("closest to the pin") && question.answers?.length > 0) {
+                console.log("about to calculate CTPs", JSON.stringify(scorecards, null, 2));
                 scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.teams);
             }
 
