@@ -440,9 +440,11 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Error building match, please try again." });
         }
 
+        console.log("side config", JSON.stringify(sideConfig, null, 2))
+
         const strippedJunk = sideConfig.filter(obj => obj.valid);
 
-        console.log("stripped junk", JSON.stringify(sideConfig, null, 2))
+        console.log("stripped junk", JSON.stringify(strippedJunk, null, 2))
 
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
         if (builtScorecards?.length === 0) {
