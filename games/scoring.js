@@ -5,6 +5,7 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
         //Add plusMinus for team scores
         const teamNames = teamsWithAnds.map(team => team.split(' & '))
         for (let k = 0; k < question.answers?.length; k++) {
+            console.log("answers n stuff", JSON.stringify(question.answers[k]))
             let winningTeam = teamNames[0];
             let losingTeam = teamNames[1];
 
