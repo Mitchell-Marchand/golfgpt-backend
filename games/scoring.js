@@ -8,8 +8,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         for (let j = 0; j < questions?.answers?.length; j++) {
             const question = questions.answers[j];
             if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
-                console.log("TEAM VALIDITY", strippedJunk.chipIns?.team);
-                if (strippedJunk.chipIns?.team && teamsWithAnds.length > 0) {
+                if (strippedJunk.chipIns?.teams && teamsWithAnds.length > 0) {
                     //Add plusMinus for team scores
                     const teamNames = teamsWithAnds.map(team => team.split(' & '))
                     for (let k = 0; k < question.answers?.length; k++) {
