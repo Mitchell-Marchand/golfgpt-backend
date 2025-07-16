@@ -1,16 +1,41 @@
 const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers } = require('../train/utils');
 
-function junk(scorecards, answers, strippedJunk, golfers) {
+function junk(scorecards, answers, strippedJunk, golfers, teams) {
     for (let i = 0; i < scorecards[0].holes.length; i++) {
-        const teams = getTeamsFromAnswers(answers[i], golfers);
+        const teamsWithAnds = teams || getTeamsFromAnswers(answers[i], golfers);
         const questions = answers.find(obj => obj.hole === scorecards[0].holes[i].holeNumber);
 
         for (let j = 0; j < questions?.answers?.length; j++) {
             const question = questions.answers[j];
             if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
-                if (strippedJunk.chipIns?.team) {
-                    //TODO: Add plusMinus for team scores
-                    
+                if (strippedJunk.chipIns?.team && teamsWithAnds.length > 0) {
+                    //Add plusMinus for team scores
+                    const teamNames = teamsWithAnds.map(team => team.split(' & '))
+                    for (let k = 0; k < question.answers?.length; k++) {
+                        let winningTeam = teamNames[0];
+                        let losingTeam = teamNames[1];
+
+                        if (losingTeam.includes(question.answers[k])) {
+                            winningTeam = teamNames[1];
+                            losingTeam = teamNames[0]
+                        }
+
+                        const totalPot = losingTeam.length * strippedJunk.chipIns?.value || 0;
+                        if (totalPot > 0) {
+                            const winnersEachGet = Math.round(totalPot / winningTeam.length * 100) / 100;
+                            for (let m = 0; m < winningTeam.length; m++) {
+                                const golferCard = scorecards.find(g => g.name === winningTeam[m]);
+                                const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
+                                hole.plusMinus += winnersEachGet;
+                            }
+
+                            for (let m = 0; m < losingTeam.length; m++) {
+                                const golferCard = scorecards.find(g => g.name === losingTeam[m]);
+                                const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
+                                hole.plusMinus -= strippedJunk.chipIns?.value || 0;
+                            }
+                        }
+                    }
                 } else {
                     //Add plusMinus for just this golfer
                     for (let k = 0; k < question.answers?.length; k++) {

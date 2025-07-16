@@ -559,7 +559,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             );
         }
 
-        scorecards = junk(scorecards, answers, strippedJunk, golfers);
+        scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
 
         let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
