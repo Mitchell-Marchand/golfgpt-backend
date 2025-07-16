@@ -161,7 +161,8 @@ function trackSkins(scorecards, skinsConfig, golfers) {
 
     if (skins.length > 0) {
         const skinValue = Math.round(pot / skins.length * 100) / 100;
-        console.log("skin value", skinValue);
+        const perGolferValue = Math.round(skinValue / golfers.length * 100) / 100;
+        
         for (let i = 0; i < skins.length; i++) {
             const skin = skins[i];
             const scorecard = scorecards.find(card => card.name === skin.name);
@@ -171,7 +172,7 @@ function trackSkins(scorecards, skinsConfig, golfers) {
             for (let j = 0; j < golfers.length; j++) {
                 const scorecard = scorecards.find(card => card.name === golfers[j]);
                 const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
-                hole.plusMinus -= Math.round((skinValue / (golfers.length)) * 100) / 100;
+                hole.plusMinus -= perGolferValue;
             }
         }
     }
