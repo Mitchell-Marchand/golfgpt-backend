@@ -1,5 +1,3 @@
-//Things to add each prompt: autopress (x down), birdies (outside scope of game context)
-
 const junkConfig = `{
     chipIns: {
         valid //true or false (default false) if chip ins are worth extra money
@@ -88,6 +86,8 @@ const scotchConfig = `{
     presses //true or false (default is true) whether or not presses are allowed
     doublePresses //true or false (default is true) whether or not double presses are allowed
 }`;
+
+//NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)
 
 module.exports = {
     scotchConfig,
