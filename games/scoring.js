@@ -469,6 +469,8 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         firstTeamMoney = (firstTeamPoints - secondTeamPoints) * pointWorth;
         secondTeamMoney = (secondTeamPoints - firstTeamPoints) * pointWorth;
 
+        console.log("first, second team money", firstTeamMoney, secondTeamMoney);
+
         for (let j = 0; j < currentScorecard.length; j++) {
             if (teams[0].includes(currentScorecard[j].name)) {
                 //currentScorecard[j].plusMinus += firstTeamMoney;
@@ -484,7 +486,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
     }
 
-    console.log("scorecard after scotch", JSON.stringify(currentScorecard, null, 2))
+    //console.log("scorecard after scotch", JSON.stringify(currentScorecard, null, 2))
 
     return currentScorecard;
 }
