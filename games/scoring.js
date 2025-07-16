@@ -76,7 +76,7 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
             let winningTeam = teamNames[0];
             let losingTeam = teamNames[1];
 
-            if (winningTeam.includes(question.answers[k])) {
+            if (winningTeam.includes(lastToThreePutt)) {
                 winningTeam = teamNames[1];
                 losingTeam = teamNames[0]
             }
