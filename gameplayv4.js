@@ -365,6 +365,8 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         if (!config) {
             return res.status(500).json({ error: "Sorry, I don't know how to score that kind of golf match yet." });
+        } else {
+            console.log("Config:", JSON.stringify(config, null, 2))
         }
 
         //Get side action
