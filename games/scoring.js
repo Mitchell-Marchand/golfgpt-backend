@@ -336,7 +336,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         const teamScores = getTeamScoresOnHole(teams, currentScorecard, i);
 
         if (teamScores[0].includes(0) || teamScores[1].includes(0)) {
-            break;
+            continue;
         }
 
         const answers = allAnswers[i].answers;
