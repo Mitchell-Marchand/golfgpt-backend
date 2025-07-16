@@ -15,7 +15,7 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
             }
 
             const totalPot = losingTeam.length * value || 0;
-            console.log("totalPot for holenumber", totalPot, holeNumber);
+            //console.log("totalPot for holenumber", totalPot, holeNumber);
 
             if (totalPot !== 0) {
                 const winnersEachGet = Math.round(totalPot / winningTeam.length * 100) / 100;
@@ -23,12 +23,14 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
                     const golferCard = scorecards.find(g => g.name === winningTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
                     hole.plusMinus += winnersEachGet;
+                    console.log(`Updating ${winningTeam[m]} plusMinus for hole ${holeNumber} by ${value}`)
                 }
 
                 for (let m = 0; m < losingTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === losingTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
                     hole.plusMinus -= value || 0;
+                    console.log(`Updating ${losingTeam[m]} plusMinus for hole ${holeNumber} by -${value}`)
                 }
             }
         }
