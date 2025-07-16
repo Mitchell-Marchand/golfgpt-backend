@@ -95,7 +95,7 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
                 if (winningTeam.includes(golfers[i])) {
                     hole.plusMinus += winnersEachGet || 0;
                 } else {
-                    hole.plusMinus += losersEachPay || 0;
+                    hole.plusMinus -= losersEachPay || 0;
                 }
             }
         } else {
