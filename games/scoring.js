@@ -117,6 +117,8 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
             }
         }
     }
+
+    return scorecards;
 }
 
 function trackSkins(scorecards, skinsConfig, golfers) {
