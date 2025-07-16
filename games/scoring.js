@@ -22,15 +22,15 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
                 for (let m = 0; m < winningTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === winningTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
+                    console.log(`Updating ${winningTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by ${value}`)
                     hole.plusMinus += winnersEachGet;
-                    console.log(`Updating ${winningTeam[m]} plusMinus for hole ${holeNumber} by ${value}`)
                 }
 
                 for (let m = 0; m < losingTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === losingTeam[m]);
                     const hole = golferCard.holes.find(h => h.holeNumber === holeNumber);
+                    console.log(`Updating ${losingTeam[m]} plusMinus (currently ${hole.plusMinus}) for hole ${holeNumber} by -${value}`)
                     hole.plusMinus -= value || 0;
-                    console.log(`Updating ${losingTeam[m]} plusMinus for hole ${holeNumber} by -${value}`)
                 }
             }
         }
