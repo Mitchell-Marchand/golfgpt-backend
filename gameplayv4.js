@@ -453,6 +453,8 @@ router.post("/create", authenticateUser, async (req, res) => {
             Object.entries(sideConfig).filter(([_, value]) => value.valid)
         );
 
+        console.log("stripped junk", JSON.stringify(strippedJunk, null, 2))
+
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });

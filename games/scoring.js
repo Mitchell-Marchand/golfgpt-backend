@@ -159,8 +159,6 @@ function trackSkins(scorecards, skinsConfig, golfers) {
         }
     }
 
-    console.log("skins", JSON.stringify(skins, null, 2))
-
     if (skins.length > 0) {
         const skinValue = Math.round(pot / skins.length * 100) / 100;
         const perGolferValue = Math.round(skinValue / golfers.length * 100) / 100;
