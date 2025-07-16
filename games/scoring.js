@@ -14,7 +14,8 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
             }
 
             const totalPot = losingTeam.length * value || 0;
-            if (totalPot > 0) {
+
+            if (totalPot !== 0) {
                 const winnersEachGet = Math.round(totalPot / winningTeam.length * 100) / 100;
                 for (let m = 0; m < winningTeam.length; m++) {
                     const golferCard = scorecards.find(g => g.name === winningTeam[m]);
