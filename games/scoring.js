@@ -192,7 +192,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
                 scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.chipIns?.value, strippedJunk.chipIns?.teams);
             }
 
-            if (strippedJunk.greenies?.valid && question.question?.includes("greenie") && question.answers?.length > 0) {
+            if (strippedJunk.greenies?.valid && question.question?.includes("closest to the pin") && question.answers?.length > 0) {
                 scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.teams);
             }
 
