@@ -493,127 +493,76 @@ function vegas(scorecards, scores, config) {
         autoDoubleStays = false,
         birdiesFlip = false,
         additionalBirdiesDouble = true,
-        onlyGrossBirdies = false
+        onlyGrossBirdies = false,
     } = config;
 
     const teamArray = teams.map(team => team.split(" & "));
 
-    // Extract holeNumber from scores
     const currentHole = scores[0]?.holeNumber;
     if (!currentHole) return scorecards;
 
     const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
     if (holeIndex === -1) return scorecards;
 
-    // Apply scores to scorecards
+    // Update scores and strokes
     for (const golfer of scorecards) {
-        const matchingScore = scores.find(s => s.name === golfer.name);
-        if (matchingScore) {
-            golfer.holes[holeIndex].score = matchingScore.score;
+        const match = scores.find(s => s.name === golfer.name);
+        if (match) {
+            const hole = golfer.holes[holeIndex];
+            hole.score = match.score;
+            hole.strokes = match.strokes || 0;
         }
     }
-
-    // Handle point value doubling logic
-    let isDoubled = false;
-    let pointWorth = pointVal;
-
-    const matchTied = scorecards.every(player => player.plusMinus === 0);
-    const someoneDownEnough = scorecards.some(player => Math.abs(player.plusMinus) >= autoDoubleMoneyTrigger);
-
-    if (autoDoubles && !isDoubled) {
-        if (autoDoubleAfterNineTrigger && currentHole > 9) {
-            isDoubled = true;
-            pointWorth = autoDoubleValue;
-        } else if (autoDoubleWhileTiedTrigger && matchTied) {
-            isDoubled = true;
-            pointWorth = autoDoubleValue;
-        } else if (autoDoubleMoneyTrigger > 0 && someoneDownEnough) {
-            isDoubled = true;
-            pointWorth = autoDoubleValue;
-        }
-    } else if (autoDoubles && isDoubled && !autoDoubleStays) {
-        if (
-            (autoDoubleMoneyTrigger && !someoneDownEnough) ||
-            (autoDoubleWhileTiedTrigger && !matchTied)
-        ) {
-            isDoubled = false;
-            pointWorth = pointVal;
-        }
-    }
-
-    // Get team scores for the hole
-    const teamScores = teamArray.map(team =>
-        team.map(name => {
-            const golfer = scorecards.find(g => g.name === name);
-            const hole = golfer?.holes[holeIndex];
-            if (!hole) return 0;
-
-            const gross = hole.score;
-            const strokes = hole.strokes || 0;
-            const net = gross - strokes;
-            return net;
-        })
-    );
 
     const par = scorecards[0].holes[holeIndex].par;
 
-    const hasBirdie = team => team.some((_, i) => {
-        const name = teamArray.flat()[i];
-        const golfer = scorecards.find(g => g.name === name);
-        const hole = golfer?.holes[holeIndex];
-        if (!hole) return false;
+    // Build teamScores: [{ gross, net }]
+    const teamScores = teamArray.map(team =>
+        team.map(name => {
+            const g = scorecards.find(p => p.name === name);
+            const h = g?.holes[holeIndex];
+            const gross = h?.score || 0;
+            const strokes = h?.strokes || 0;
+            const net = gross - strokes;
+            return { gross, net };
+        })
+    );
 
-        const gross = hole.score;
-        const net = gross - (hole.strokes || 0);
-
-        return onlyGrossBirdies ? gross < par : net < par;
-    });
-
-    // Flip if birdieFlip is on and one team birdied and the other didn’t
-    if (birdiesFlip) {
-        const team1Birdie = hasBirdie(teamScores[0]);
-        const team2Birdie = hasBirdie(teamScores[1]);
-
-        if (team1Birdie !== team2Birdie) {
-            if (team2Birdie) {
-                [teamScores[0], teamScores[1]] = [teamScores[1], teamScores[0]];
-            }
-        }
-    }
-
-    const vegasValue = (a, b) => {
-        const [low, high] = a <= b ? [a, b] : [b, a];
-        return parseInt(`${low}${high}`);
-    };
-
-    const teamValues = teamScores.map(([a, b]) => vegasValue(a, b));
-    let team1Points = 0;
-    let team2Points = 0;
-
-    if (teamValues[0] < teamValues[1]) {
-        team1Points = 1;
-    } else if (teamValues[0] > teamValues[1]) {
-        team2Points = 1;
-    }
-
-    // Handle additionalBirdiesDouble
-    const birdieCounts = teamArray.map(team =>
-        team.reduce((count, name) => {
-            const golfer = scorecards.find(g => g.name === name);
-            const hole = golfer?.holes[holeIndex];
-            if (!hole) return count;
-    
-            const gross = hole.score;
-            const net = gross - (hole.strokes || 0);
-    
-            if ((onlyGrossBirdies && gross < par) || (!onlyGrossBirdies && net < par)) {
-                return count + 1;
-            }
-    
-            return count;
+    // Count birdies
+    const birdieCounts = teamScores.map(team =>
+        team.reduce((acc, { gross, net }) => {
+            const used = onlyGrossBirdies ? gross : net;
+            return used < par ? acc + 1 : acc;
         }, 0)
     );
 
+    // Create vegas values from net scores
+    const rawTeamValues = teamScores.map(team => {
+        const scores = team.map(p => p.net);
+        const [a, b] = scores;
+        const [low, high] = a <= b ? [a, b] : [b, a];
+        return parseInt(`${low}${high}`);
+    });
+
+    // 🔁 Correct birdie flip: FLIP THE OPPONENT TEAM if only one team has birdies
+    if (birdiesFlip && birdieCounts[0] !== birdieCounts[1]) {
+        const teamToFlip = birdieCounts[0] > birdieCounts[1] ? 1 : 0;
+        const flipped = parseInt(rawTeamValues[teamToFlip].toString().split('').reverse().join(''));
+        rawTeamValues[teamToFlip] = flipped;
+    }
+
+    // 💰 Calculate point difference
+    let team1Points = 0;
+    let team2Points = 0;
+    const diff = Math.abs(rawTeamValues[0] - rawTeamValues[1]);
+
+    if (rawTeamValues[0] < rawTeamValues[1]) {
+        team1Points = diff;
+    } else if (rawTeamValues[0] > rawTeamValues[1]) {
+        team2Points = diff;
+    }
+
+    // 📈 Additional birdie doubling
     if (additionalBirdiesDouble) {
         if (team1Points && birdieCounts[0] > 1) {
             team1Points *= Math.pow(2, birdieCounts[0] - 1);
@@ -623,19 +572,38 @@ function vegas(scorecards, scores, config) {
         }
     }
 
-    const teamMoney = [
-        (team1Points - team2Points) * pointWorth,
-        (team2Points - team1Points) * pointWorth,
-    ];
+    // 💵 Handle autodoubles
+    let pointWorth = pointVal;
+    let isDoubled = false;
+    const matchTied = scorecards.every(p => p.plusMinus === 0);
+    const someoneDownEnough = scorecards.some(p => Math.abs(p.plusMinus) >= autoDoubleMoneyTrigger);
 
-    // Apply results to scorecards
-    for (let player of scorecards) {
+    if (autoDoubles) {
+        if (autoDoubleAfterNineTrigger && currentHole > 9) {
+            isDoubled = true;
+        } else if (autoDoubleWhileTiedTrigger && matchTied) {
+            isDoubled = true;
+        } else if (autoDoubleMoneyTrigger > 0 && someoneDownEnough) {
+            isDoubled = true;
+        }
+    }
+
+    if (isDoubled) {
+        pointWorth = autoDoubleValue;
+    }
+
+    const team1Money = (team1Points - team2Points) * pointWorth;
+    const team2Money = (team2Points - team1Points) * pointWorth;
+
+    // 🎯 Apply to scorecard
+    for (const player of scorecards) {
+        const hole = player.holes[holeIndex];
         if (teamArray[0].includes(player.name)) {
-            player.holes[holeIndex].plusMinus = teamMoney[0];
-            player.holes[holeIndex].points = team1Points;
+            hole.points = team1Points;
+            hole.plusMinus = team1Money;
         } else if (teamArray[1].includes(player.name)) {
-            player.holes[holeIndex].plusMinus = teamMoney[1];
-            player.holes[holeIndex].points = team2Points;
+            hole.points = team2Points;
+            hole.plusMinus = team2Money;
         }
     }
 
