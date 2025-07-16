@@ -51,7 +51,7 @@ function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golf
     return scorecards;
 }
 
-function trackSnake(scorecards, answers, teamsWithAnds, snakeConfig, golfers) {
+function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
     let lastToThreePutt = false;
     let lastHole = 0;
     let pot = 0;
@@ -71,6 +71,7 @@ function trackSnake(scorecards, answers, teamsWithAnds, snakeConfig, golfers) {
         //Determine if team pentalty, and whether shared or full pot per opponent
         if (snakeConfig?.teams) {
             //team snake
+            const teamsWithAnds = teams || getTeamsFromAnswers(answers.find(h => h.hole === lastHole), golfers);
             const teamNames = teamsWithAnds.map(team => team.split(' & '))
             let winningTeam = teamNames[0];
             let losingTeam = teamNames[1];
@@ -118,6 +119,63 @@ function trackSnake(scorecards, answers, teamsWithAnds, snakeConfig, golfers) {
     }
 }
 
+function trackSkins(scorecards, skinsConfig, golfers) {
+    let skins = [];
+    let pot = 0;
+    if (skinsConfig.fromPot) {
+        pot = golfers.length * skinsConfig.potValue || 0;
+    } 
+
+    for (let i = 0; i < scorecards[0].holes.length; i++) {
+        let skin = false;
+        for (let j = 0; j < golfers.length; j++) {
+            const scorecard = scorecards.find(card => card.name === golfers[j]);
+            const hole = scorecard.holes[i];
+            if (hole.score > 0 && (!skin || skin?.score > hole.score)) {
+                skin = { name: golfers[i], score: hole.score, holeNumber: hole.holeNumber }
+            } else if (skin && hole.score === skin.score) {
+                skin = false;
+            }
+        }
+
+        if (skin && skinsConfig.validation && i < scorecards[0].holes.length - 1) {
+            //Determine if skin was proven
+            const scorecard = scorecards.find(card => card.name === skin.name);
+            const holeToProve = scorecard.holes[i + 1];
+            if (holeToProve.score > holeToProve.par) {
+                skin = false;
+            }
+        }
+
+        if (skin) {
+            skins.push(skin);
+            if (!skinsConfig.fromPot) {
+                pot += skinsConfig.potValue || 0
+            }
+        }
+    }
+
+    if (skins.length > 0) {
+        const skinValue = pot / skins.length;
+        for (let i = 0; i < skins.length; i++) {
+            const skin = skins[i];
+            const scorecard = scorecards.find(card => card.name === skin.name);
+            const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
+            hole.plusMinus += skinValue;
+
+            for (let j = 0; j < golfers.length; j++) {
+                if (golfers[j] !== skin.name) {
+                    const scorecard = scorecards.find(card => card.name === golfers[j]);
+                    const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
+                    hole.plusMinus -= (skinValue / (golfers.length - 1));
+                }
+            }
+        }
+    }
+
+    return scorecards;
+}
+
 function junk(scorecards, answers, strippedJunk, golfers, teams) {
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         const teamsWithAnds = teams || getTeamsFromAnswers(answers[i], golfers);
@@ -160,10 +218,12 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
     }
 
     if (strippedJunk.snake?.valid) {
-        scorecards = trackSnake(scorecards, answers, strippedJunk.snake, golfers);
+        scorecards = trackSnake(scorecards, answers, teams, strippedJunk.snake, golfers);
     }
 
-    //TODO: Skins
+    if (strippedJunk.skins?.valid) {
+        scorecards = trackSkins(scorecards, strippedJunk.skins, golfers);
+    }
 
     return scorecards;
 }
