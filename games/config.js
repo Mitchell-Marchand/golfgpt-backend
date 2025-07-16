@@ -97,7 +97,7 @@ const vegasConfig = `{
     autoDoubleWhileTiedTrigger //true or false (default is false). whether or not the money automatically increases while the match is tied
     autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
-    birdiesFlip //true or false (default is false) whether or not gross birdies flip the scores of the other team
+    birdiesFlip //true or false (default is true) whether or not gross birdies flip the scores of the other team
     additionalBirdiesDouble //true or false (default is true) whether or not addidional birdies double the points
     presses //true or false (default is true) whether or not presses/cups/rolls/bridges/hammers are allowed
     doublePresses //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
