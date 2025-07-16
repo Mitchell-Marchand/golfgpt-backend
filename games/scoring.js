@@ -197,7 +197,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
             }
 
             if (strippedJunk.greenies?.valid && question.question?.includes("closest to the pin") && question.answers?.length > 0) {
-                console.log("about to calculate CTPs", JSON.stringify(scorecards, null, 2));
+                //console.log("about to calculate CTPs", JSON.stringify(scorecards, null, 2));
                 scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.teams);
             }
 
@@ -483,6 +483,8 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             }
         }
     }
+
+    console.log("scorecard after scotch", JSON.stringify(currentScorecard, null, 2))
 
     return currentScorecard;
 }
