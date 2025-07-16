@@ -44,13 +44,13 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
                         const golferCard = scorecards.find(g => g.name === question.answers[k]);
                         const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
                         hole.plusMinus += won;
-                    }
 
-                    for (let k = 0; k < golfers.length; k++) {
-                        if (!question.answers.includes(golfers[k])) {
-                            const golferCard = scorecards.find(g => g.name === golfers[k]);
-                            const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
-                            hole.plusMinus -= strippedJunk.chipIns?.value || 0;
+                        for (let m = 0; m < golfers.length; m++) {
+                            if (question.answers[k] !== golfers[m]) {
+                                const golferCard = scorecards.find(g => g.name === golfers[m]);
+                                const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
+                                hole.plusMinus -= strippedJunk.chipIns?.value || 0;
+                            }
                         }
                     }
                 }
