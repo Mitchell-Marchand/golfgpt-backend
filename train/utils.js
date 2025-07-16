@@ -300,6 +300,23 @@ function getTeamScoresOnHole(teams, currentScorecard, i) {
     return result;
 }
 
+function getTeamsFromAnswers(answeredQuestions, golfers) {
+    let teams = [];
+
+    for (const question of answeredQuestions) {
+        if (question.question.toLowerCase().includes("team")) {
+            const team1 = question.answers;
+            const team2 = golfers.filter(name => !team1.includes(name));
+            
+            teams.push(team1.join(" & "));
+            teams.push(team2.join(" & "));
+            break; // Stop after first team-related question
+        }
+    }
+
+    return teams;
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -315,6 +332,7 @@ module.exports = {
     getTeamTotals,
     getLowScoreWinners,
     getTeamScoresOnHole,
+    getTeamsFromAnswers,
     scoringSystemMessage,
     setupSystemMessage
 }

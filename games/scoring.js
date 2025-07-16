@@ -1,4 +1,39 @@
-const { getTeamTotals, getLowScoreWinners,getTeamScoresOnHole } = require('../train/utils');
+const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers } = require('../train/utils');
+
+function junk(scorecards, answers, strippedJunk, golfers) {
+    for (let i = 0; i < scorecards[0].holes.length; i++) {
+        const teams = getTeamsFromAnswers(answers[i], golfers);
+        const questions = answers.find(obj => obj.hole === scorecards[0].holes[i].holeNumber);
+
+        for (let j = 0; j < questions?.answers?.length; j++) {
+            const question = questions.answers[j];
+            if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
+                if (strippedJunk.chipIns?.team) {
+                    //TODO: Add plusMinus for team scores
+                    
+                } else {
+                    //Add plusMinus for just this golfer
+                    for (let k = 0; k < question.answers?.length; k++) {
+                        const opponents = golfers.length - 1;
+                        const won = opponents * strippedJunk.chipIns?.value || 0
+                        const golferCard = scorecards.find(g => g.name === question.answers[k]);
+                        const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
+                        hole.plusMinus += won;
+                    }
+
+                    for (let k = 0; k < golfers.length; k++) {
+                        if (!question.answers.includes(golfers[k])) {
+                            const golferCard = scorecards.find(g => g.name === golfers[k]);
+                            const hole = golferCard.holes.find(h => h.holeNumber === questions.hole);
+                            hole.plusMinus -= strippedJunk.chipIns?.value || 0;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+}
 
 function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal, points, autoDoubles, autoDoubleAfterNineTrigger, autoDoubleMoneyTrigger, autoDoubleWhileTiedTrigger, autoDoubleValue, autoDoubleStays, miracle) {
     //Add scores to currentScorecard
@@ -107,7 +142,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                 firstTeamPoints++;
             } else if (getLowScoreWinners(teamScores).team2Wins) {
                 secondTeamPoints++;
-            } 
+            }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints++;
@@ -119,7 +154,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                 firstTeamPoints += 2;
             } else if (getLowScoreWinners(teamScores).team2Wins) {
                 secondTeamPoints += 2;
-            } 
+            }
 
             if (getTeamTotals(teamScores[0]) < getTeamTotals(teamScores[1])) {
                 firstTeamPoints += 2;
@@ -181,20 +216,22 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                 } else if (answers[j].answers.includes(nameTeams[1])) {
                     secondTeamPoints++;
                 }
-            } else if (answers[j].answers.includes(teams[0][0]) && answers[j].answers.includes(teams[0][1])) {
-                firstTeamPoints += 2;
-                pointsNeededToSweep++;
-            } else if (answers[j].answers.includes(teams[1][0]) && answers[j].answers.includes(teams[1][1])) {
-                secondTeamPoints += 2;
-                pointsNeededToSweep++;
-            } else if (answers[j].answers.includes(teams[0][0])) {
-                firstTeamPoints++;
-            } else if (answers[j].answers.includes(teams[0][1])) {
-                firstTeamPoints++;
-            } else if (answers[j].answers.includes(teams[1][0])) {
-                secondTeamPoints++;
-            } else if (answers[j].answers.includes(teams[1][1])) {
-                secondTeamPoints++;
+            } else if (answers[j].question === "Who got the point for proximity?" || answers[j].question === "Who had the longest drive?") {
+                if (answers[j].answers.includes(teams[0][0]) && answers[j].answers.includes(teams[0][1])) {
+                    firstTeamPoints += 2;
+                    pointsNeededToSweep++;
+                } else if (answers[j].answers.includes(teams[1][0]) && answers[j].answers.includes(teams[1][1])) {
+                    secondTeamPoints += 2;
+                    pointsNeededToSweep++;
+                } else if (answers[j].answers.includes(teams[0][0])) {
+                    firstTeamPoints++;
+                } else if (answers[j].answers.includes(teams[0][1])) {
+                    firstTeamPoints++;
+                } else if (answers[j].answers.includes(teams[1][0])) {
+                    secondTeamPoints++;
+                } else if (answers[j].answers.includes(teams[1][1])) {
+                    secondTeamPoints++;
+                }
             }
         }
 
@@ -229,13 +266,13 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
 
         for (let j = 0; j < currentScorecard.length; j++) {
             if (teams[0].includes(currentScorecard[j].name)) {
-                currentScorecard[j].plusMinus += firstTeamMoney;
-                currentScorecard[j].points += firstTeamPoints;
+                //currentScorecard[j].plusMinus += firstTeamMoney;
+                //currentScorecard[j].points += firstTeamPoints;
                 currentScorecard[j].holes[i].plusMinus = firstTeamMoney;
                 currentScorecard[j].holes[i].points = firstTeamPoints;
             } else if (teams[1].includes(currentScorecard[j].name)) {
-                currentScorecard[j].plusMinus += secondTeamMoney;
-                currentScorecard[j].points += secondTeamPoints;
+                //currentScorecard[j].plusMinus += secondTeamMoney;
+                //currentScorecard[j].points += secondTeamPoints;
                 currentScorecard[j].holes[i].plusMinus = secondTeamMoney;
                 currentScorecard[j].holes[i].points = secondTeamPoints;
             }
@@ -246,5 +283,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
 }
 
 module.exports = {
-    scotch
+    scotch,
+    junk
 }

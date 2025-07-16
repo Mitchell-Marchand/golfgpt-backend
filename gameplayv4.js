@@ -5,7 +5,7 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
-const { scotchConfig } = require("./games/config");
+const { scotchConfig, junkConfig } = require("./games/config");
 const { scotch } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -253,7 +253,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
             "king of the hill", "standard match play", "bingo bango bongo", "standard stroke play", "stableford",
-            "stableford quota", "666", "9 point", "scramble", "shamble", "bramble"
+            "stableford quota", "666", "9 point", "scramble", "shamble", "bramble", "chapman"
         ];
 
         const gameType = await openai.chat.completions.create({
@@ -273,6 +273,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
         let config;
+        let sideConfig;
         let questions = [];
 
         console.log("Type:", raw);
@@ -295,7 +296,6 @@ router.post("/create", authenticateUser, async (req, res) => {
             });
 
             try {
-                console.log("JSON:", extractJsonBlock(rawConfig.choices[0].message.content));
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
                 questions.push({
                     question: `Who got the point for proximity?`,
@@ -345,6 +345,103 @@ router.post("/create", authenticateUser, async (req, res) => {
             return res.status(500).json({ error: "Sorry, I don't know how to score that kind of golf match yet." });
         }
 
+        //Get side action
+        const prompt = `Based on the details for my golf match, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation.\n\nDetails: ${rules}\n\nJSON Object: ${junkConfig}`;
+        const rawConfig = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of side games/junk in golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.0
+        });
+
+        try {
+            sideConfig = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
+
+            if (sideConfig.greenies?.valid) {
+                questions.push({
+                    question: `Who got closest to the pin?`,
+                    answers: golfers,
+                    numberOfAnswers: 1,
+                    holes: "par3s"
+                });
+            }
+
+            if (sideConfig.chipIns?.valid) {
+                questions.push({
+                    question: `Did anyone chip in?`,
+                    answers: golfers,
+                    numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.sandies?.valid) {
+                questions.push({
+                    question: `Did anyone get a sandies?`,
+                    answers: golfers,
+                    numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.polies?.valid) {
+                questions.push({
+                    question: `Did anyone get a polie?`,
+                    answers: golfers,
+                    numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.barkies?.valid) {
+                questions.push({
+                    question: `Did anyone get a barkie?`,
+                    answers: golfers,
+                    numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.arnies?.valid) {
+                questions.push({
+                    question: `Did anyone get an Arnie?`,
+                    answers: golfers,
+                    numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.oozle?.valid) {
+                questions.push({
+                    question: `Who was the first to hole out?`,
+                    answers: golfers,
+                    numberOfAnswers: 1,
+                    holes: "all"
+                });
+            }
+
+            if (sideConfig.fish?.valid) {
+                questions.push({
+                    question: `Did anyone hit into a water hazard?`,
+                    answers: golfers,
+                    numberOfAnswers: 4,
+                    holes: "all"
+                });
+            }
+        } catch (err) {
+            return res.status(500).json({ error: "Error building match, please try again." });
+        }
+
+        const strippedJunk = sideConfig.filter(obj => obj.valid);
+
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
@@ -359,7 +456,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You're an assistant who can return a creative but professional display name for a golf match. Your job is to generate short, clear display names.`
+                    content: `You're an assistant who can return a creative but not cheesy display name for a golf match. Your job is to generate short, clear display names.`
                 },
                 { role: "user", content: `Based on these rules, generate a display name. Limit it to 6 words or fewer: ${rules}` }
             ],
@@ -371,8 +468,8 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         await mariadbPool.query(
-            "UPDATE Matches SET strokes = ?, config = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
-            [JSON.stringify(strokes), JSON.stringify(config), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
+            "UPDATE Matches SET strokes = ?, config = ?, configType = ?, strippedJunk = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
+            [JSON.stringify(strokes), JSON.stringify(config), raw, JSON.stringify(strippedJunk), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
         res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName });
@@ -423,7 +520,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        const [rows] = await mariadbPool.query("SELECT scorecards, config, golfers, golferIds, answers FROM Matches WHERE id = ?", [matchId]);
+        const [rows] = await mariadbPool.query("SELECT scorecards, config, configType, strippedJunk, golfers, golferIds, answers FROM Matches WHERE id = ?", [matchId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
@@ -433,6 +530,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         const golfers = JSON.parse(rows[0].golfers);
         const golferIds = JSON.parse(rows[0].golferIds);
         const config = JSON.parse(rows[0].config);
+        const strippedJunk = JSON.parse(rows[0].strippedJunk);
+        const configType = rows[0].configType;
 
         //Update scorecards with config, scores, questionAnswers
         for (let i = 0; i < answers?.length; i++) {
@@ -441,22 +540,26 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             }
         }
 
-        scorecards = scotch(
-            scorecards, 
-            answers, 
-            scores, 
-            config.teams, 
-            config.teams.map(team => team.split(' & ')),
-            config.pointVal,
-            config.points,
-            config.autoDoubles,
-            config.autoDoubleAfterNineTrigger,
-            config.autoDoubleMoneyTrigger,
-            config.autoDoubleWhileTiedTrigger,
-            config.autoDoubleValue,
-            config.autoDoubleStays,
-            config.miracle
-        );
+        if (configType === "scotch" || configType === "umbrella" || configType === "bridge") {
+            scorecards = scotch(
+                scorecards,
+                answers,
+                scores,
+                config.teams,
+                config.teams.map(team => team.split(' & ')),
+                config.pointVal,
+                config.points,
+                config.autoDoubles,
+                config.autoDoubleAfterNineTrigger,
+                config.autoDoubleMoneyTrigger,
+                config.autoDoubleWhileTiedTrigger,
+                config.autoDoubleValue,
+                config.autoDoubleStays,
+                config.miracle
+            );
+        }
+
+        scorecards = junk(scorecards, answers, strippedJunk, golfers);
 
         let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
