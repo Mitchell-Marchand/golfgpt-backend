@@ -188,35 +188,35 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         for (let j = 0; j < questions?.answers?.length; j++) {
             const question = questions.answers[j];
             if (strippedJunk.chipIns?.valid && question.question?.includes("chip in") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.chipIns?.value, strippedJunk.chipIns?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.chipIns?.value, strippedJunk.chipIns?.teams);
             }
 
             if (strippedJunk.greenies?.valid && question.question?.includes("greenie") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.greenies?.value, strippedJunk.greenies?.teams);
             }
 
             if (strippedJunk.sandies?.valid && question.question?.includes("sandie") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.sandies?.value, strippedJunk.sandies?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.sandies?.value, strippedJunk.sandies?.teams);
             }
 
             if (strippedJunk.polies?.valid && question.question?.includes("polie") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.polies?.value, strippedJunk.polies?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.polies?.value, strippedJunk.polies?.teams);
             }
 
             if (strippedJunk.barkies?.valid && question.question?.includes("barkie") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.barkies?.value, strippedJunk.barkies?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.barkies?.value, strippedJunk.barkies?.teams);
             }
 
             if (strippedJunk.arnies?.valid && question.question?.includes("Arnie") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.arnies?.value, strippedJunk.arnies?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.arnies?.value, strippedJunk.arnies?.teams);
             }
 
             if (strippedJunk.oozle?.valid && question.question?.includes("first to hole out") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.oozle?.value, strippedJunk.oozle?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.oozle?.value, strippedJunk.oozle?.teams);
             }
 
             if (strippedJunk.fish?.valid && question.question?.includes("a water hazard") && question.answers?.length > 0) {
-                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.fish?.value * -1, strippedJunk.fish?.team);
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.fish?.value * -1, strippedJunk.fish?.teams);
             }
         }
     }
@@ -228,6 +228,8 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
     if (strippedJunk.skins?.valid) {
         scorecards = trackSkins(scorecards, strippedJunk.skins, golfers);
     }
+
+    //TODO: streaks
 
     return scorecards;
 }
