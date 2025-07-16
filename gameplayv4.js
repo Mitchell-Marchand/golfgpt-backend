@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
 const { scotchConfig, junkConfig } = require("./games/config");
-const { scotch } = require("./games/scoring")
+const { scotch, junk } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -443,8 +443,6 @@ router.post("/create", authenticateUser, async (req, res) => {
         const strippedJunk = Object.fromEntries(
             Object.entries(sideConfig).filter(([_, value]) => value.valid)
         );
-
-        console.log("stripped junk", JSON.stringify(strippedJunk, null, 2))
 
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
         if (builtScorecards?.length === 0) {
