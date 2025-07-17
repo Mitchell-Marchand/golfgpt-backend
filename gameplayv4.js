@@ -432,7 +432,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 if (config.crybaby) {
                     questions.push({
                         question: `Did the bet change? If so, enter the new dollar value:`,
-                        answers: [],
+                        answers: [""],
                         numberOfAnswers: 1,
                         holes: `${config.crybabyHole || 16}+`
                     })
