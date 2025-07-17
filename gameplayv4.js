@@ -5,7 +5,7 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
-const { scotchConfig, junkConfig, vegasConfig } = require("./games/config");
+const { scotchConfig, junkConfig, vegasConfig, wolfConfig } = require("./games/config");
 const { scotch, junk, vegas } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -375,6 +375,67 @@ router.post("/create", authenticateUser, async (req, res) => {
                             holes: "all"
                         })
                     }
+                }
+            } catch (err) {
+                return res.status(500).json({ error: "Error building match, please try again." });
+            }
+        } else if (raw === "wolf") {
+            const prompt = `Based on the following rules of a wolf match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${wolfConfig}`;
+            const rawConfig = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                temperature: 0.0
+            });
+
+            try {
+                config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
+
+                questions.push({
+                    question: `Who was the wolf?`,
+                    answers: golfers,
+                    numberOfAnswers: 1,
+                    holes: "all"
+                })
+
+                if (config.blindWolfAllowed) {
+                    questions.push({
+                        question: `Did the wolf go solo?`,
+                        answers: ["No", "Yes, Before Their Teeshot", "Yes, After Their Tee Shot", "Yes, After Everyone's Tee Shot"],
+                        numberOfAnswers: 1,
+                        holes: "all"
+                    })
+                } else {
+                    questions.push({
+                        question: `Did the wolf go solo?`,
+                        answers: ["No", "Yes, After Their Tee Shot", "Yes, After Everyone's Tee Shot"],
+                        numberOfAnswers: 1,
+                        holes: "all"
+                    })
+                }
+
+                questions.push({
+                    question: `Who was their partner?`,
+                    answers: golfers,
+                    numberOfAnswers: 1,
+                    holes: "all"
+                })
+
+                if (config.crybaby) {
+                    questions.push({
+                        question: `Did the bet change? If so, enter the new dollar value:`,
+                        answers: [],
+                        numberOfAnswers: 1,
+                        holes: `${config.crybabyHole || 16}+`
+                    })
                 }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });

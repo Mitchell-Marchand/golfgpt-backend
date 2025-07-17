@@ -633,8 +633,190 @@ function vegas(scorecards, scores, config, answers) {
     return scorecards;
 }
 
+function wolf(scorecards, scores, config, answers) {
+    const {
+        holeValue: defaultHoleValue = 5,
+        birdiesDouble = false,
+        carryovers = false,
+        birdiesDoubleCarryovers = false,
+        blindWolfAllowed = true,
+        crybaby = true,
+        crybabyHole = 16,
+        autoDoubles = false,
+        autoDoubleAfterNineTrigger = false,
+        autoDoubleMoneyTrigger = 0,
+        autoDoubleWhileTiedTrigger = false,
+        autoDoubleValue = 1,
+        autoDoubleStays = false,
+    } = config;
+
+    const golfers = scorecards.map(g => g.name);
+    let isDoubled = false;
+    let carryoverPoints = [];
+
+    // Record scores into scorecard
+    for (const score of scores) {
+        const golfer = scorecards.find(g => g.name === score.name);
+        const hole = golfer?.holes.find(h => h.holeNumber === score.holeNumber);
+        if (hole) {
+            hole.score = score.score;
+            hole.strokes = score.strokes || 0;
+        }
+    }
+
+    const getAnswer = (holeNumber, questionText) => {
+        const holeAnswers = answers.find(a => a.hole === holeNumber)?.answers || [];
+        return holeAnswers.find(q => q.question === questionText)?.answers || null;
+    };
+
+    const getPreviousWolves = () => {
+        const wolves = [];
+        for (let h = 1; h <= 18; h++) {
+            const who = getAnswer(h, "Who was the wolf?");
+            if (who?.[0]) wolves.push(who[0]);
+        }
+        return wolves;
+    };
+
+    const getNextWolf = (holeNumber) => {
+        const prevWolves = getPreviousWolves();
+        const unused = golfers.filter(g => !prevWolves.includes(g));
+        if (unused.length) return unused[0];
+        const lastWolfIndex = golfers.findIndex(g => g === prevWolves[prevWolves.length - 1]);
+        return golfers[(lastWolfIndex + 1) % golfers.length];
+    };
+
+    for (let i = 0; i < 18; i++) {
+        const holeNumber = i + 1;
+        const holeIndex = i;
+
+        // 🐺 Who was the wolf?
+        const wolfAnswer = getAnswer(holeNumber, "Who was the wolf?");
+        let wolf = wolfAnswer?.[0] || getNextWolf(holeNumber);
+
+        // 🐺 Solo logic
+        const soloAnswer = getAnswer(holeNumber, "Did the wolf go solo?");
+        const isSolo = soloAnswer?.[0]?.startsWith("Yes") ?? false;
+        const wentBlind = soloAnswer?.[0]?.includes("Before") ?? false;
+
+        // 🧑‍🤝‍🧑 Partner
+        const partnerAnswer = getAnswer(holeNumber, "Who was their partner?");
+        const partner = (!isSolo && partnerAnswer?.[0]) ? partnerAnswer[0] : null;
+
+        // 😢 Crybaby override
+        const crybabyAnswer = getAnswer(holeNumber, "Did the bet change? If so, enter the new dollar value:");
+        let baseHoleValue = defaultHoleValue;
+        if (crybaby && holeNumber >= crybabyHole && crybabyAnswer?.[0]) {
+            const match = crybabyAnswer[0].match(/(\d+(\.\d+)?)/);
+            if (match) baseHoleValue = parseFloat(match[1]);
+        }
+
+        // 💰 Auto-double logic
+        const matchTied = scorecards.every(p => p.plusMinus === 0);
+        const someoneDown = scorecards.some(p => Math.abs(p.plusMinus) >= autoDoubleMoneyTrigger);
+        let thisHoleDoubled = false;
+        if (autoDoubles) {
+            if (autoDoubleAfterNineTrigger && holeNumber > 9) thisHoleDoubled = true;
+            else if (autoDoubleWhileTiedTrigger && matchTied) thisHoleDoubled = true;
+            else if (autoDoubleMoneyTrigger && someoneDown) thisHoleDoubled = true;
+        }
+
+        if (thisHoleDoubled && autoDoubleStays) isDoubled = true;
+        const effectiveHoleValue = (thisHoleDoubled || isDoubled) ? autoDoubleValue : baseHoleValue;
+
+        // 🧑‍🤝‍🧑 Teams
+        const wolfTeam = [wolf];
+        if (!isSolo && partner) wolfTeam.push(partner);
+        const oppTeam = scorecards.filter(g => !wolfTeam.includes(g.name));
+
+        const par = scorecards[0].holes[holeIndex].par;
+
+        const wolfTeamScore = isSolo
+            ? scorecards.find(g => g.name === wolf)?.holes[holeIndex].score ?? 999
+            : Math.min(
+                scorecards.find(g => g.name === wolf)?.holes[holeIndex].score ?? 999,
+                scorecards.find(g => g.name === partner)?.holes[holeIndex].score ?? 999
+            );
+
+        const opponentBest = Math.min(...oppTeam.map(g => g.holes[holeIndex].score));
+        const wolfWins = wolfTeamScore < opponentBest;
+
+        // 🧮 Multiplier
+        let basePoints = 1;
+        if (wentBlind) basePoints *= 2;
+        if (wolfTeamScore < par && birdiesDouble) basePoints *= 2;
+
+        // Carryover
+        const carryPointsSum = carryoverPoints.reduce((sum, pt) => sum + pt.points, 0);
+        const thisHolePoints = basePoints;
+        const totalPointsEarned = wolfWins ? (carryovers ? thisHolePoints + carryPointsSum : thisHolePoints) : 0;
+
+        const totalPoints = totalPointsEarned;
+        const perOpponent = totalPoints * effectiveHoleValue;
+        const opponentCount = opponentTeam.length;
+        const wolfTotal = perOpponent * opponentCount;
+
+        if (wolfWins) {
+            wolfTeam.forEach(name => {
+              const p = findPlayer(name);
+              if (p) {
+                const hole = p.holes.find(h => h.holeNumber === holeNumber);
+                if (hole) {
+                  hole.points = totalPoints;
+                  hole.plusMinus = wolfTotal;
+                }
+              }
+            });
+          
+            opponentTeam.forEach(name => {
+              const p = findPlayer(name);
+              if (p) {
+                const hole = p.holes.find(h => h.holeNumber === holeNumber);
+                if (hole) {
+                  hole.points = 0;
+                  hole.plusMinus = -perOpponent;
+                }
+              }
+            });
+          } else {
+            wolfTeam.forEach(name => {
+              const p = findPlayer(name);
+              if (p) {
+                const hole = p.holes.find(h => h.holeNumber === holeNumber);
+                if (hole) {
+                  hole.points = 0;
+                  hole.plusMinus = -wolfTotal;
+                }
+              }
+            });
+          
+            opponentTeam.forEach(name => {
+              const p = findPlayer(name);
+              if (p) {
+                const hole = p.holes.find(h => h.holeNumber === holeNumber);
+                if (hole) {
+                  hole.points = totalPoints;
+                  hole.plusMinus = perOpponent;
+                }
+              }
+            });
+          }
+
+        // If birdie on win & carryover && birdiesDoubleCarryovers
+        if (wolfWins && wolfTeamScore < par && carryovers && birdiesDoubleCarryovers) {
+            for (const player of scorecards) {
+                const hole = player.holes[holeIndex];
+                hole.plusMinus *= 2;
+            }
+        }
+    }
+
+    return scorecards;
+}
+
 module.exports = {
     scotch,
     junk,
-    vegas
+    vegas,
+    wolf
 }
