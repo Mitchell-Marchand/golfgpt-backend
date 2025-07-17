@@ -481,7 +481,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
     return currentScorecard;
 }
 
-function vegas(scorecards, scores, config) {
+function vegas(scorecards, scores, config, answers) {
     const {
         teams,
         pointVal = 1,
@@ -590,6 +590,25 @@ function vegas(scorecards, scores, config) {
             pointWorth = autoDoubleValue;
         }
     }
+
+    const holeAnswers = answers?.find(a => a.hole === currentHole)?.answers || [];
+    let pressMultiplier = 1;
+
+    for (const ans of holeAnswers) {
+        if (ans.question === "Was there a press?" && ans.answers.includes("Yes")) {
+            pressMultiplier *= 2;
+        }
+        if (ans.question === "Was there a press or a double press?") {
+            if (ans.answers.includes("Double Press")) {
+                pressMultiplier *= 4;
+            } else if (ans.answers.includes("Press")) {
+                pressMultiplier *= 2;
+            }
+        }
+    }
+
+    team1Points *= pressMultiplier;
+    team2Points *= pressMultiplier;
 
     const team1Money = (team1Points - team2Points) * pointWorth;
     const team2Money = (team2Points - team1Points) * pointWorth;

@@ -617,7 +617,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             scorecards = vegas(
                 scorecards,
                 scores,
-                config
+                config,
+                answers
             );
         }
 
@@ -978,7 +979,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
 
         const oldSummary = copyRows[0].setup;
 
-        const prompt = `Here is a list of golfer who are playing a match. Update this prompt to use their names instead of the ones it currently has. Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}`
+        const prompt = `Here is a list of golfers who are playing a match. Update this prompt to use their names instead of the ones it currently has. NEVER use "Me" - only EXACT golfer names from the list. Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}`
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
