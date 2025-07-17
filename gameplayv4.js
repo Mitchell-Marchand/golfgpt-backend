@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig } = require("./games/config");
-const { scotch, junk, vegas } = require("./games/scoring")
+const { scotch, junk, vegas, wolf } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -681,6 +681,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 config,
                 answers
             );
+        } else if (configType === "wolf") {
+            scorecards = wolf(
+                scorecards,
+                scores,
+                config,
+                answers
+            )
         }
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
