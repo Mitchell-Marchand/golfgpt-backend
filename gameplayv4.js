@@ -473,7 +473,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                     question: `Who got closest to the pin?`,
                     answers: golfers,
                     numberOfAnswers: sideConfig.greenies?.teams ? 2 : 1,
-                    holes: "par3s"
+                    holes: "par 3s"
                 });
             }
 
