@@ -491,7 +491,7 @@ function vegas(scorecards, scores, config) {
         autoDoubleWhileTiedTrigger = false,
         autoDoubleValue = 2,
         autoDoubleStays = false,
-        birdiesFlip = false,
+        birdiesFlip = true,
         additionalBirdiesDouble = true,
         onlyGrossBirdies = false,
     } = config;
