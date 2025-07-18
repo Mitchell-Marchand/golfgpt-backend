@@ -751,17 +751,16 @@ function wolf(scorecards, scores, config, answers) {
         if (wentAfterTee) {
             basePoints *= 2;
         } else if (wentBlind) {
-            basePoints *= 2;
+            basePoints *= 4;
         }
-        
+
         if (wolfTeamScore < par && birdiesDouble) basePoints *= 2;
 
         // Carryover logic
         const carryPointsSum = carryoverPoints.reduce((sum, pt) => sum + pt.points, 0);
         const thisHolePoints = basePoints;
-        const totalPointsEarned = wolfWins ? (carryovers ? thisHolePoints + carryPointsSum : thisHolePoints) : 0;
+        const totalPoints = carryovers ? thisHolePoints + carryPointsSum : thisHolePoints;
 
-        const totalPoints = totalPointsEarned;
         const perOpponent = totalPoints * effectiveHoleValue;
         const opponentCount = oppTeam.length;
         const wolfTotal = perOpponent * opponentCount;
