@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig } = require("./games/config");
-const { scotch, junk, vegas, wolf, leftRight, ninePoint } = require("./games/scoring")
+const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -523,6 +523,24 @@ router.post("/create", authenticateUser, async (req, res) => {
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
+        } else if (raw === "banker") {
+            config = {};
+
+            questions.push({
+                question: `Who was the banker?`,
+                answers: golfers,
+                numberOfAnswers: 1,
+                holes: "all"
+            })
+
+            for (let i = 0; i < golfers.length; i++) {
+                questions.push({
+                    question: `What was the dollar value of their bet with ${golfers[i]}`,
+                    answers: [""],
+                    numberOfAnswers: 1,
+                    holes: "all"
+                })
+            }
         }
 
         if (!config) {
@@ -801,6 +819,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 scorecards,
                 scores,
                 config
+            )
+        } else if (configType === "banker") {
+            scorecards = banker(
+                scorecards,
+                scores,
+                answers
             )
         }
 

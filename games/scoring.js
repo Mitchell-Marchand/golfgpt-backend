@@ -1245,11 +1245,91 @@ function ninePoint(scorecards, scores, config) {
     return scorecards;
 }
 
+function banker(scorecards, scores, answers) {
+    // Update scorecards with scores
+    for (const score of scores) {
+        const player = scorecards.find(g => g.name === score.name);
+        const hole = player?.holes.find(h => h.holeNumber === score.holeNumber);
+        if (hole) {
+            hole.score = score.score;
+            hole.strokes = score.strokes || 0;
+            hole.plusMinus = 0;
+        }
+    }
+
+    const currentHole = scores[0]?.holeNumber;
+    const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
+    if (holeIndex === -1) return scorecards;
+
+    const golfers = scorecards.map(g => g.name);
+    const par = scorecards[0].holes[holeIndex].par;
+
+    const holeAnswers = answers.find(h => h.hole === currentHole)?.answers || [];
+
+    const bankerAnswer = holeAnswers.find(q => q.question.includes("banker"));
+    const banker = (bankerAnswer?.answers?.[0]) || golfers[0];
+
+    const getScore = (name) => {
+        const g = scorecards.find(p => p.name === name);
+        const h = g.holes[holeIndex];
+        return h.score;
+    };
+
+    const applyMatchResult = (winner, loser, amount) => {
+        const winnerCard = scorecards.find(g => g.name === winner);
+        const loserCard = scorecards.find(g => g.name === loser);
+        const winnerHole = winnerCard.holes[holeIndex];
+        const loserHole = loserCard.holes[holeIndex];
+        winnerHole.plusMinus += amount;
+        loserHole.plusMinus -= amount;
+    };
+
+    for (const player of golfers) {
+        if (player === banker) continue;
+
+        // find the question for this matchup
+        const matchQuestion = holeAnswers.find(q => q.question.includes(`with ${player}`));
+        let rawVal = matchQuestion?.answers?.[0] || "0";
+        rawVal = rawVal.replace(/\$/g, '').trim();
+
+        let value = 0;
+        let bonusBirdie = 0;
+
+        if (rawVal.includes("/")) {
+            const parts = rawVal.split("/").map(v => parseFloat(v));
+            value = parts[0] || 0;
+            bonusBirdie = parts[1] || value;
+        } else {
+            const match = rawVal.match(/(\d+(\.\d+)?)/);
+            if (match) value = parseFloat(match[1]);
+        }
+
+        const bankerScore = getScore(banker);
+        const playerScore = getScore(player);
+
+        if (!bankerScore || !playerScore || bankerScore <= 0 || playerScore <= 0) continue;
+
+        if (bankerScore < playerScore) {
+            const diff = par - bankerScore;
+            const payout = diff === 1 ? bonusBirdie || value : value;
+            applyMatchResult(banker, player, payout);
+        } else if (bankerScore > playerScore) {
+            const diff = par - playerScore;
+            const payout = diff === 1 ? bonusBirdie || value : value;
+            applyMatchResult(player, banker, payout);
+        }
+        // no payout if tied
+    }
+
+    return scorecards;
+}
+
 module.exports = {
     scotch,
     junk,
     vegas,
     wolf,
     leftRight,
-    ninePoint
+    ninePoint,
+    banker
 }
