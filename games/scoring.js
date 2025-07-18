@@ -123,6 +123,7 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
 }
 
 function trackSkins(scorecards, skinsConfig, golfers) {
+    //TODO: Canadian Skins
     let skins = [];
     let pot = 0;
     if (skinsConfig.fromPot) {

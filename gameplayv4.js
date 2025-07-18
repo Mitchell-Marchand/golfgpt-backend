@@ -751,16 +751,14 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 config,
                 answers
             )
-        } else if (configType === "left-right" || configType === "middle-outside") {
+        } else if (["left-right", "middle-outside", "flip wolf"].includes(configType)) {
             scorecards = leftRight(
                 scorecards,
                 scores,
                 config,
                 answers
             )
-        } else if (configType === "flip wolf") {
-            
-        }
+        } 
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
         scorecards = calculateWinPercents(scorecards);
@@ -1121,6 +1119,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
         const oldSummary = copyRows[0].setup;
         const oldGolfers = copyRows[0].golfers;
 
+        //TODO: If golfers are the same, just copy the config
         const prompt = `Here is a list of golfers who are playing a match. Update this prompt with the names of the golfers playing in this new match. NEVER use "Me" - only EXACT golfer names from the list. Old Golfers: ${JSON.stringify(oldGolfers)}. New Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}\n\nIf the original prompt didn't include any of the old golfer names, just return the original prompt.`
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
