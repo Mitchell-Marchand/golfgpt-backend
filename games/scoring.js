@@ -570,6 +570,10 @@ function vegas(scorecards, scores, config, answers) {
         const par = scorecards[0].holes[holeIndex].par;
         if (!par) continue;
 
+        if (scorecards[0].holes[holeIndex].score === 0) {
+            continue;
+        }
+
         // STEP 2: Gather team scores
         const teamScores = teamArray.map(teamNames => {
             return teamNames.map(name => {
