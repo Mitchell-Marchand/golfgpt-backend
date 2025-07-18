@@ -409,7 +409,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 if (config.blindWolfAllowed) {
                     questions.push({
                         question: `Did the wolf go solo?`,
-                        answers: ["No", "Yes, Before Their Teeshot", "Yes, After Their Tee Shot", "Yes, After Everyone's Tee Shot"],
+                        answers: ["No", "Yes, Before Their Tee Shot", "Yes, After Their Tee Shot", "Yes, After Everyone's Tee Shot"],
                         numberOfAnswers: 1,
                         holes: "all"
                     })

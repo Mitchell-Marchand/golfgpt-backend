@@ -700,8 +700,8 @@ function wolf(scorecards, scores, config, answers) {
         // 🐺 Solo logic
         const soloAnswer = getAnswer(holeNumber, "Did the wolf go solo?");
         const isSolo = soloAnswer?.[0]?.startsWith("Yes") ?? false;
-        const wentAfterTee = soloAnswer?.[0]?.includes("Teeshot") ?? false;
-        const wentBlind = soloAnswer?.[0]?.includes("Before") ?? false;
+        const wentAfterTee = soloAnswer?.[0]?.includes("After Their") ?? false;
+        const wentBlind = soloAnswer?.[0]?.includes("Before Their") ?? false;
 
         // 🧑‍🤝‍🧑 Partner
         const partnerAnswer = getAnswer(holeNumber, "Who was their partner?");
