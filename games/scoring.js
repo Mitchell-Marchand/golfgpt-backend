@@ -561,6 +561,7 @@ function vegas(scorecards, scores, config, answers) {
     }
 
     let isDoubled = false;
+    let doubledFromMoney = false;
 
     for (let i = 0; i < currentHole; i++) {
         const holeNumber = i + 1;
@@ -637,14 +638,17 @@ function vegas(scorecards, scores, config, answers) {
         let thisHoleDoubled = false;
         if (autoDoubles) {
             if (autoDoubleAfterNineTrigger && holeNumber > 9) thisHoleDoubled = true;
-            else if (autoDoubleWhileTiedTrigger && matchTied) thisHoleDoubled = true;
-            else if (autoDoubleMoneyTrigger && someoneDown) thisHoleDoubled = true;
+            if (autoDoubleWhileTiedTrigger && matchTied) thisHoleDoubled = true;
+            if (autoDoubleMoneyTrigger && someoneDown) {
+                thisHoleDoubled = true;
+                doubledFromMoney = true;
+            }
         }
 
         if (thisHoleDoubled) {
             isDoubled = true;
             pointWorth = autoDoubleValue;
-        } else if (isDoubled && autoDoubleStays) {
+        } else if (doubledFromMoney && autoDoubleStays) {
             pointWorth = autoDoubleValue;
         }
 
@@ -705,6 +709,7 @@ function wolf(scorecards, scores, config, answers) {
 
     const golfers = scorecards.map(g => g.name);
     let isDoubled = false;
+    let doubledFromMoney = false;
     let carryoverPoints = 0;
 
     const findPlayer = (name) => scorecards.find(p => p.name === name);
@@ -790,11 +795,20 @@ function wolf(scorecards, scores, config, answers) {
 
         if (autoDoubles) {
             if (autoDoubleAfterNineTrigger && holeNumber > 9) thisHoleDoubled = true;
-            else if (autoDoubleWhileTiedTrigger && matchTied) thisHoleDoubled = true;
-            else if (autoDoubleMoneyTrigger && someoneDown) thisHoleDoubled = true;
+            if (autoDoubleWhileTiedTrigger && matchTied) thisHoleDoubled = true;
+            if (autoDoubleMoneyTrigger && someoneDown) {
+                thisHoleDoubled = true;
+                doubledFromMoney = true;
+            }
+            if (doubledFromMoney) {
+                thisHoleDoubled = true;
+            }
         }
 
-        if (thisHoleDoubled && autoDoubleStays) isDoubled = true;
+        if (thisHoleDoubled) {
+            isDoubled = true;
+        }
+        
         const effectiveHoleValue = (thisHoleDoubled || isDoubled) ? autoDoubleValue : baseHoleValue;
 
         // 🧑‍🤝‍🧑 Teams
