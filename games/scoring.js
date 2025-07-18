@@ -637,9 +637,10 @@ function wolf(scorecards, scores, config, answers) {
     const {
         holeValue: defaultHoleValue = 5,
         birdiesDouble = false,
+        eaglesMultiply = false,
+        eaglesFactor = 5,
         carryovers = false,
         birdiesDoubleCarryovers = false,
-        blindWolfAllowed = true,
         crybaby = true,
         crybabyHole = 16,
         autoDoubles = false,
@@ -648,6 +649,7 @@ function wolf(scorecards, scores, config, answers) {
         autoDoubleWhileTiedTrigger = false,
         autoDoubleValue = 1,
         autoDoubleStays = false,
+        onlyGrossBirdies = false,
     } = config;
 
     const golfers = scorecards.map(g => g.name);
@@ -736,16 +738,21 @@ function wolf(scorecards, scores, config, answers) {
 
         const par = hole.par;
 
-        const wolfTeamScore = isSolo
+        /*const wolfTeamScore = isSolo
             ? findPlayer(wolf)?.holes[holeIndex].score ?? 999
             : Math.min(
                 findPlayer(wolf)?.holes[holeIndex].score ?? 999,
                 findPlayer(partner)?.holes[holeIndex].score ?? 999
-            );
+            );*/
 
+        const wolfBest = Math.min(...wolfTeam.map(g => g.holes[holeIndex].score));
+        const wolfBestNet = Math.min(...wolfTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
         const opponentBest = Math.min(...oppTeam.map(g => g.holes[holeIndex].score));
-        const wolfWins = wolfTeamScore < opponentBest;
-        const oppWins = wolfTeamScore > opponentBest;
+        const opponentBestNet = Math.min(...oppTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
+        const wolfBirdieLow = onlyGrossBirdies ? wolfBest : wolfBestNet
+        const opponentBirdieLow = onlyGrossBirdies ? opponentBest : opponentBestNet
+        const wolfWins = wolfBest < opponentBest;
+        const oppWins = wolfBest > opponentBest;
 
         // 🧮 Multiplier
         let basePoints = 1;
@@ -755,7 +762,8 @@ function wolf(scorecards, scores, config, answers) {
             basePoints *= 3;
         }
 
-        if ((wolfTeamScore < par || opponentBest < par) && birdiesDouble && !(carryovers && birdiesDoubleCarryovers)) basePoints *= 2;
+        if ((wolfBirdieLow === par - 1 || opponentBirdieLow === par - 1) && birdiesDouble && !(carryovers && birdiesDoubleCarryovers)) basePoints *= 2;
+        if ((wolfBirdieLow <= par - 2 || opponentBirdieLow <= par - 2) && eaglesMultiply && !(carryovers && birdiesDoubleCarryovers)) basePoints *= eaglesFactor;
 
         // Carryover logic
         const thisHolePoints = basePoints;
@@ -820,10 +828,15 @@ function wolf(scorecards, scores, config, answers) {
         }
 
         // If birdie on win & carryover && birdiesDoubleCarryovers
-        if ((wolfTeamScore < par || opponentBest < par) && carryovers && birdiesDoubleCarryovers) {
+        if ((wolfBirdieLow < par || opponentBirdieLow < par) && carryovers && birdiesDoubleCarryovers) {
+            let factor = 2;
+            if (eaglesMultiply && eaglesFactor && (wolfBirdieLow <= par - 2 || opponentBirdieLow <= par - 2)) {
+                factor = eaglesFactor
+            }
+
             for (const player of scorecards) {
                 const hole = player.holes[holeIndex];
-                hole.plusMinus *= 2;
+                hole.plusMinus *= factor;
             }
         }
     }
