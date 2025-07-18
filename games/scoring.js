@@ -982,7 +982,7 @@ function leftRight(scorecards, scores, config, answers) {
         console.log("teams", JSON.stringify(teams))
 
         // Fallback logic if one of the teams is empty
-        if (teams.length < 2 || teams[0].length === 0 || teams[1].length === 0) {
+        if (teams.length < 2 || teams[0][0] === "" || teams[1][0] === "") {
             const everyone = golfers.map(name => {
                 const golfer = scorecards.find(g => g.name === name);
                 const h = golfer.holes[holeIndex];
