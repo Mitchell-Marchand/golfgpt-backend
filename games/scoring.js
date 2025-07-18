@@ -652,7 +652,7 @@ function wolf(scorecards, scores, config, answers) {
 
     const golfers = scorecards.map(g => g.name);
     let isDoubled = false;
-    let carryoverPoints = [];
+    let carryoverPoints = 0;
 
     const findPlayer = (name) => scorecards.find(p => p.name === name);
 
@@ -758,15 +758,16 @@ function wolf(scorecards, scores, config, answers) {
         if ((wolfTeamScore < par || opponentBest < par) && birdiesDouble && !(carryovers && birdiesDoubleCarryovers)) basePoints *= 2;
 
         // Carryover logic
-        const carryPointsSum = carryoverPoints.reduce((sum, pt) => sum + pt.points, 0);
         const thisHolePoints = basePoints;
-        const totalPoints = carryovers ? thisHolePoints + carryPointsSum : thisHolePoints;
+        const totalPoints = carryovers ? thisHolePoints + carryoverPoints : thisHolePoints;
 
         const perOpponent = totalPoints * effectiveHoleValue;
         const biggestTeam = oppTeam.length > wolfTeam.length ? oppTeam.length : wolfTeam.length
         const wolfTotal = perOpponent * biggestTeam;
 
         if (wolfWins) {
+            carryoverPoints = 0;
+
             wolfTeam.forEach(name => {
                 const p = findPlayer(name);
                 if (p) {
@@ -786,6 +787,8 @@ function wolf(scorecards, scores, config, answers) {
                 }
             });
         } else if (oppWins) {
+            carryoverPoints = 0;
+
             wolfTeam.forEach(name => {
                 const p = findPlayer(name);
                 if (p) {
@@ -805,6 +808,8 @@ function wolf(scorecards, scores, config, answers) {
                 }
             });
         } else {
+            carryoverPoints = totalPoints;
+
             scorecards.forEach(p => {
                 const hole = p.holes[holeIndex];
                 if (hole) {
