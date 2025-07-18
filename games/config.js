@@ -153,6 +153,13 @@ const lrmoConfig = `{
     combinedScore //true or false (default is false) true if the teams' scores to par are added up or false if it's best ball
 }`
 
+const ninePointConfig = `{
+    pointVal //number (default is 1). dollar value of points in the match
+    extraForBirdies //number (default is 0) number of points for a birdie
+    extraForEagles //number (default is 0) number of points for an eagle
+    onlyGrossBirdies //true or false (default is false) whether or not only gross birdies or eagles are worth the extra points
+}`;
+
 //NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)
 
 module.exports = {
@@ -160,5 +167,6 @@ module.exports = {
     junkConfig,
     vegasConfig,
     wolfConfig,
-    lrmoConfig
+    lrmoConfig,
+    ninePointConfig
 }

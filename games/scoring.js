@@ -1139,8 +1139,111 @@ function leftRight(scorecards, scores, config, answers) {
     return scorecards;
 }
 
-function ninePont(scorecards, scores, config, answers) {
+function ninePoint(scorecards, scores, config) {
+    const {
+        pointVal = 1,
+        extraForBirdies = 5,
+        extraForEagles = 5,
+        onlyGrossBirdies = false,
+    } = config;
 
+    // First update scores in scorecards
+    for (const s of scores) {
+        const p = scorecards.find(g => g.name === s.name);
+        const h = p?.holes.find(h => h.holeNumber === s.holeNumber);
+        if (h) {
+            h.score = s.score;
+            h.strokes = s.strokes || 0;
+        }
+    }
+
+    const currentHole = scores[0]?.holeNumber;
+    const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
+    if (holeIndex === -1) return scorecards;
+
+    const par = scorecards[0].holes[holeIndex].par;
+    const golfers = scorecards.map(g => {
+        const hole = g.holes[holeIndex];
+        const gross = hole.score;
+        const net = gross - (hole.strokes || 0);
+        return {
+            name: g.name,
+            gross,
+            net,
+            par,
+            score: onlyGrossBirdies ? gross : net,
+            original: g
+        };
+    });
+
+    // Sort lowest to highest by net or gross
+    const ranked = golfers
+        .filter(g => g.score > 0)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 3); // only score lowest 3 golfers
+
+    const basePoints = [5, 3, 1]; // Default 3-place distribution
+
+    // Handle tie logic
+    const scoresOnly = ranked.map(g => g.score);
+    const points = new Array(ranked.length).fill(0);
+
+    if (scoresOnly[0] === scoresOnly[1] && scoresOnly[1] === scoresOnly[2]) {
+        points.fill(3);
+    } else if (scoresOnly[0] === scoresOnly[1]) {
+        points[0] = 4;
+        points[1] = 4;
+        points[2] = 1;
+    } else if (scoresOnly[1] === scoresOnly[2]) {
+        points[0] = 5;
+        points[1] = 2;
+        points[2] = 2;
+    } else {
+        points[0] = 5;
+        points[1] = 3;
+        points[2] = 1;
+    }
+
+    // Apply extra points for birdies/eagles
+    for (let i = 0; i < ranked.length; i++) {
+        const g = ranked[i];
+        const usedScore = onlyGrossBirdies ? g.gross : g.net;
+        const diff = g.par - usedScore;
+
+        if (diff === 1 && extraForBirdies > points[i]) {
+            points[i] = extraForBirdies;
+        } else if (diff >= 2 && extraForEagles > points[i]) {
+            points[i] = extraForEagles;
+        }
+    }
+
+    // Apply points and plusMinus
+    for (let i = 0; i < ranked.length; i++) {
+        const g = ranked[i];
+        const hole = g.original.holes[holeIndex];
+        hole.points = points[i];
+    }
+
+    // Now handle plusMinus based on differences in points
+    const allGolfers = scorecards.map(g => ({
+        name: g.name,
+        hole: g.holes[holeIndex],
+    }));
+
+    for (let i = 0; i < allGolfers.length; i++) {
+        for (let j = 0; j < allGolfers.length; j++) {
+            if (i === j) continue;
+            const p1 = allGolfers[i];
+            const p2 = allGolfers[j];
+            const diff = (p1.hole.points || 0) - (p2.hole.points || 0);
+            if (diff > 0) {
+                p1.hole.plusMinus = (p1.hole.plusMinus || 0) + diff * pointVal;
+                p2.hole.plusMinus = (p2.hole.plusMinus || 0) - diff * pointVal;
+            }
+        }
+    }
+
+    return scorecards;
 }
 
 module.exports = {
@@ -1148,5 +1251,6 @@ module.exports = {
     junk,
     vegas,
     wolf,
-    leftRight
+    leftRight,
+    ninePoint
 }
