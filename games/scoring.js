@@ -754,7 +754,7 @@ function wolf(scorecards, scores, config, answers) {
             basePoints *= 3;
         }
 
-        if (wolfTeamScore < par && birdiesDouble) basePoints *= 2;
+        if ((wolfTeamScore < par || opponentBest < par) && birdiesDouble) basePoints *= 2;
 
         // Carryover logic
         const carryPointsSum = carryoverPoints.reduce((sum, pt) => sum + pt.points, 0);
