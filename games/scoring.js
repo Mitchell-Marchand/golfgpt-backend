@@ -802,8 +802,8 @@ function wolf(scorecards, scores, config, answers) {
         const opponentBestNet = Math.min(...oppTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
         const wolfBirdieLow = onlyGrossBirdies ? wolfBest : wolfBestNet
         const opponentBirdieLow = onlyGrossBirdies ? opponentBest : opponentBestNet
-        const wolfWins = wolfBest < opponentBest;
-        const oppWins = wolfBest > opponentBest;
+        const wolfWins = wolfBestNet < opponentBestNet;
+        const oppWins = wolfBestNet > opponentBestNet;
 
         // 🧮 Multiplier
         let basePoints = 1;
