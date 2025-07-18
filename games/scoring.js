@@ -989,8 +989,8 @@ function leftRight(scorecards, scores, config, answers) {
             };
         }));
 
-        const team1Best = Math.min(...team1.map(p => onlyGrossBirdies ? p.gross : p.net));
-        const team2Best = Math.min(...team2.map(p => onlyGrossBirdies ? p.gross : p.net));
+        const team1Best = Math.min(...team1.map(p => p.net));
+        const team2Best = Math.min(...team2.map(p => p.net));
 
         const team1BirdieLow = onlyGrossBirdies ? Math.min(...team1.map(p => p.gross)) : Math.min(...team1.map(p => p.net));
         const team2BirdieLow = onlyGrossBirdies ? Math.min(...team2.map(p => p.gross)) : Math.min(...team2.map(p => p.net));
@@ -1041,25 +1041,23 @@ function leftRight(scorecards, scores, config, answers) {
 
         const totalValue = carryovers ? value + carryoverPoints : value;
 
-        if (team1Wins) {
+        if (team1Wins || team2Wins) {
             carryoverPoints = 0;
-            for (const p of team1) {
+            const winners = team1Wins ? team1 : team2;
+            const losers = team1Wins ? team2 : team1;
+
+            const teamSize = Math.max(team1.length, team2.length);
+            const pot = teamSize * totalValue;
+            const perWinner = Math.round((pot / winners.length) * 100) / 100;
+            const perLoser = Math.round((pot / losers.length) * 100) / 100;
+
+            for (const p of winners) {
                 const golfer = scorecards.find(g => g.name === p.name);
-                golfer.holes[holeIndex].plusMinus = totalValue;
+                golfer.holes[holeIndex].plusMinus = perWinner;
             }
-            for (const p of team2) {
+            for (const p of losers) {
                 const golfer = scorecards.find(g => g.name === p.name);
-                golfer.holes[holeIndex].plusMinus = -totalValue;
-            }
-        } else if (team2Wins) {
-            carryoverPoints = 0;
-            for (const p of team2) {
-                const golfer = scorecards.find(g => g.name === p.name);
-                golfer.holes[holeIndex].plusMinus = totalValue;
-            }
-            for (const p of team1) {
-                const golfer = scorecards.find(g => g.name === p.name);
-                golfer.holes[holeIndex].plusMinus = -totalValue;
+                golfer.holes[holeIndex].plusMinus = -perLoser;
             }
         } else {
             carryoverPoints = totalValue;
