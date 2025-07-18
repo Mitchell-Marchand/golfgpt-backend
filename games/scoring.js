@@ -692,6 +692,10 @@ function wolf(scorecards, scores, config, answers) {
     };
 
     for (const hole of scorecards[0].holes) {
+        if (hole.score === 0) {
+            continue;
+        }
+
         const holeNumber = hole.holeNumber;
         const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === holeNumber);
 
