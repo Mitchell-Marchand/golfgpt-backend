@@ -745,6 +745,7 @@ function wolf(scorecards, scores, config, answers) {
 
         const opponentBest = Math.min(...oppTeam.map(g => g.holes[holeIndex].score));
         const wolfWins = wolfTeamScore < opponentBest;
+        const oppWins = wolfTeamScore > opponentBest;
 
         // 🧮 Multiplier
         let basePoints = 1;
@@ -754,7 +755,7 @@ function wolf(scorecards, scores, config, answers) {
             basePoints *= 3;
         }
 
-        if ((wolfTeamScore < par || opponentBest < par) && birdiesDouble) basePoints *= 2;
+        if ((wolfTeamScore < par || opponentBest < par) && birdiesDouble && !(carryovers && birdiesDoubleCarryovers)) basePoints *= 2;
 
         // Carryover logic
         const carryPointsSum = carryoverPoints.reduce((sum, pt) => sum + pt.points, 0);
@@ -762,8 +763,8 @@ function wolf(scorecards, scores, config, answers) {
         const totalPoints = carryovers ? thisHolePoints + carryPointsSum : thisHolePoints;
 
         const perOpponent = totalPoints * effectiveHoleValue;
-        const opponentCount = oppTeam.length;
-        const wolfTotal = perOpponent * opponentCount;
+        const biggestTeam = oppTeam.length > wolfTeam.length ? oppTeam.length : wolfTeam.length
+        const wolfTotal = perOpponent * biggestTeam;
 
         if (wolfWins) {
             wolfTeam.forEach(name => {
@@ -771,8 +772,8 @@ function wolf(scorecards, scores, config, answers) {
                 if (p) {
                     const hole = p.holes[holeIndex];
                     if (hole) {
-                        hole.points = totalPoints;
-                        hole.plusMinus = wolfTotal;
+                        hole.points = 0;//totalPoints;
+                        hole.plusMinus = Math.round(wolfTotal / wolfTeam.length * 100) / 100;
                     }
                 }
             });
@@ -784,14 +785,14 @@ function wolf(scorecards, scores, config, answers) {
                     hole.plusMinus = -perOpponent;
                 }
             });
-        } else {
+        } else if (oppWins) {
             wolfTeam.forEach(name => {
                 const p = findPlayer(name);
                 if (p) {
                     const hole = p.holes[holeIndex];
                     if (hole) {
                         hole.points = 0;
-                        hole.plusMinus = -wolfTotal;
+                        hole.plusMinus = -1 * (wolfTotal / wolfTeam.length);
                     }
                 }
             });
@@ -799,14 +800,22 @@ function wolf(scorecards, scores, config, answers) {
             oppTeam.forEach(p => {
                 const hole = p.holes[holeIndex];
                 if (hole) {
-                    hole.points = totalPoints;
+                    hole.points = 0;//totalPoints;
                     hole.plusMinus = perOpponent;
                 }
             });
+        } else {
+            scorecards.forEach(p => {
+                const hole = p.holes[holeIndex];
+                if (hole) {
+                    hole.points = 0;
+                    hole.plusMinus = 0;
+                }
+            })
         }
 
         // If birdie on win & carryover && birdiesDoubleCarryovers
-        if (wolfWins && wolfTeamScore < par && carryovers && birdiesDoubleCarryovers) {
+        if ((wolfTeamScore < par || opponentBest < par) && carryovers && birdiesDoubleCarryovers) {
             for (const player of scorecards) {
                 const hole = player.holes[holeIndex];
                 hole.plusMinus *= 2;
