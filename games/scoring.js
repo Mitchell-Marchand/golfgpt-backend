@@ -700,6 +700,7 @@ function wolf(scorecards, scores, config, answers) {
         // 🐺 Solo logic
         const soloAnswer = getAnswer(holeNumber, "Did the wolf go solo?");
         const isSolo = soloAnswer?.[0]?.startsWith("Yes") ?? false;
+        const wentAfterTee = soloAnswer?.[0]?.includes("Teeshot") ?? false;
         const wentBlind = soloAnswer?.[0]?.includes("Before") ?? false;
 
         // 🧑‍🤝‍🧑 Partner
@@ -747,7 +748,12 @@ function wolf(scorecards, scores, config, answers) {
 
         // 🧮 Multiplier
         let basePoints = 1;
-        if (wentBlind) basePoints *= 2;
+        if (wentAfterTee) {
+            basePoints *= 2;
+        } else if (wentBlind) {
+            basePoints *= 2;
+        }
+        
         if (wolfTeamScore < par && birdiesDouble) basePoints *= 2;
 
         // Carryover logic
