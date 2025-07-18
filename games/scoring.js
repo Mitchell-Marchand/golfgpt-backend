@@ -751,7 +751,7 @@ function wolf(scorecards, scores, config, answers) {
         if (wentAfterTee) {
             basePoints *= 2;
         } else if (wentBlind) {
-            basePoints *= 4;
+            basePoints *= 3;
         }
 
         if (wolfTeamScore < par && birdiesDouble) basePoints *= 2;
