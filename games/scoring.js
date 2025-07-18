@@ -1172,7 +1172,7 @@ function ninePoint(scorecards, scores, config) {
             gross,
             net,
             par,
-            score: onlyGrossBirdies ? gross : net,
+            score: net,
             original: g
         };
     });
