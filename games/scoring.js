@@ -560,10 +560,9 @@ function vegas(scorecards, scores, config, answers) {
         });
     }
 
-    let isDoubled = false;
     let doubledFromMoney = false;
 
-    for (let i = 0; i < currentHole; i++) {
+    for (let i = 0; i < scorecards[0].holes?.length; i++) {
         const holeNumber = i + 1;
         const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === holeNumber);
         if (holeIndex === -1) continue;
@@ -645,12 +644,9 @@ function vegas(scorecards, scores, config, answers) {
             }
         }
 
-        if (thisHoleDoubled) {
-            isDoubled = true;
+        if (thisHoleDoubled || (doubledFromMoney && autoDoubleStays)) {
             pointWorth = autoDoubleValue;
-        } else if (doubledFromMoney && autoDoubleStays) {
-            pointWorth = autoDoubleValue;
-        }
+        } 
 
         // STEP 9: Presses
         const holeAnswers = answers?.find(a => a.hole === holeNumber)?.answers || [];
@@ -800,7 +796,7 @@ function wolf(scorecards, scores, config, answers) {
                 thisHoleDoubled = true;
                 doubledFromMoney = true;
             }
-            if (doubledFromMoney) {
+            if (autoDoubleStays && doubledFromMoney) {
                 thisHoleDoubled = true;
             }
         }
