@@ -1154,6 +1154,7 @@ function ninePoint(scorecards, scores, config) {
         if (h) {
             h.score = s.score;
             h.strokes = s.strokes || 0;
+            h.plusMinus = 0;
         }
     }
 
@@ -1181,8 +1182,6 @@ function ninePoint(scorecards, scores, config) {
         .filter(g => g.score > 0)
         .sort((a, b) => a.score - b.score)
         .slice(0, 3); // only score lowest 3 golfers
-
-    const basePoints = [5, 3, 1]; // Default 3-place distribution
 
     // Handle tie logic
     const scoresOnly = ranked.map(g => g.score);
