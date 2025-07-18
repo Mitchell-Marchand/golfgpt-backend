@@ -181,6 +181,42 @@ function trackSkins(scorecards, skinsConfig, golfers) {
     return scorecards;
 }
 
+function trackStreaks(scorecards, config, toPar) {
+    for (const golfer of scorecards) {
+        let streak = 0;
+
+        for (let i = 0; i < golfer.holes.length; i++) {
+            const hole = golfer.holes[i];
+            const diff = hole.score - hole.par;
+
+            // Check if the current hole meets the streak criteria
+            const isValid =
+                (toPar === -1 && diff < 0) || // Birdie or better
+                (toPar === 0 && diff === 0) || // Par
+                (toPar === 1 && diff > 0); // Bogey or worse
+
+            if (isValid) {
+                streak++;
+            } else {
+                streak = 0;
+            }
+
+            // Apply reward/penalty on the hole where the streak is hit
+            if (streak === config.streak) {
+                if (toPar === -1 || toPar === 0) {
+                    hole.plusMinus = (hole.plusMinus || 0) + config.value;
+                } else if (toPar === 1) {
+                    hole.plusMinus = (hole.plusMinus || 0) - config.value;
+                }
+
+                if (!config.canOverlap) {
+                    streak = 0;
+                }
+            }
+        }
+    }
+}
+
 function junk(scorecards, answers, strippedJunk, golfers, teams) {
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         const teamsWithAnds = teams || getTeamsFromAnswers(answers[i].answers, golfers);
@@ -231,6 +267,17 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
     }
 
     //TODO: streaks
+    if (strippedJunk.birdieStreak.valid) {
+        scorecards = trackStreaks(scorecards, strippedJunk.birdieStreak, -1)
+    }
+
+    if (strippedJunk.parStreak.valid) {
+        scorecards = trackStreaks(scorecards, strippedJunk.parStreak, 0)
+    }
+
+    if (strippedJunk.parStreak.valid) {
+        scorecards = trackStreaks(scorecards, strippedJunk.bogeyStreak, 0)
+    }
 
     return scorecards;
 }

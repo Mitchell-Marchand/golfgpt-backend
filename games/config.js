@@ -57,18 +57,21 @@ const junkConfig = `{
         streak //number (default 3) number of birdies in a row necessary to earn money
         value //number (default 0) dollar value of making the birdie streak
         team ///true or false (default false) whether or not birdie streaks are for the team
+        canOverlap //true or false (default true) whether or not birdie streaks can overlap
     },
     parStreak: {
         valid //true or false (default false) if the user says that making a certain number of pars in a row is worth money
         streak //number (default 3) number of pars in a row necessary to earn money
         value //number (default 0) dollar value of making the par streak
         team ///true or false (default false) whether or not par streaks are for the team
+        canOverlap //true or false (default true) whether or not par streaks can overlap
     },
     bogeyStreak: {
         valid //true or false (default false) if the user says that making a certain number of bogeys in a means a player owes money
         streak //number (default 3) number of bogeys in a row necessary to owe money
         value //number (default 0) dollar value to pay for making the bogey streak
         team ///true or false (default false) whether or not bogey streaks are for the team
+        canOverlap //true or false (default true) whether or not bogey streaks can overlap
     }
 }`;
 
