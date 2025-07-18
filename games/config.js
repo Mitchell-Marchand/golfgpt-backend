@@ -126,11 +126,30 @@ const wolfConfig = `{
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies double
 }`
 
+const lrmoConfig = `{
+    holeValue //number (default 5) dollar value that everyone is in for on each hole
+    birdiesDouble //true or false (default false) whether or not birdies double the points for the hole. NOTE: something like 10/20 means $20 for a win with birdie and $10 otherwise, so this would be true
+    eaglesMultiply //true or false (default false) whether or not eagles multiply the points for the hole. NOTE: something like 10/20/50 means $50 for a win with eagle, $20 with birdie, and $10 otherwise, so this would be true
+    eaglesFactor //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that
+    carryovers //true or false (default false) whether or not money played for on the hole carrys over to the next
+    birdiesDoubleCarryovers //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole
+    crybaby //true or false (default false) whether or not the golfer who is down the most can change the bet after a certain hole
+    crybabyHole //number (default 16) the first hole where the "crybaby", the golfer who is down the most, can change the bet
+    autoDoubles //true or false (default is false). whether or not the money increases automatically at any point in the match
+    autoDoubleAfterNineTrigger //true or false (default is false). whether or not the money automatically increases after nine holes
+    autoDoubleMoneyTrigger //number (default is 0). how much money someone has to be down for the bet to automatically increase
+    autoDoubleWhileTiedTrigger //true or false (default is false). whether or not the money automatically increases while the match is tied
+    autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
+    autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
+    onlyGrossBirdies //true or false (default is false) whether or not only gross birdies double
+}`
+
 //NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)
 
 module.exports = {
     scotchConfig,
     junkConfig,
     vegasConfig,
-    wolfConfig
+    wolfConfig,
+    lrmoConfig
 }

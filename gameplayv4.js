@@ -5,7 +5,7 @@ const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
-const { scotchConfig, junkConfig, vegasConfig, wolfConfig } = require("./games/config");
+const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -440,6 +440,53 @@ router.post("/create", authenticateUser, async (req, res) => {
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
+        } else if (raw === "left-right" || raw === "middle-outside") {
+            const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${lrmoConfig}`;
+            const rawConfig = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                temperature: 0.0
+            });
+
+            try {
+                config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
+
+                if (raw === "left-right") {
+                    questions.push({
+                        question: `Who was on the left team?`,
+                        answers: golfers,
+                        numberOfAnswers: golfers.length,
+                        holes: "all"
+                    })
+                } else {
+                    questions.push({
+                        question: `Who was on the middle team?`,
+                        answers: golfers,
+                        numberOfAnswers: golfers.length,
+                        holes: "all"
+                    })
+                }
+
+                if (config.crybaby) {
+                    questions.push({
+                        question: `Did the bet change? If so, enter the new dollar value:`,
+                        answers: [""],
+                        numberOfAnswers: 1,
+                        holes: `${config.crybabyHole || 16}+`
+                    })
+                }
+            } catch (err) {
+                return res.status(500).json({ error: "Error building match, please try again." });
+            }
         }
 
         if (!config) {
@@ -574,7 +621,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                     role: "system",
                     content: `You're an assistant who can return a creative but not cheesy display name for a golf match. Your job is to generate short, clear display names.`
                 },
-                { role: "user", content: `Based on these rules, generate a display name. Limit it to 6 words or fewer: ${rules}` }
+                { role: "user", content: `Based on these the type of match and stakes, generate a display name. Limit it to 6 words or fewer: ${rules}` }
             ],
             temperature: 0.2
         });

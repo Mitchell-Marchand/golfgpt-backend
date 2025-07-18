@@ -620,8 +620,20 @@ function vegas(scorecards, scores, config, answers) {
     // STEP 8: Autodoubles
     let pointWorth = pointVal;
     let isDoubled = false;
-    const matchTied = scorecards.every(p => p.plusMinus === 0);
-    const someoneDownEnough = scorecards.some(p => Math.abs(p.plusMinus) >= autoDoubleMoneyTrigger);
+
+    //TODO: need to factor this in for holes played up to currentHole
+    const getPriorPlusMinus = (player, currentHoleNumber) =>
+        player.holes
+            .filter(h => h.holeNumber < currentHoleNumber)
+            .reduce((sum, h) => sum + (h.plusMinus || 0), 0);
+
+    const priorTotals = scorecards.map(p => ({
+        name: p.name,
+        total: getPriorPlusMinus(p, currentHole),
+    }));
+
+    const matchTied = priorTotals.reduce((sum, p) => sum + p.total, 0) === 0;
+    const someoneDownEnough = priorTotals.some(p => p.total <= autoDoubleMoneyTrigger * -1);
 
     if (autoDoubles) {
         if (autoDoubleAfterNineTrigger && currentHole > 9) {
@@ -768,6 +780,7 @@ function wolf(scorecards, scores, config, answers) {
         }
 
         // 💰 Auto-double logic
+        //TODO: need to factor this in for holes played up to currentHole
         const matchTied = scorecards.every(p => p.plusMinus === 0);
         const someoneDown = scorecards.some(p => Math.abs(p.plusMinus) >= autoDoubleMoneyTrigger);
         let thisHoleDoubled = false;
