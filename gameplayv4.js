@@ -1037,7 +1037,7 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
 
         // Pull summary from match to copy
         const [copyRows] = await mariadbPool.query(
-            `SELECT setup FROM Matches WHERE id = ?`,
+            `SELECT setup, golfers FROM Matches WHERE id = ?`,
             [matchToCopyId]
         );
 
@@ -1046,8 +1046,9 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
         }
 
         const oldSummary = copyRows[0].setup;
+        const oldGolfers = copyRows[0].golfers;
 
-        const prompt = `Here is a list of golfers who are playing a match. Update this prompt to use their names instead of the ones it currently has. NEVER use "Me" - only EXACT golfer names from the list. Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}`
+        const prompt = `Here is a list of golfers who are playing a match. Update this prompt with the names of the golfers playing in this new match. NEVER use "Me" - only EXACT golfer names from the list. Old Golfers: ${JSON.stringify(oldGolfers)}. New Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}\n\nIf the original prompt didn't include any of the old golfer names, just return the original prompt.`
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
