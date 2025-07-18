@@ -979,6 +979,8 @@ function leftRight(scorecards, scores, config, answers) {
         const teamsWithAnds = getTeamsFromAnswers(holeAnswers, golfers);
         const teams = teamsWithAnds.map(team => team.split(' & '));
 
+        console.log("teams", JSON.stringify(teams))
+
         // Fallback logic if one of the teams is empty
         if (teams.length < 2 || teams[0].length === 0 || teams[1].length === 0) {
             const everyone = golfers.map(name => {
