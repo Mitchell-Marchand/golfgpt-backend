@@ -1142,8 +1142,8 @@ function leftRight(scorecards, scores, config, answers) {
 function ninePoint(scorecards, scores, config) {
     const {
         pointVal = 1,
-        extraForBirdies = 5,
-        extraForEagles = 5,
+        extraForBirdies = 0,
+        extraForEagles = 0,
         onlyGrossBirdies = false,
     } = config;
 
