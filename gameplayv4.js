@@ -260,7 +260,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
             "middle-outside", "king of the hill", "standard match play", "bingo bango bongo", "standard stroke play",
-            "stableford", "stableford quota", "666", "9 point", "scramble", "shamble", "bramble", "chapman", "alt shot"
+            "stableford", "stableford quota", "666", "nine point", "scramble", "shamble", "bramble", "chapman", "alt shot"
         ];
 
         const gameType = await openai.chat.completions.create({
