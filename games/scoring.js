@@ -72,7 +72,7 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
         //Determine if team pentalty, and whether shared or full pot per opponent
         if (snakeConfig?.teams) {
             //team snake
-            const teamsWithAnds = teams || getTeamsFromAnswers(answers.find(h => h.hole === lastHole), golfers);
+            const teamsWithAnds = teams || getTeamsFromAnswers(answers.find(h => h.hole === lastHole).answers, golfers);
             const teamNames = teamsWithAnds.map(team => team.split(' & '))
             let winningTeam = teamNames[0];
             let losingTeam = teamNames[1];
@@ -183,7 +183,7 @@ function trackSkins(scorecards, skinsConfig, golfers) {
 
 function junk(scorecards, answers, strippedJunk, golfers, teams) {
     for (let i = 0; i < scorecards[0].holes.length; i++) {
-        const teamsWithAnds = teams || getTeamsFromAnswers(answers[i], golfers);
+        const teamsWithAnds = teams || getTeamsFromAnswers(answers[i].answers, golfers);
         const questions = answers.find(obj => obj.hole === scorecards[0].holes[i].holeNumber);
 
         for (let j = 0; j < questions?.answers?.length; j++) {
