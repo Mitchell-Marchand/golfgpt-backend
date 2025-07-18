@@ -735,6 +735,7 @@ function wolf(scorecards, scores, config, answers) {
         const wolfTeam = [wolf];
         if (!isSolo && partner) wolfTeam.push(partner);
         const oppTeam = scorecards.filter(g => !wolfTeam.includes(g.name));
+        const wolfScorecards = scorecards.filter(g => wolfTeam.includes(g.name));
 
         const par = hole.par;
 
@@ -745,8 +746,8 @@ function wolf(scorecards, scores, config, answers) {
                 findPlayer(partner)?.holes[holeIndex].score ?? 999
             );*/
 
-        const wolfBest = Math.min(wolfTeam.map(g => g.holes[holeIndex].score));
-        const wolfBestNet = Math.min(wolfTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
+        const wolfBest = Math.min(...wolfScorecards.map(g => g.holes[holeIndex].score));
+        const wolfBestNet = Math.min(...wolfScorecards.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
         const opponentBest = Math.min(...oppTeam.map(g => g.holes[holeIndex].score));
         const opponentBestNet = Math.min(...oppTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
         const wolfBirdieLow = onlyGrossBirdies ? wolfBest : wolfBestNet
