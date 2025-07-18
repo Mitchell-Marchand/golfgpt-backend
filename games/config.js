@@ -142,6 +142,7 @@ const lrmoConfig = `{
     autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies double
+    soloMultiple //number (default 2) the factor the bet increases by if everyone goes solo
 }`
 
 //NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)

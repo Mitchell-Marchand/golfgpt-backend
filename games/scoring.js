@@ -944,7 +944,8 @@ function leftRight(scorecards, scores, config, answers) {
         autoDoubleWhileTiedTrigger = false,
         autoDoubleValue = 1,
         autoDoubleStays = false,
-        onlyGrossBirdies = false
+        onlyGrossBirdies = false,
+        soloMultiple = 2
     } = config;
 
     const golfers = scorecards.map(g => g.name);
@@ -978,8 +979,7 @@ function leftRight(scorecards, scores, config, answers) {
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
         const teamsWithAnds = getTeamsFromAnswers(holeAnswers, golfers);
         let teams = teamsWithAnds.map(team => team.split(' & '));
-
-        console.log("teams", JSON.stringify(teams))
+        let everyManForOne = 1;
 
         // Fallback logic if one of the teams is empty
         if (teams.length < 2 || teams[0][0] === "" || teams[1][0] === "") {
@@ -995,6 +995,7 @@ function leftRight(scorecards, scores, config, answers) {
 
             const lowNet = Math.min(...everyone.map(g => g.net));
             const lowScorers = everyone.filter(g => g.net === lowNet);
+            everyManForOne = soloMultiple;
 
             if (lowScorers.length === 1) {
                 // One winner vs rest
@@ -1057,6 +1058,7 @@ function leftRight(scorecards, scores, config, answers) {
         if (thisHoleDoubled) isDoubled = true;
 
         let value = (thisHoleDoubled || isDoubled) ? autoDoubleValue : holeValue;
+        value *= Math.max(1, everyManForOne);
 
         // Handle crybaby override
         const crybabyAnswer = getAnswer(holeNumber, "Did the bet change? If so, enter the new dollar value:");
