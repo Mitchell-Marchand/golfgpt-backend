@@ -770,6 +770,8 @@ function wolf(scorecards, scores, config, answers) {
         const thisHolePoints = basePoints;
         const totalPoints = carryovers ? thisHolePoints + carryoverPoints : thisHolePoints;
 
+        console.log("carryover points", carryoverPoints);
+
         const perOpponent = totalPoints * effectiveHoleValue;
         const biggestTeam = oppTeam.length > wolfTeam.length ? oppTeam.length : wolfTeam.length
         const wolfTotal = perOpponent * biggestTeam;
@@ -839,6 +841,8 @@ function wolf(scorecards, scores, config, answers) {
                 const hole = player.holes[holeIndex];
                 hole.plusMinus *= factor;
             }
+
+            carryoverPoints *= factor;
         }
     }
 
