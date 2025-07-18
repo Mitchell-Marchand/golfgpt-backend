@@ -927,9 +927,156 @@ function wolf(scorecards, scores, config, answers) {
     return scorecards;
 }
 
+// Scoring function for Left/Right or Middle/Outside match play game
+function leftRight(scorecards, scores, config, answers) {
+    const {
+        holeValue = 5,
+        birdiesDouble = false,
+        eaglesMultiply = false,
+        eaglesFactor = 5,
+        carryovers = false,
+        birdiesDoubleCarryovers = false,
+        crybaby = false,
+        crybabyHole = 16,
+        autoDoubles = false,
+        autoDoubleAfterNineTrigger = false,
+        autoDoubleMoneyTrigger = 0,
+        autoDoubleWhileTiedTrigger = false,
+        autoDoubleValue = 1,
+        autoDoubleStays = false,
+        onlyGrossBirdies = false
+    } = config;
+
+    const golfers = scorecards.map(g => g.name);
+    let carryoverPoints = 0;
+    let isDoubled = false;
+    let doubledFromMoney = false;
+
+    // Record scores
+    for (const s of scores) {
+        const p = scorecards.find(g => g.name === s.name);
+        const h = p?.holes.find(h => h.holeNumber === s.holeNumber);
+        if (h) {
+            h.score = s.score;
+            h.strokes = s.strokes || 0;
+        }
+    }
+
+    const getAnswer = (holeNumber, questionText) => {
+        const holeAnswers = answers.find(a => a.hole === holeNumber)?.answers || [];
+        return holeAnswers.find(q => q.question === questionText)?.answers || null;
+    };
+
+    for (const hole of scorecards[0].holes) {
+        if (hole.score === 0) continue;
+
+        const holeNumber = hole.holeNumber;
+        const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === holeNumber);
+        const par = hole.par;
+
+        // Get teams
+        const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
+        const teamsWithAnds = getTeamsFromAnswers(holeAnswers, golfers);
+        const teams = teamsWithAnds.map(team => team.split(' & '));
+
+        const [team1, team2] = teams.map(team => team.map(name => {
+            const player = scorecards.find(g => g.name === name);
+            const h = player.holes[holeIndex];
+            return {
+                name,
+                gross: h.score,
+                net: h.score - (h.strokes || 0)
+            };
+        }));
+
+        const team1Best = Math.min(...team1.map(p => onlyGrossBirdies ? p.gross : p.net));
+        const team2Best = Math.min(...team2.map(p => onlyGrossBirdies ? p.gross : p.net));
+
+        const team1BirdieLow = onlyGrossBirdies ? Math.min(...team1.map(p => p.gross)) : Math.min(...team1.map(p => p.net));
+        const team2BirdieLow = onlyGrossBirdies ? Math.min(...team2.map(p => p.gross)) : Math.min(...team2.map(p => p.net));
+
+        const team1Wins = team1Best < team2Best;
+        const team2Wins = team2Best < team1Best;
+
+        // Determine autodouble state
+        const getPriorPlusMinus = (player, currentHoleNumber) =>
+            player.holes
+                .filter(h => h.holeNumber < currentHoleNumber)
+                .reduce((sum, h) => sum + (h.plusMinus || 0), 0);
+
+        const priorTotals = scorecards.map(p => ({
+            name: p.name,
+            total: getPriorPlusMinus(p, holeNumber)
+        }));
+
+        const matchTied = priorTotals.reduce((sum, p) => sum + p.total, 0) === 0;
+        const someoneDown = priorTotals.some(p => p.total <= autoDoubleMoneyTrigger * -1);
+
+        let thisHoleDoubled = false;
+        if (autoDoubles) {
+            if (autoDoubleAfterNineTrigger && holeNumber > 9) thisHoleDoubled = true;
+            if (autoDoubleWhileTiedTrigger && matchTied) thisHoleDoubled = true;
+            if (autoDoubleMoneyTrigger && someoneDown) {
+                thisHoleDoubled = true;
+                doubledFromMoney = true;
+            }
+            if (autoDoubleStays && doubledFromMoney) {
+                thisHoleDoubled = true;
+            }
+        }
+        if (thisHoleDoubled) isDoubled = true;
+
+        let value = (thisHoleDoubled || isDoubled) ? autoDoubleValue : holeValue;
+
+        // Handle crybaby override
+        const crybabyAnswer = getAnswer(holeNumber, "Did the bet change? If so, enter the new dollar value:");
+        if (crybaby && holeNumber >= crybabyHole && crybabyAnswer?.[0]) {
+            const match = crybabyAnswer[0].match(/\d+(\.\d+)?/);
+            if (match) value = parseFloat(match[0]);
+        }
+
+        // Apply streak modifiers
+        if ((team1BirdieLow === par - 1 || team2BirdieLow === par - 1) && birdiesDouble && !(carryovers && birdiesDoubleCarryovers)) value *= 2;
+        if ((team1BirdieLow <= par - 2 || team2BirdieLow <= par - 2) && eaglesMultiply && !(carryovers && birdiesDoubleCarryovers)) value *= eaglesFactor;
+
+        const totalValue = carryovers ? value + carryoverPoints : value;
+
+        if (team1Wins) {
+            carryoverPoints = 0;
+            for (const p of team1) {
+                const golfer = scorecards.find(g => g.name === p.name);
+                golfer.holes[holeIndex].plusMinus = totalValue;
+            }
+            for (const p of team2) {
+                const golfer = scorecards.find(g => g.name === p.name);
+                golfer.holes[holeIndex].plusMinus = -totalValue;
+            }
+        } else if (team2Wins) {
+            carryoverPoints = 0;
+            for (const p of team2) {
+                const golfer = scorecards.find(g => g.name === p.name);
+                golfer.holes[holeIndex].plusMinus = totalValue;
+            }
+            for (const p of team1) {
+                const golfer = scorecards.find(g => g.name === p.name);
+                golfer.holes[holeIndex].plusMinus = -totalValue;
+            }
+        } else {
+            carryoverPoints = totalValue;
+            for (const p of [...team1, ...team2]) {
+                const golfer = scorecards.find(g => g.name === p.name);
+                golfer.holes[holeIndex].plusMinus = 0;
+            }
+        }
+    }
+
+    return scorecards;
+}
+
 module.exports = {
     scotch,
     junk,
     vegas,
-    wolf
+    wolf,
+    leftRight
 }
