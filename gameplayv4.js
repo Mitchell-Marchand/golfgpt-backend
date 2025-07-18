@@ -447,7 +447,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
-        } else if (raw === "left-right" || raw === "middle-outside") {
+        } else if (raw === "left-right" || raw === "middle-outside" || raw === "flip wolf") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${lrmoConfig}`;
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
@@ -474,9 +474,16 @@ router.post("/create", authenticateUser, async (req, res) => {
                         numberOfAnswers: golfers.length,
                         holes: "all"
                     })
-                } else {
+                } else if (raw === "middle-outside") {
                     questions.push({
                         question: `Who was on the middle team?`,
+                        answers: golfers,
+                        numberOfAnswers: golfers.length,
+                        holes: "all"
+                    })
+                } else {
+                    questions.push({
+                        question: `Who was on the heads team?`,
                         answers: golfers,
                         numberOfAnswers: golfers.length,
                         holes: "all"
@@ -751,6 +758,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 config,
                 answers
             )
+        } else if (configType === "flip wolf") {
+            
         }
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);

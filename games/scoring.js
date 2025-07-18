@@ -650,7 +650,7 @@ function vegas(scorecards, scores, config, answers) {
 
         if (thisHoleDoubled || (doubledFromMoney && autoDoubleStays)) {
             pointWorth = autoDoubleValue;
-        } 
+        }
 
         // STEP 9: Presses
         const holeAnswers = answers?.find(a => a.hole === holeNumber)?.answers || [];
@@ -808,7 +808,7 @@ function wolf(scorecards, scores, config, answers) {
         if (thisHoleDoubled) {
             isDoubled = true;
         }
-        
+
         const effectiveHoleValue = (thisHoleDoubled || isDoubled) ? autoDoubleValue : baseHoleValue;
 
         // 🧑‍🤝‍🧑 Teams
@@ -978,6 +978,34 @@ function leftRight(scorecards, scores, config, answers) {
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
         const teamsWithAnds = getTeamsFromAnswers(holeAnswers, golfers);
         const teams = teamsWithAnds.map(team => team.split(' & '));
+
+        // Fallback logic if one of the teams is empty
+        if (teams.length < 2 || teams[0].length === 0 || teams[1].length === 0) {
+            const everyone = golfers.map(name => {
+                const golfer = scorecards.find(g => g.name === name);
+                const h = golfer.holes[holeIndex];
+                return {
+                    name,
+                    gross: h.score,
+                    net: h.score - (h.strokes || 0),
+                };
+            });
+
+            const lowNet = Math.min(...everyone.map(g => g.net));
+            const lowScorers = everyone.filter(g => g.net === lowNet);
+
+            if (lowScorers.length === 1) {
+                // One winner vs rest
+                const winner = lowScorers[0];
+                const rest = everyone.filter(g => g.name !== winner.name);
+                teams = [[winner.name], rest.map(g => g.name)];
+            } else {
+                // Tie: split low scorers across two teams
+                const [first, ...rest] = lowScorers;
+                const others = everyone.filter(g => !lowScorers.some(l => l.name === g.name));
+                teams = [[first.name, ...others.map(g => g.name)], rest.map(g => g.name)];
+            }
+        }
 
         const [team1, team2] = teams.map(team => team.map(name => {
             const player = scorecards.find(g => g.name === name);
