@@ -266,15 +266,15 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         scorecards = trackSkins(scorecards, strippedJunk.skins, golfers);
     }
 
-    if (strippedJunk.birdieStreak.valid) {
+    if (strippedJunk.birdieStreak?.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.birdieStreak, -1)
     }
 
-    if (strippedJunk.parStreak.valid) {
+    if (strippedJunk.parStreak?.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.parStreak, 0)
     }
 
-    if (strippedJunk.parStreak.valid) {
+    if (strippedJunk.parStreak?.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.bogeyStreak, 0)
     }
 
