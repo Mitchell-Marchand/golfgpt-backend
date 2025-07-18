@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, extractJsonBlock } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight } = require("./games/scoring")
 
@@ -63,11 +63,18 @@ function generateSummary(scorecards) {
     const leaders = scorecards.filter(g => g.plusMinus === maxPlusMinus)
 
     if (maxPlusMinus !== 0 && leaders.length < scorecards.length) {
-        const names = leaders.map(g => g.name)
+        const names = leaders.map(g => {
+            const parts = g.name.trim().split(" ");
+            return parts.length === 1
+                ? parts[0]
+                : `${parts[0]} ${parts[1][0]}`;
+        });
+
         const joined = names.length === 1
             ? names[0]
-            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
-        return `${joined} ${names.length === 1 ? "is" : "are"} up $${maxPlusMinus} through ${holesPlayed}`
+            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+
+        return `${joined} ${names.length === 1 ? "is" : "are"} up $${maxPlusMinus} through ${holesPlayed}`;
     }
 
     // 3. Check points if money is tied
@@ -745,6 +752,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
         }
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
+        scorecards = calculateWinPercents(scorecards);
 
         let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
