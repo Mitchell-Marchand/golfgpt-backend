@@ -117,7 +117,7 @@ const wolfConfig = `{
     holeValue //number (default 5) dollar value that everyone is in for on each hole
     birdiesDouble //true or false (default false) whether or not birdies double the points for the hole. NOTE: something like 10/20 means $20 for a win with birdie and $10 otherwise, so this would be true
     eaglesMultiply //true or false (default false) whether or not eagles multiply the points for the hole. NOTE: something like 10/20/50 means $50 for a win with eagle, $20 with birdie, and $10 otherwise, so this would be true
-    eaglesFactor //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that
+    eaglesFactor //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that, while 5/10/50 would be 10 because the base value is 5 and 50 for eagle which is 10x that
     carryovers //true or false (default false) whether or not money played for on the hole carrys over to the next
     birdiesDoubleCarryovers //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole
     blindWolfAllowed //true or false (default true) whether or not the wolf can go "blind" or declare they are along before teeing off
@@ -137,7 +137,7 @@ const lrmoConfig = `{
     holeValue //number (default 5) dollar value that everyone is in for on each hole
     birdiesDouble //true or false (default false) whether or not birdies double the points for the hole. NOTE: something like 10/20 means $20 for a win with birdie and $10 otherwise, so this would be true
     eaglesMultiply //true or false (default false) whether or not eagles multiply the points for the hole. NOTE: something like 10/20/50 means $50 for a win with eagle, $20 with birdie, and $10 otherwise, so this would be true
-    eaglesFactor //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that
+    eaglesFactor //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that, while 5/10/50 would be 10 because the base value is 5 and 50 for eagle which is 10x that
     carryovers //true or false (default false) whether or not money played for on the hole carrys over to the next
     birdiesDoubleCarryovers //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole
     crybaby //true or false (default false) whether or not the golfer who is down the most can change the bet after a certain hole
