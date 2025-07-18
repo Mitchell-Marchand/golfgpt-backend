@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight } = require("./games/scoring")
 
@@ -620,7 +620,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const formattedTeeTime = formatDateForSQL(teeTime);
 
         //Get creative displayName from AI.
-        let displayName = "Golf Match";
+        /*let displayName = "Golf Match";
         const displayNameResponse = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
@@ -635,7 +635,9 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         if (displayNameResponse.choices[0].message.content) {
             displayName = displayNameResponse.choices[0].message.content?.trim()?.replaceAll('"', '');
-        }
+        }*/
+
+        const displayName = capitalizeWords(raw);
 
         await mariadbPool.query(
             "UPDATE Matches SET strokes = ?, config = ?, configType = ?, strippedJunk = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",

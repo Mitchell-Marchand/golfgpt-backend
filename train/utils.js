@@ -97,6 +97,14 @@ function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     return builtScorecards;
 }
 
+function capitalizeWords(str) {
+    return str
+        .toLowerCase()
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
 function deepEqual(obj1, obj2) {
     if (obj1 === obj2) return true;
 
@@ -313,7 +321,7 @@ function getTeamsFromAnswers(answeredQuestions, golfers) {
         if (question.question.toLowerCase().includes("team")) {
             const team1 = question.answers;
             const team2 = golfers.filter(name => !team1.includes(name));
-            
+
             teams.push(team1.join(" & "));
             teams.push(team2.join(" & "));
             break; // Stop after first team-related question
@@ -339,6 +347,7 @@ module.exports = {
     getLowScoreWinners,
     getTeamScoresOnHole,
     getTeamsFromAnswers,
+    capitalizeWords,
     scoringSystemMessage,
     setupSystemMessage
 }
