@@ -266,7 +266,6 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         scorecards = trackSkins(scorecards, strippedJunk.skins, golfers);
     }
 
-    //TODO: streaks
     if (strippedJunk.birdieStreak.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.birdieStreak, -1)
     }
@@ -820,8 +819,6 @@ function wolf(scorecards, scores, config, answers) {
         // Carryover logic
         const thisHolePoints = basePoints;
         const totalPoints = carryovers ? thisHolePoints + carryoverPoints : thisHolePoints;
-
-        console.log("carryover points", carryoverPoints);
 
         const perOpponent = totalPoints * effectiveHoleValue;
         const biggestTeam = oppTeam.length > wolfTeam.length ? oppTeam.length : wolfTeam.length
