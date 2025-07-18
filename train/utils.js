@@ -308,6 +308,7 @@ function getTeamScoresOnHole(teams, currentScorecard, i, onlyGrossCount) {
 
 function getTeamsFromAnswers(answeredQuestions, golfers) {
     let teams = [];
+    console.log("ANSWERED QUESTIONS: ", answeredQuestions);
 
     for (const question of answeredQuestions) {
         if (question.question.toLowerCase().includes("team")) {
