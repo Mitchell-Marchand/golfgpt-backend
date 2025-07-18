@@ -123,29 +123,58 @@ function trackSnake(scorecards, answers, teams, snakeConfig, golfers) {
 }
 
 function trackSkins(scorecards, skinsConfig, golfers) {
-    //TODO: Canadian Skins
     let skins = [];
     let pot = 0;
     if (skinsConfig.fromPot) {
-        pot = golfers.length * skinsConfig.potValue || 0;
+        pot = golfers.length * (skinsConfig.potValue || 0);
     }
 
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         let skin = false;
-        let scoreToBeat = false;
+        let scoreToBeat = Infinity;
+        let contenders = [];
+
         for (let j = 0; j < golfers.length; j++) {
             const scorecard = scorecards.find(card => card.name === golfers[j]);
             const hole = scorecard.holes[i];
-            if (hole.score > 0 && (!skin || skin?.score > hole.score) && (!scoreToBeat || hole.score < scoreToBeat)) {
-                scoreToBeat = hole.score;
-                skin = { name: golfers[j], score: hole.score, holeNumber: hole.holeNumber }
-            } else if (skin && hole.score === skin.score) {
-                skin = false;
+            if (!hole || hole.score <= 0) continue;
+
+            const gross = hole.score;
+            const net = gross - (hole.strokes || 0);
+
+            let comparisonScore;
+            switch (skinsConfig.type) {
+                case "net":
+                case "canadian":
+                    comparisonScore = net;
+                    break;
+                case "gross":
+                default:
+                    comparisonScore = gross;
+                    break;
+            }
+
+            if (comparisonScore < scoreToBeat) {
+                scoreToBeat = comparisonScore;
+                contenders = [{ name: golfers[j], gross, net, holeNumber: hole.holeNumber }];
+            } else if (comparisonScore === scoreToBeat) {
+                contenders.push({ name: golfers[j], gross, net, holeNumber: hole.holeNumber });
             }
         }
 
+        if (contenders.length === 1) {
+            skin = contenders[0];
+        } else if (skinsConfig.type === "canadian" && contenders.length > 1) {
+            // Check if any net ties match a gross
+            const lowestNet = contenders[0].net;
+            const grossWinners = contenders.filter(p => p.gross === lowestNet);
+            if (grossWinners.length === 1) {
+                skin = grossWinners[0];
+            }
+        }
+
+        // Optional validation (e.g., must "prove" skin)
         if (skin && skinsConfig.validation && i < scorecards[0].holes.length - 1) {
-            //Determine if skin was proven
             const scorecard = scorecards.find(card => card.name === skin.name);
             const holeToProve = scorecard.holes[i + 1];
             if (holeToProve.score > holeToProve.par) {
@@ -156,25 +185,25 @@ function trackSkins(scorecards, skinsConfig, golfers) {
         if (skin) {
             skins.push(skin);
             if (!skinsConfig.fromPot) {
-                pot += (skinsConfig.value * golfers.length) || 0
+                pot += (skinsConfig.value * golfers.length) || 0;
             }
         }
     }
 
+    // Award skins
     if (skins.length > 0) {
         const skinValue = Math.round(pot / skins.length * 100) / 100;
         const perGolferValue = Math.round(skinValue / golfers.length * 100) / 100;
 
-        for (let i = 0; i < skins.length; i++) {
-            const skin = skins[i];
+        for (const skin of skins) {
             const scorecard = scorecards.find(card => card.name === skin.name);
-            const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
+            const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber);
             hole.plusMinus += skinValue;
 
-            for (let j = 0; j < golfers.length; j++) {
-                const scorecard = scorecards.find(card => card.name === golfers[j]);
-                const hole = scorecard.holes.find(hole => hole.holeNumber === skin.holeNumber)
-                hole.plusMinus -= perGolferValue;
+            for (const golfer of golfers) {
+                const sc = scorecards.find(card => card.name === golfer);
+                const h = sc.holes.find(hole => hole.holeNumber === skin.holeNumber);
+                h.plusMinus -= perGolferValue;
             }
         }
     }
@@ -255,6 +284,10 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
 
             if (strippedJunk.fish?.valid && question.question?.includes("a water hazard") && question.answers?.length > 0) {
                 scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.fish?.value * -1, strippedJunk.fish?.teams);
+            }
+
+            if (strippedJunk.bingoBangoBongo?.valid && (question.question?.includes("first on the green") || question.question?.includes("CTP once all balls") || question.question?.includes("first to hole out")) && question.answers?.length > 0) {
+                scorecards = tallyStandardJunk(scorecards, question, questions.hole, teamsWithAnds, golfers, strippedJunk.bingoBangoBongo?.value, strippedJunk.bingoBangoBongo?.teams);
             }
         }
     }
@@ -706,6 +739,7 @@ function wolf(scorecards, scores, config, answers) {
         autoDoubleValue = 1,
         autoDoubleStays = false,
         onlyGrossBirdies = false,
+        combinedScore = false
     } = config;
 
     const golfers = scorecards.map(g => g.name);
@@ -827,9 +861,9 @@ function wolf(scorecards, scores, config, answers) {
                 findPlayer(partner)?.holes[holeIndex].score ?? 999
             );*/
 
-        const wolfBest = Math.min(...wolfScorecards.map(g => g.holes[holeIndex].score));
+        const wolfBest = !combinedScore ? Math.min(...wolfScorecards.map(g => g.holes[holeIndex].score)) : Math.sum(...wolfScorecards.map(g => g.holes[holeIndex].score - g.holes[holeIndex].par));
         const wolfBestNet = Math.min(...wolfScorecards.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
-        const opponentBest = Math.min(...oppTeam.map(g => g.holes[holeIndex].score));
+        const opponentBest = !combinedScore ? Math.min(...oppTeam.map(g => g.holes[holeIndex].score)) : Math.sum(...oppTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].par));
         const opponentBestNet = Math.min(...oppTeam.map(g => g.holes[holeIndex].score - g.holes[holeIndex].strokes));
         const wolfBirdieLow = onlyGrossBirdies ? wolfBest : wolfBestNet
         const opponentBirdieLow = onlyGrossBirdies ? opponentBest : opponentBestNet
@@ -946,7 +980,8 @@ function leftRight(scorecards, scores, config, answers) {
         autoDoubleValue = 1,
         autoDoubleStays = false,
         onlyGrossBirdies = false,
-        soloMultiple = 2
+        soloMultiple = 2,
+        combinedScore = false
     } = config;
 
     const golfers = scorecards.map(g => g.name);
@@ -1021,8 +1056,8 @@ function leftRight(scorecards, scores, config, answers) {
             };
         }));
 
-        const team1Best = Math.min(...team1.map(p => p.net));
-        const team2Best = Math.min(...team2.map(p => p.net));
+        const team1Best = !combinedScore ? Math.min(...team1.map(p => p.net)) : Math.sum(...team1.map(p => p.net - p.par));
+        const team2Best = !combinedScore ? Math.min(...team2.map(p => p.net)) : Math.sum(...team2.map(p => p.net - p.par));
 
         const team1BirdieLow = onlyGrossBirdies ? Math.min(...team1.map(p => p.gross)) : Math.min(...team1.map(p => p.net));
         const team2BirdieLow = onlyGrossBirdies ? Math.min(...team2.map(p => p.gross)) : Math.min(...team2.map(p => p.net));
@@ -1102,6 +1137,10 @@ function leftRight(scorecards, scores, config, answers) {
     }
 
     return scorecards;
+}
+
+function ninePont(scorecards, scores, config, answers) {
+
 }
 
 module.exports = {

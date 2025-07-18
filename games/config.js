@@ -26,6 +26,7 @@ const junkConfig = `{
         fromPot //true or false (default true) - true if each golfer is in for a fixed amount that is then split amongst the skins, or false if each skin is just worth a certain dollar amount from each golfer
         potValue //number (default 0) the amount that each golfer puts in the pot or "buys in" for skins
         validation //true or false (default false) whether or not a skin needs to be "validated" or "proven" with a par on the next hole
+        type //string of either "gross", "net", or "canadian" (default "net")
     },
     polies: {
         valid //true or false (default false) if the user says that "polies", or making a putt longer than the flagstick length, are worth extra money
@@ -63,7 +64,7 @@ const junkConfig = `{
         valid //true or false (default false) if the user says that making a certain number of pars in a row is worth money
         streak //number (default 3) number of pars in a row necessary to earn money
         value //number (default 0) dollar value of making the par streak
-        team ///true or false (default false) whether or not par streaks are for the team
+        team //true or false (default false) whether or not par streaks are for the team
         canOverlap //true or false (default true) whether or not par streaks can overlap
     },
     bogeyStreak: {
@@ -72,6 +73,11 @@ const junkConfig = `{
         value //number (default 0) dollar value to pay for making the bogey streak
         team ///true or false (default false) whether or not bogey streaks are for the team
         canOverlap //true or false (default true) whether or not bogey streaks can overlap
+    },
+    bingoBangoBongo: {
+        valid //true or false (default false) if the user says they're playing bingo bango bongo
+        value //number (default 1) dollar value for a bingo, bango, or bongo
+        team //true or false (default false) whether or not bingo bango bongo points are for the team
     }
 }`;
 
@@ -124,6 +130,7 @@ const wolfConfig = `{
     autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies double
+    combinedScore //true or false (default is false) true if the teams' scores to par are added up or false if it's best ball
 }`
 
 const lrmoConfig = `{
@@ -143,6 +150,7 @@ const lrmoConfig = `{
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies double
     soloMultiple //number (default 2) the factor the bet increases by if everyone goes solo
+    combinedScore //true or false (default is false) true if the teams' scores to par are added up or false if it's best ball
 }`
 
 //NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)

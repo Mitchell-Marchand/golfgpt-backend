@@ -583,7 +583,23 @@ router.post("/create", authenticateUser, async (req, res) => {
                 });
             }
 
-            if (sideConfig.oozle?.valid) {
+            if (sideConfig.oozle?.valid || sideConfig.bingoBangoBongo?.valid) {
+                if (sideConfig.bingoBangoBongo?.valid) {
+                    questions.push({
+                        question: `Who was the first on the green?`,
+                        answers: golfers,
+                        numberOfAnswers: 1,
+                        holes: "all"
+                    });
+
+                    questions.push({
+                        question: `Who was CTP once all balls were on the green?`,
+                        answers: golfers,
+                        numberOfAnswers: 1,
+                        holes: "all"
+                    });
+                }
+
                 questions.push({
                     question: `Who was the first to hole out?`,
                     answers: golfers,
