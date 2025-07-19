@@ -1479,35 +1479,33 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     if (bonusValue <= 0) continue;
 
                     const scorerName = scorer.name;
-                    const partnerName = findPartnerFromTeams(scorerName, teams);
+                    const scorerTeam = findTeamFromTeams(scorerName, teams);
 
-                    const eligibleLosers = scorecards.filter(p =>
-                        p.name !== scorerName && (!extraBirdieTeam || p.name !== partnerName)
-                    );
+                    const nonTeammates = scorecards
+                        .map(p => p.name)
+                        .filter(name => !scorerTeam.includes(name));
 
-                    const totalBonus = bonusValue * eligibleLosers.length;
+                    const totalBonus = bonusValue * nonTeammates.length;
+                    const splitAmount = Math.round((totalBonus / scorerTeam.length) * 100) / 100;
 
-                    if (extraBirdieTeam && partnerName) {
-                        const split = Math.round((totalBonus / 2) * 100) / 100;
+                    console.log(totalBonus, splitAmount)
 
-                        // Scorer gets half
-                        hole.plusMinus = (hole.plusMinus || 0) + split;
-
-                        // Partner gets half
-                        const partnerCard = scorecards.find(p => p.name === partnerName);
-                        const partnerHole = partnerCard?.holes?.[holeIndex];
-                        if (partnerHole) {
-                            partnerHole.plusMinus = (partnerHole.plusMinus || 0) + split;
+                    // Give split to each teammate (including scorer)
+                    for (const name of scorerTeam) {
+                        const player = scorecards.find(p => p.name === name);
+                        const playerHole = player?.holes?.[holeIndex];
+                        if (playerHole) {
+                            playerHole.plusMinus = (playerHole.plusMinus || 0) + splitAmount;
                         }
-                    } else {
-                        // Scorer gets full bonus
-                        hole.plusMinus = (hole.plusMinus || 0) + totalBonus;
                     }
 
-                    // Others pay
-                    for (const opponent of eligibleLosers) {
-                        const opponentHole = opponent.holes[holeIndex];
-                        opponentHole.plusMinus = (opponentHole.plusMinus || 0) - bonusValue;
+                    // Charge non-teammates
+                    for (const name of nonTeammates) {
+                        const player = scorecards.find(p => p.name === name);
+                        const playerHole = player?.holes?.[holeIndex];
+                        if (playerHole) {
+                            playerHole.plusMinus = (playerHole.plusMinus || 0) - bonusValue;
+                        }
                     }
                 }
             }
@@ -1517,14 +1515,13 @@ function universalMatchScorer(scorecards, scores, config, answers) {
     return scorecards;
 }
 
-function findPartnerFromTeams(name, teams) {
+// 🧠 Helper: return array of teammates including the scorer
+function findTeamFromTeams(name, teams) {
     for (const team of teams) {
         const members = team.split(" & ").map(p => p.trim());
-        if (members.includes(name)) {
-            return members.find(p => p !== name);
-        }
+        if (members.includes(name)) return members;
     }
-    return null;
+    return [name]; // fallback: solo player
 }
 
 function trackMatchStatuses(scorecards, teams, matches, type, combinedScore, autoPresses, autoPressesReset, autoPressTrigger, sweepValue) {
