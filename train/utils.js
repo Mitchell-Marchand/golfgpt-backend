@@ -318,14 +318,14 @@ function getTeamsFromAnswers(answeredQuestions, golfers) {
     let teams = [];
 
     for (const question of answeredQuestions) {
-        if (question.question.toLowerCase().includes("team")) {
+        if (question.question.toLowerCase().includes("team") || question.question.toLowerCase().includes("king of the hill")) {
             const team1 = question.answers;
             const team2 = golfers.filter(name => !team1.includes(name));
 
             teams.push(team1.join(" & "));
             teams.push(team2.join(" & "));
             break; // Stop after first team-related question
-        }
+        } 
     }
 
     return teams;

@@ -146,7 +146,7 @@ const lrmoConfig = `{
     autoDoubleAfterNineTrigger //true or false (default is false). whether or not the money automatically increases after nine holes
     autoDoubleMoneyTrigger //number (default is 0). how much money someone has to be down for the bet to automatically increase
     autoDoubleWhileTiedTrigger //true or false (default is false). whether or not the money automatically increases while the match is tied
-    autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
+    autoDoubleValue //number (default is 5). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies double
     soloMultiple //number (default 2) the factor the bet increases by if everyone goes solo
@@ -156,7 +156,7 @@ const lrmoConfig = `{
 }`
 
 const ninePointConfig = `{
-    pointVal //number (default is 1) dollar value of points in the match
+    pointVal //number (default is 0) dollar value of points in the match
     extraForBirdies //number (default is 0) number of points for a birdie
     extraForEagles //number (default is 0) number of points for an eagle
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies or eagles are worth the extra points
@@ -167,7 +167,7 @@ const universalConfig = `{
     type //string of either "match" or "stroke" (default "match") for match or stroke play
     perHoleOrMatch //string of either "hole" or "match" (default "match") for whether or not the bet is per hole or match play
     perHoleValue //number (default 0) dollar value per hole if perHoleOrMatch is "hole"
-    perMatchValue //number (default 10) dollar value per match if perHoleOrMatch is "match"
+    perMatchValue //number (default 0) dollar value per match if perHoleOrMatch is "match"
     perStrokeValue //number (default 0) dollar value per stroke that is paid for losing a hole/match
     carryovers //true or false (default false) whether or not money from tied holes or matches carrys over to the next
     birdiesDoubleCarryovers //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole

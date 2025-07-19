@@ -259,8 +259,8 @@ router.post("/create", authenticateUser, async (req, res) => {
         //Step 1: Determine game type
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
-            "middle-outside", "king of the hill", "match play", "bingo bango bongo", "stroke play",
-            "stableford", "stableford quota", "nine point", "scramble", "shamble", "bramble", "chapman", "alt shot"
+            "middle-outside", "king of the hill", "match play", "stroke play", "stableford", "stableford quota", "nine point", 
+            "scramble", "shamble", "bramble", "chapman", "alt shot"
         ];
 
         const gameType = await openai.chat.completions.create({
@@ -447,7 +447,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
-        } else if (raw === "left-right" || raw === "middle-outside" || raw === "flip wolf") {
+        } else if (raw === "left-right" || raw === "middle-outside" || raw === "flip wolf" || raw === "king of the hill") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${lrmoConfig}`;
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
@@ -481,11 +481,19 @@ router.post("/create", authenticateUser, async (req, res) => {
                         numberOfAnswers: golfers.length,
                         holes: "all"
                     })
-                } else {
+                } else if (raw === "flip wolf") {
                     questions.push({
                         question: `Who was on the heads team?`,
                         answers: golfers,
                         numberOfAnswers: golfers.length,
+                        holes: "all"
+                    })
+                } else {
+                    config.soloMultiple = 1;
+                    questions.push({
+                        question: `Who was king of the hill?`,
+                        answers: golfers,
+                        numberOfAnswers: 1,
                         holes: "all"
                     })
                 }
@@ -883,7 +891,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 config,
                 answers
             )
-        } else if (["left-right", "middle-outside", "flip wolf"].includes(configType)) {
+        } else if (["left-right", "middle-outside", "flip wolf", "king of the hill"].includes(configType)) {
             scorecards = leftRight(
                 scorecards,
                 scores,
