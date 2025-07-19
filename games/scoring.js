@@ -1630,7 +1630,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     }
 
     //Loop through all presses to determine winners and losers
-    const teamsArrays = teams.map(team => team.split(' & '));
     let carryoverValue = 0;
     let firstTeamGotSwept = true;
     let firstTeamSwept = true;
@@ -1638,6 +1637,15 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     //console.log("matches length", allMatches.length);
 
     for (let i = 0; i < allMatches.length; i++) {
+        if (teamsChangeEveryThree || teamsChangeEverySix) {
+            //Get teams somehow
+            const differentTeams = getTeamsFromAnswers(answers.find(h => h.hole === allMatches[i].startingHole).answers, golfers);
+            if (differentTeams.length === 2) {
+                teams = [...differentTeams];
+            }
+        } 
+
+        const teamsArrays = teams.map(team => team.split(' & '));
         const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
             teams,
             scorecards,

@@ -620,7 +620,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                                 holes: "all"
                             })
                         }
-                    } else {
+                    } else if (!config.teamsChangeEveryThree && !config.teamsChangeEverySix) {
                         if (config.autoPresses) {
                             questions.push({
                                 question: `Did someone start a new press that is not an autopress?`,
