@@ -1396,30 +1396,10 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 combinedScore
             }, answers);
         } else if (type === "stroke" && perStrokeValue > 0) {
-            //TODO: Tally up the plusMinus based on their score relative to eachother each hole and the perStrokeValue
+            //Tally up the plusMinus based on their score relative to eachother each hole and the perStrokeValue
             const currentHole = scores[0]?.holeNumber;
             const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
             if (holeIndex === -1) return scorecards;
-
-            const par = scorecards[0].holes[holeIndex].par;
-            const golfers = scorecards.map(g => {
-                const hole = g.holes[holeIndex];
-                const gross = hole.score;
-                const net = gross - (hole.strokes || 0);
-                return {
-                    name: g.name,
-                    gross,
-                    net,
-                    par,
-                    score: net,
-                    original: g
-                };
-            });
-
-            // Sort lowest to highest by net or gross
-            const ranked = golfers
-                .filter(g => g.score > 0)
-                .sort((a, b) => a.score - b.score)
 
             // Now handle plusMinus based on differences in points
             const allGolfers = scorecards.map(g => ({
@@ -1432,7 +1412,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     if (i === j) continue;
                     const p1 = allGolfers[i];
                     const p2 = allGolfers[j];
-                    const diff = (p1.hole.score - p1.hole.strokes || 0) - (p2.hole.score - p2.hole.strokes || 0);
+                    const diff = (p1.hole.score - p1.hole.strokes || 0) + (p2.hole.score - p2.hole.strokes || 0);
                     if (diff > 0) {
                         p1.hole.plusMinus = (p1.hole.plusMinus || 0) + diff * perStrokeValue;
                         p2.hole.plusMinus = (p2.hole.plusMinus || 0) - diff * perStrokeValue;
