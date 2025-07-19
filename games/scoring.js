@@ -1557,7 +1557,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     endingHole: allMatches[j].endingHole,
                     value: matchValue,
                     original: false,
-                    key: `false${startingHole}`
+                    key: `false${allMatches[j].endingHole - holesRemaining}`
                 };
 
                 const alreadyExists = allMatches.some(p =>
