@@ -1603,7 +1603,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
         );
 
         console.log("Match", JSON.stringify(allMatches[i], null, 2));
-        console.log(`First team: Down ${firstTeamDown} with ${holesRemaining} to go`);
+        console.log(`First team: Up ${firstTeamDown} with ${holesRemaining} to go`);
 
         if ((type === "match" && Math.abs(firstTeamDown) > holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
             if (firstTeamDown >= 0) {
@@ -1715,7 +1715,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
 function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, type, combinedScore) {
     const teamsArrays = teams.map(team => team.split(' & '));
     let firstTeamPoints = 0;
-    let holesRemaining = endingHole - startingHole;
+    let holesRemaining = endingHole - startingHole + 1;
 
     console.log(JSON.stringify(teamsArrays))
     console.log("starting hole, ending hole", startingHole, endingHole);
