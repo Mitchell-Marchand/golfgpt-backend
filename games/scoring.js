@@ -1437,7 +1437,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
 
-            for (let i = 0; i < scorecards[0].holes.length % 6; i++) {
+            for (let i = 0; i <  Math.floor(scorecards[0].holes.length / 6); i++) {
                 allMatches.push({
                     active: true,
                     startingHole: (i * 6) + 1,
@@ -1447,7 +1447,6 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
         } else if (threeThreeThree) {
-            console.log("in 333")
             if (threeThreeThreeOverallValue > 0) {
                 allMatches.push({
                     active: true,
@@ -1458,7 +1457,6 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
 
-            console.log("i = 0 until i <", Math.floor(scorecards[0].holes.length / 3))
             for (let i = 0; i < Math.floor(scorecards[0].holes.length / 3); i++) {
                 allMatches.push({
                     active: true,
@@ -1748,6 +1746,8 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
             holesRemaining--;
         }
     }
+
+    console.log("first team points", firstTeamPoints);
 
     return { firstTeamDown: firstTeamPoints, holesRemaining }
 }
