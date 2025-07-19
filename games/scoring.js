@@ -965,6 +965,7 @@ function wolf(scorecards, scores, config, answers) {
 // Scoring function for Left/Right or Middle/Outside match play game
 function leftRight(scorecards, scores, config, answers) {
     const {
+        permanentTeams = false,
         holeValue = 5,
         birdiesDouble = false,
         eaglesMultiply = false,
@@ -1013,7 +1014,7 @@ function leftRight(scorecards, scores, config, answers) {
 
         // Get teams
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
-        const teamsWithAnds = getTeamsFromAnswers(holeAnswers, golfers);
+        const teamsWithAnds = permanentTeams || getTeamsFromAnswers(holeAnswers, golfers);
         let teams = teamsWithAnds.map(team => team.split(' & '));
         let everyManForOne = 1;
 
@@ -1095,6 +1096,17 @@ function leftRight(scorecards, scores, config, answers) {
 
         let value = (thisHoleDoubled || isDoubled) ? autoDoubleValue : holeValue;
         value *= Math.max(1, everyManForOne);
+
+        let pressMultiplier = 1;
+        for (const ans of holeAnswers) {
+            if (ans.question === "Was there a press?" && ans.answers.includes("Yes")) pressMultiplier *= 2;
+            if (ans.question === "Was there a press or a double press?") {
+                if (ans.answers.includes("Double Press")) pressMultiplier *= 4;
+                else if (ans.answers.includes("Press")) pressMultiplier *= 2;
+            }
+        }
+
+        value *= pressMultiplier;
 
         // Handle crybaby override
         const crybabyAnswer = getAnswer(holeNumber, "Did the bet change? If so, enter the new dollar value:");
@@ -1324,6 +1336,349 @@ function banker(scorecards, scores, answers) {
     return scorecards;
 }
 
+function universalMatchScorer(scorecards, scores, config, answers) {
+    const {
+        teams = [],
+        type = "stroke",
+        perHoleOrMatch = "match",
+        perHoleValue = 0,
+        perMatchValue = 0,
+        perStrokeValue = 0,
+        carryovers = false,
+        birdiesDoubleCarryovers = false,
+        combinedScore = false,
+        birdiesDouble = false,
+        eaglesMultiply = false,
+        eaglesFactor = 5,
+        autoPresses = false,
+        autoPressesReset = false,
+        autoPressTrigger = 2,
+        extraBirdieValue = 0,
+        extraEagleValue = 0,
+        extraBirdieTeam = false,
+        nassau = false,
+        sixSixSix = false,
+        threeThreeThree = false,
+        sixSixSixOverallValue = 0,
+        threeThreeThreeOverallValue = 0,
+        sweepValue = 0,
+        onlyGrossBirdies = false,
+    } = config;
+
+    for (const score of scores) {
+        const player = scorecards.find(g => g.name === score.name);
+        const hole = player?.holes.find(h => h.holeNumber === score.holeNumber);
+        if (hole) {
+            hole.score = score.score;
+            hole.strokes = score.strokes || 0;
+            hole.plusMinus = 0;
+            hole.points = 0;
+        }
+    }
+
+    if (perHoleOrMatch === "hole" || teams.length !== 2) {
+        //Score just like a leftRight or whatever
+        if (teams.length === 2) {
+            scorecards = leftRight(scorecards, scores, {
+                permanentTeam: teams,
+                holeValue: perHoleValue,
+                birdiesDouble,
+                eaglesMultiply,
+                eaglesFactor,
+                carryovers,
+                birdiesDoubleCarryovers,
+                onlyGrossBirdies,
+                combinedScore
+            }, answers);
+        } else if (type === "stroke" && perStrokeValue > 0) {
+            //TODO: Everyone playing stroke play individually
+            //Tally up the plusMinus based on their score relative to eachother each hole and the perStrokeValue
+        }
+    } else {
+        //Playing matches of "match" play, either by total strokes or match points
+        let allMatches = [];
+
+        if (nassau) {
+            allMatches.push({
+                active: true,
+                startingHole: scorecards[0].holes[0].holeNumber,
+                endingHole: scorecards[0].holes[scorecards[0].holes.length - 1],
+                value: perMatchValue
+            })
+
+            if (scorecards[0].holes.length === 18) {
+                allMatches.push({
+                    active: true,
+                    startingHole: 1,
+                    endingHole: 9,
+                    value: perMatchValue
+                })
+                allMatches.push({
+                    active: true,
+                    startingHole: 10,
+                    endingHole: 18,
+                    value: perMatchValue
+                })
+            }
+        } else if (sixSixSix) {
+            if (sixSixSixOverallValue > 0) {
+                allMatches.push({
+                    active: true,
+                    startingHole: 1,
+                    endingHole: scorecards[0].holes[scorecards[0].holes.length - 1],
+                    value: sixSixSixOverallValue
+                })
+            }
+
+            for (let i = 0; i < scorecards[0].holes.length % 6; i++) {
+                allMatches.push({
+                    active: true,
+                    startingHole: (i * 6) + 1,
+                    endingHole: ((i + 1) * 6),
+                    value: perMatchValue
+                })
+            }
+        } else if (threeThreeThree) {
+            if (threeThreeThreeOverallValue > 0) {
+                allMatches.push({
+                    active: true,
+                    startingHole: 1,
+                    endingHole: scorecards[0].holes[scorecards[0].holes.length - 1],
+                    value: threeThreeThreeOverallValue
+                })
+            }
+
+            for (let i = 0; i < scorecards[0].holes.length % 3; i++) {
+                allMatches.push({
+                    active: true,
+                    startingHole: (i * 3) + 1,
+                    endingHole: ((i + 1) * 3),
+                    value: perMatchValue
+                })
+            }
+        }
+
+        scorecards = trackMatchStatuses(scorecards, teams, [...allMatches], type, combinedScore, autoPresses, autoPressesReset, autoPressTrigger, sweepValue);
+
+        if (extraBirdieValue > 0 || extraEagleValue > 0) {
+            for (let i = 0; i < scorecards[0].holes.length; i++) {
+                const holeIndex = i;
+
+                for (const scorer of scorecards) {
+                    const hole = scorer.holes[holeIndex];
+                    if (!hole || hole.score <= 0 || hole.par <= 0) continue;
+
+                    const strokes = hole.score;
+                    const par = hole.par;
+                    const diff = par - strokes;
+
+                    let bonusValue = 0;
+                    if (diff === 1) bonusValue = extraBirdieValue;
+                    else if (diff >= 2) bonusValue = extraEagleValue;
+
+                    if (bonusValue <= 0) continue;
+
+                    const scorerName = scorer.name;
+                    const partnerName = findPartnerFromTeams(scorerName, teams);
+
+                    const eligibleLosers = scorecards.filter(p =>
+                        p.name !== scorerName && (!extraBirdieTeam || p.name !== partnerName)
+                    );
+
+                    const totalBonus = bonusValue * eligibleLosers.length;
+                    const splitAmount = extraBirdieTeam && partnerName
+                        ? Math.round((totalBonus / 2) * 100) / 100
+                        : totalBonus;
+
+                    // Award to scorer
+                    hole.plusMinus = (hole.plusMinus || 0) + splitAmount;
+
+                    // If team payout, split with partner
+                    if (extraBirdieTeam && partnerName) {
+                        const partnerCard = scorecards.find(p => p.name === partnerName);
+                        const partnerHole = partnerCard?.holes?.[holeIndex];
+                        if (partnerHole) partnerHole.plusMinus = (partnerHole.plusMinus || 0) + splitAmount;
+                    }
+
+                    // Charge all other eligible golfers
+                    for (const opponent of eligibleLosers) {
+                        const opponentHole = opponent.holes[holeIndex];
+                        opponentHole.plusMinus = (opponentHole.plusMinus || 0) - bonusValue;
+                    }
+                }
+            }
+        }
+    }
+
+    return scorecards;
+}
+
+function findPartnerFromTeams(name, teams) {
+    for (const team of teams) {
+        const members = team.split(" & ").map(p => p.trim());
+        if (members.includes(name)) {
+            return members.find(p => p !== name);
+        }
+    }
+    return null;
+}
+
+function trackMatchStatuses(scorecards, teams, matches, type, combinedScore, autoPresses, autoPressesReset, autoPressTrigger, sweepValue) {
+    const holeCount = scorecards[0].holes.length;
+    const newPresses = [];
+
+    for (const match of matches.filter(m => m.active)) {
+        let teamScores = [0, 0];
+        const matchHoles = [];
+
+        for (let i = match.startingHole; i <= match.endingHole && i <= holeCount; i++) {
+            const holeIndex = i - 1;
+            const teamVals = teams.map(team =>
+                team.map(name => {
+                    const golfer = scorecards.find(g => g.name === name);
+                    const hole = golfer?.holes?.[holeIndex];
+                    return {
+                        name,
+                        net: hole?.score - (hole?.strokes || 0),
+                        toPar: hole?.score - hole?.par,
+                        hole
+                    };
+                })
+            );
+
+            if (!teamVals[0][0].hole || !teamVals[1][0].hole) continue; // skip unscored holes
+
+            matchHoles.push(holeIndex);
+
+            if (type === "stroke") {
+                const totals = teamVals.map(vals =>
+                    combinedScore
+                        ? vals.reduce((sum, p) => sum + p.net, 0)
+                        : Math.min(...vals.map(p => p.net))
+                );
+
+                if (totals[0] < totals[1]) teamScores[0]++;
+                else if (totals[1] < totals[0]) teamScores[1]++;
+            }
+
+            if (type === "match") {
+                const vals = teamVals.map(vals =>
+                    combinedScore
+                        ? vals.reduce((sum, p) => sum + p.toPar, 0)
+                        : Math.min(...vals.map(p => p.net))
+                );
+
+                if (vals[0] < vals[1]) {
+                    teamScores[0] += 1;
+                    for (const p of teamVals[0]) p.hole.points = (p.hole.points || 0) + 1;
+                } else if (vals[1] < vals[0]) {
+                    teamScores[1] += 1;
+                    for (const p of teamVals[1]) p.hole.points = (p.hole.points || 0) + 1;
+                } else {
+                    teamScores[0] += 0.5;
+                    teamScores[1] += 0.5;
+                    for (const p of [...teamVals[0], ...teamVals[1]]) {
+                        p.hole.points = (p.hole.points || 0) + 0.5;
+                    }
+                }
+
+                // 💥 Check for auto press
+                const lead = Math.abs(teamScores[0] - teamScores[1]);
+                const currentHole = i;
+                const pressExists = matches.some(
+                    m => m.originMatch === match.startingHole && m.startingHole === currentHole + 1
+                );
+
+                if (
+                    autoPresses &&
+                    lead >= autoPressTrigger &&
+                    currentHole < holeCount &&
+                    !pressExists
+                ) {
+                    newPresses.push({
+                        active: true,
+                        startingHole: currentHole + 1,
+                        endingHole: autoPressesReset ? match.endingHole : holeCount,
+                        value: match.value,
+                        originMatch: match.startingHole
+                    });
+                }
+
+                // 🔚 End early if one team is mathematically eliminated
+                const holesLeft = match.endingHole - i;
+                if (Math.abs(teamScores[0] - teamScores[1]) > holesLeft) {
+                    match.endingHole = i;
+                    break;
+                }
+            }
+        }
+
+        match.teamScores = teamScores;
+        match.winner =
+            teamScores[0] > teamScores[1] ? 0 :
+                teamScores[1] > teamScores[0] ? 1 : null;
+
+        match.active = false; // Match is done (either endedHole or early)
+
+        // 💸 Apply match value to all relevant holes
+        if (match.winner !== null) {
+            const winners = teams[match.winner];
+            const losers = teams[1 - match.winner];
+            const payout = match.value;
+            const perWinner = Math.round((payout * losers.length) / winners.length * 100) / 100;
+            const perLoser = payout;
+
+            for (const holeIndex of matchHoles) {
+                for (const name of winners) {
+                    const golfer = scorecards.find(g => g.name === name);
+                    const h = golfer.holes[holeIndex];
+                    h.plusMinus = (h.plusMinus || 0) + perWinner;
+                }
+                for (const name of losers) {
+                    const golfer = scorecards.find(g => g.name === name);
+                    const h = golfer.holes[holeIndex];
+                    h.plusMinus = (h.plusMinus || 0) - perLoser;
+                }
+            }
+        }
+    }
+
+    if (sweepValue > 0 && matches.every(m => m.active === false)) {
+        const sweepCounts = [0, 0];
+
+        for (const match of matches) {
+            if (match.winner === null) {
+                sweepCounts[0] += 1;
+                sweepCounts[1] += 1;
+            } else {
+                sweepCounts[match.winner] += 1;
+            }
+        }
+
+        // A team was swept if they never won or tied any match
+        const sweptTeam = sweepCounts[0] === 0 ? 0 : sweepCounts[1] === 0 ? 1 : null;
+        if (sweptTeam !== null) {
+            const losers = teams[sweptTeam];
+            const winners = teams[1 - sweptTeam];
+
+            for (const name of losers) {
+                const golfer = scorecards.find(g => g.name === name);
+                const lastHole = [...golfer.holes].reverse().find(h => h.score > 0);
+                if (lastHole) lastHole.plusMinus = (lastHole.plusMinus || 0) - sweepValue;
+            }
+
+            const perWinnerBonus = Math.round((sweepValue * losers.length / winners.length) * 100) / 100;
+            for (const name of winners) {
+                const golfer = scorecards.find(g => g.name === name);
+                const lastHole = [...golfer.holes].reverse().find(h => h.score > 0);
+                if (lastHole) lastHole.plusMinus = (lastHole.plusMinus || 0) + perWinnerBonus;
+            }
+        }
+    }
+
+    return scorecards;
+}
+
 module.exports = {
     scotch,
     junk,
@@ -1331,5 +1686,6 @@ module.exports = {
     wolf,
     leftRight,
     ninePoint,
-    banker
+    banker,
+    universalMatchScorer
 }
