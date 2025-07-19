@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig } = require("./games/config");
-const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker } = require("./games/scoring")
+const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -614,15 +614,6 @@ router.post("/create", authenticateUser, async (req, res) => {
                         }
                     }
                 }
-
-                if (config.crybaby) {
-                    questions.push({
-                        question: `Did the bet change? If so, enter the new dollar value:`,
-                        answers: [""],
-                        numberOfAnswers: 1,
-                        holes: `${config.crybabyHole || 16}+`
-                    })
-                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -911,6 +902,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 scores,
                 answers
             )
+        } else if (["standard match play", "standard stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
+            scorecards = universalMatchScorer(
+                scorecards, 
+                scores,
+                config, 
+                answers
+            );
         }
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
