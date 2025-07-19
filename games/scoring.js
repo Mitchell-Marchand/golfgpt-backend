@@ -1561,7 +1561,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
 
                 const alreadyExists = allMatches.some(p =>
                     p.startingHole === press.startingHole &&
-                    p.endingHole === press.endingHole &&
                     p.value === press.value &&
                     !p.original
                 );
@@ -1727,8 +1726,6 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
     const teamsArrays = teams.map(team => team.split(' & '));
     let firstTeamPoints = 0;
     let holesRemaining = endingHole - startingHole + 1;
-
-    console.log(JSON.stringify(teamsArrays))
 
     for (let i = startingHole; i <= endingHole; i++) {
         const firstTeamScores = [];
