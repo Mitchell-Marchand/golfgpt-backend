@@ -1536,8 +1536,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     const allMatches = [...matches];
     let foundNewPress = true;
 
-    console.log("matches length", allMatches.length);
-
     while (!foundNewPress) {
         foundNewPress = false;
 
@@ -1552,7 +1550,8 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             );
 
             //Determine any auto presses
-            if (autoPresses && Math.abs(firstTeamDown) === autoPressTrigger) {
+            console.log("autoPressTrigger", autoPressTrigger)
+            if (type=== "match" && autoPresses && Math.abs(firstTeamDown) >= autoPressTrigger) {
                 const press = {
                     active: true,
                     startingHole: holeNumber,
@@ -1591,6 +1590,8 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     let carryoverValue = 0;
     let firstTeamGotSwept = true;
     let firstTeamSwept = true;
+
+    console.log("matches length", allMatches.length);
 
     for (let i = 0; i < allMatches.length; i++) {
         const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
