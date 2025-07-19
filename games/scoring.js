@@ -1605,10 +1605,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
         console.log("Match", JSON.stringify(allMatches[i], null, 2));
         console.log(`First team: Up ${firstTeamDown} with ${holesRemaining} to go`);
 
-        if (holesRemaining === allMatches[i].endingHole - allMatches[i].startingHole + 1) {
-            firstTeamGotSwept = false;
-            firstTeamSwept = false;
-        } else if ((type === "match" && Math.abs(firstTeamDown) >= holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
+        if ((type === "match" && Math.abs(firstTeamDown) >= holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
             if (firstTeamDown >= 0) {
                 if (allMatches[i].original) {
                     firstTeamGotSwept = false;
@@ -1671,6 +1668,9 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     carryoverValue = 0;
                 }
             }
+        } else if (allMatches[i].original) {
+            firstTeamGotSwept = false;
+            firstTeamSwept = false;
         }
     }
 
