@@ -1608,7 +1608,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
         if (holesRemaining === allMatches[i].endingHole - allMatches[i].startingHole + 1) {
             firstTeamGotSwept = false;
             firstTeamSwept = false;
-        } else if ((type === "match" && Math.abs(firstTeamDown) > holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
+        } else if ((type === "match" && Math.abs(firstTeamDown) >= holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
             if (firstTeamDown >= 0) {
                 if (allMatches[i].original) {
                     firstTeamGotSwept = false;
