@@ -1458,8 +1458,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
 
-            console.log("i = 0 until i <", scorecards[0].holes.length % 3)
-            for (let i = 0; i < scorecards[0].holes.length % 3; i++) {
+            console.log("i = 0 until i <", Math.floor(scorecards[0].holes.length / 3))
+            for (let i = 0; i < Math.floor(scorecards[0].holes.length / 3); i++) {
                 allMatches.push({
                     active: true,
                     startingHole: (i * 3) + 1,
