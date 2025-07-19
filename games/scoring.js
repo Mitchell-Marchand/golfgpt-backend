@@ -1536,6 +1536,8 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     const allMatches = [...matches];
     let foundNewPress = true;
 
+    console.log("matches length", allMatches.length);
+
     while (!foundNewPress) {
         foundNewPress = false;
 
