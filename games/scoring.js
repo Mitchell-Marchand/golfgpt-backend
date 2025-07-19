@@ -1596,7 +1596,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     let firstTeamGotSwept = true;
     let firstTeamSwept = true;
 
-    console.log("matches length", allMatches.length);
+    //console.log("matches length", allMatches.length);
 
     for (let i = 0; i < allMatches.length; i++) {
         const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
@@ -1608,8 +1608,8 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             combinedScore
         );
 
-        console.log("Match", JSON.stringify(allMatches[i], null, 2));
-        console.log(`First team: Up ${firstTeamDown} with ${holesRemaining} to go`);
+        //console.log("Match", JSON.stringify(allMatches[i], null, 2));
+        //console.log(`First team: Up ${firstTeamDown} with ${holesRemaining} to go`);
 
         if ((type === "match" && Math.abs(firstTeamDown) >= holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
             if (firstTeamDown >= 0) {
