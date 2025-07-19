@@ -1570,7 +1570,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     //Loop through answers to see which holes there were presses on
     for (let i = 0; i < answers.length; i++) {
         const holeNumber = answers[i].hole;
-        const questions = answers[i].questions;
+        const questions = answers[i].answers;
         for (let j = 0; j < questions.length; j++) {
             if (questions[j].question.includes("start a new press") && questions[j].answers.includes("Yes")) {
                 allMatches.push({
