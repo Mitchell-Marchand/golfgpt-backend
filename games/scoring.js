@@ -1507,7 +1507,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             }
         }
 
-        scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
+        scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue, teamsChangeEveryThree, teamsChangeEverySix);
     }
 
     if (extraBirdieValue > 0 || extraEagleValue > 0) {
@@ -1571,7 +1571,7 @@ function findTeamFromTeams(name, teams) {
     return [name];
 }
 
-function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue) {
+function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue, teamsChangeEveryThree, teamsChangeEverySix) {
     const allMatches = [...matches];
     let foundNewPress = true;
 
