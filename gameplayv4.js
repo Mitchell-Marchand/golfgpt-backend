@@ -587,19 +587,19 @@ router.post("/create", authenticateUser, async (req, res) => {
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
 
-                if (config.teamsChangeEverySix) {
-                    questions.push({
-                        question: `Select the golfers on one team for this six hole match:`,
-                        answers: golfers,
-                        numberOfAnswers: golfers.length,
-                        holes: "1,7,13"
-                    })
-                } else if (config.teamsChangeEverySix) {
+                if (config.teamsChangeEveryThree) {
                     questions.push({
                         question: `Select the golfers on one team for this three hole match:`,
                         answers: golfers,
                         numberOfAnswers: golfers.length,
                         holes: "1,4,7"
+                    })
+                } else if (config.teamsChangeEverySix) {
+                    questions.push({
+                        question: `Select the golfers on one team for this six hole match:`,
+                        answers: golfers,
+                        numberOfAnswers: golfers.length,
+                        holes: "1,7,13"
                     })
                 }
 

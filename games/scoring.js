@@ -1375,6 +1375,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         threeThreeThreeOverallValue = 0,
         sweepValue = 0,
         onlyGrossBirdies = false,
+        teamsChangeEverySix = false,
+        teamsChangeEveryThree = false
     } = config;
 
     for (const golfer of scorecards) {
@@ -1405,7 +1407,9 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 carryovers,
                 birdiesDoubleCarryovers,
                 onlyGrossBirdies,
-                combinedScore
+                combinedScore,
+                teamsChangeEverySix,
+                teamsChangeEveryThree
             }, answers);
         } else if (type === "stroke" && perStrokeValue > 0) {
             //Tally up the plusMinus based on their score relative to eachother each hole and the perStrokeValue
