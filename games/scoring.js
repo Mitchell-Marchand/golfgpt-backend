@@ -1717,6 +1717,9 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
     const firstTeamPoints = 0;
     const holesRemaining = endingHole - startingHole;
 
+    console.log(JSON.stringify(teamsArrays))
+    console.log("starting hole, ending hole", startingHole, endingHole);
+
     for (let i = startingHole; i < endingHole; i++) {
         const firstTeamScores = [];
         const secondTeamScores = [];
@@ -1735,8 +1738,14 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
             }
         }
 
+        console.log("first team scores", JSON.stringify(firstTeamScores));
+        console.log("second team scores", JSON.stringify(firstTeamScores));
+
         let firstTeamScore = combinedScore ? Math.sum(firstTeamScores) : Math.min(firstTeamScores);
         let secondTeamScore = combinedScore ? Math.sum(secondTeamScores) : Math.min(secondTeamScores);
+
+        console.log("first team score", firstTeamScore);
+        console.log("second team score", secondTeamScore);
 
         if (firstTeamScore < secondTeamScore) {
             type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
