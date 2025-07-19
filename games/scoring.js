@@ -1370,6 +1370,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             hole.points = 0;
         }
     }
+    
+    console.log("cleaned scorecard", JSON.stringify(scorecards, null, 2))
 
     for (const score of scores) {
         const player = scorecards.find(g => g.name === score.name);
