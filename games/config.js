@@ -189,9 +189,9 @@ const universalConfig = `{
     threeThreeThreeOverallValue //number (default 0) if the user is playing three 3 hole matches and there is an additional match for the overall, this is the dollar value
     sweepValue //number (default 0) the amount a team gets if they sweep, or win all of the matches/points in the match
     onlyGrossBirdies //true or false (default is false) whether or not only gross birdies or eagles are worth anything extra
+    teamsChangeEverySix //true or false (default is false) whether or not teams change every 6 holes
+    teamsChangeEveryThree //true or false (default is false) whether or not teams change every 3 holes
 }`
-
-//NOTE: Things to add each prompt: autopress (x down), birdies (outside scope of game context)
 
 module.exports = {
     scotchConfig,

@@ -982,13 +982,16 @@ function leftRight(scorecards, scores, config, answers) {
         autoDoubleStays = false,
         onlyGrossBirdies = false,
         soloMultiple = 2,
-        combinedScore = false
+        combinedScore = false,
+        teamsChangeEverySix = false,
+        teamsChangeEveryThree = false
     } = config;
 
     const golfers = scorecards.map(g => g.name);
     let carryoverPoints = 0;
     let isDoubled = false;
     let doubledFromMoney = false;
+    let mostRecentTeam = false;
 
     // Record scores
     for (const s of scores) {
@@ -1014,7 +1017,16 @@ function leftRight(scorecards, scores, config, answers) {
 
         // Get teams
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
-        const teamsWithAnds = permanentTeams || getTeamsFromAnswers(holeAnswers, golfers);
+        let teamsWithAnds = permanentTeams || getTeamsFromAnswers(holeAnswers, golfers);
+
+        if (teamsChangeEverySix || teamsChangeEveryThree) {
+            if ((teams.length < 2 || teams[0][0] === "" || teams[1][0] === "") && mostRecentTeam) {
+                teamsWithAnds = mostRecentTeam;
+            } else {
+                mostRecentTeam = teamsWithAnds;
+            }
+        }
+
         let teams = teamsWithAnds.map(team => team.split(' & '));
         let everyManForOne = 1;
 
