@@ -1539,7 +1539,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     while (foundNewPress) {
         foundNewPress = false;
 
-        for (let j = matches.length - 1; j >= 0; j--) {
+        for (let j = allMatches.length - 1; j >= 0; j--) {
             const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
                 teams,
                 scorecards,
@@ -1559,7 +1559,14 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     original: false
                 };
 
-                if (!allMatches.includes(press)) {
+                const alreadyExists = allMatches.some(p =>
+                    p.startingHole === press.startingHole &&
+                    p.endingHole === press.endingHole &&
+                    p.value === press.value &&
+                    !p.original
+                );
+
+                if (!alreadyExists) {
                     allMatches.push(press)
                     foundNewPress = true;
                 }
