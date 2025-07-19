@@ -1468,9 +1468,11 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             }
         }
 
+        console.log("before matches scorecard", JSON.stringify(scorecards[0], null, 2))
+
         scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
 
-        console.log("after matches scorecard", JSON.stringify(scorecards, null, 2))
+        console.log("after matches scorecard", JSON.stringify(scorecards[0], null, 2))
 
         if (extraBirdieValue > 0 || extraEagleValue > 0) {
             for (let i = 0; i < scorecards[0].holes.length; i++) {
