@@ -1447,6 +1447,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
         } else if (threeThreeThree) {
+            console.log("in 333")
             if (threeThreeThreeOverallValue > 0) {
                 allMatches.push({
                     active: true,
@@ -1457,6 +1458,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
 
+            console.log("i = 0 until i <", scorecards[0].holes.length % 3)
             for (let i = 0; i < scorecards[0].holes.length % 3; i++) {
                 allMatches.push({
                     active: true,
