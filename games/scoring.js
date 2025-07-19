@@ -1617,8 +1617,9 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     const teamPot = (allMatches[i].value + (carryovers && allMatches[i].original ? carryoverValue : 0)) * largerTeam;
 
                     for (let j = 0; j < scorecards.length; j++) {
+                        const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
+
                         if (teamsArrays[0].includes(scorecards[j].name)) {
-                            const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
                             hole.plusMinus += teamPot / teamsArrays[0].length;
                         } else {
                             hole.plusMinus -= teamPot / teamsArrays[1].length;
@@ -1646,8 +1647,9 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 const teamPot = (allMatches[i].value + (carryovers && allMatches[i].original ? carryoverValue : 0)) * largerTeam;
 
                 for (let j = 0; j < scorecards.length; j++) {
+                    const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
+
                     if (teamsArrays[0].includes(scorecards[j].name)) {
-                        const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
                         hole.plusMinus += teamPot / teamsArrays[0].length;
                     } else {
                         hole.plusMinus -= teamPot / teamsArrays[1].length;
@@ -1673,8 +1675,9 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             const teamPot = sweepValue * largerTeam;
 
             for (let j = 0; j < scorecards.length; j++) {
+                const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
+
                 if (teamsArrays[0].includes(scorecards[j].name)) {
-                    const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
                     hole.plusMinus -= teamPot / teamsArrays[0].length;
                 } else {
                     hole.plusMinus += teamPot / teamsArrays[1].length;
@@ -1690,8 +1693,9 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             const teamPot = sweepValue * largerTeam;
 
             for (let j = 0; j < scorecards.length; j++) {
+                const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
+
                 if (teamsArrays[0].includes(scorecards[j].name)) {
-                    const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
                     hole.plusMinus += teamPot / teamsArrays[0].length;
                 } else {
                     hole.plusMinus -= teamPot / teamsArrays[1].length;
