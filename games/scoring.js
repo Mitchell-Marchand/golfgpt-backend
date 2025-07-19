@@ -1480,26 +1480,24 @@ function universalMatchScorer(scorecards, scores, config, answers) {
 
                     const scorerName = scorer.name;
                     const scorerTeam = findTeamFromTeams(scorerName, teams);
-
+                    const teammates = scorerTeam; // includes scorer
                     const nonTeammates = scorecards
                         .map(p => p.name)
                         .filter(name => !scorerTeam.includes(name));
 
-                    const totalBonus = bonusValue * nonTeammates.length;
-                    const splitAmount = Math.round((totalBonus / scorerTeam.length) * 100) / 100;
+                    const totalPot = bonusValue * nonTeammates.length;
+                    const payoutPerTeammate = Math.round((totalPot / teammates.length) * 100) / 100;
 
-                    console.log(totalBonus, splitAmount)
-
-                    // Give split to each teammate (including scorer)
-                    for (const name of scorerTeam) {
+                    // Award to each teammate
+                    for (const name of teammates) {
                         const player = scorecards.find(p => p.name === name);
                         const playerHole = player?.holes?.[holeIndex];
                         if (playerHole) {
-                            playerHole.plusMinus = (playerHole.plusMinus || 0) + splitAmount;
+                            playerHole.plusMinus = (playerHole.plusMinus || 0) + payoutPerTeammate;
                         }
                     }
 
-                    // Charge non-teammates
+                    // Deduct from each non-teammate
                     for (const name of nonTeammates) {
                         const player = scorecards.find(p => p.name === name);
                         const playerHole = player?.holes?.[holeIndex];
