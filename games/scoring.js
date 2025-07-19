@@ -1015,7 +1015,6 @@ function leftRight(scorecards, scores, config, answers) {
         // Get teams
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
         const teamsWithAnds = permanentTeams || getTeamsFromAnswers(holeAnswers, golfers);
-        console.log("TEAMS", teamsWithAnds)
         let teams = teamsWithAnds.map(team => team.split(' & '));
         let everyManForOne = 1;
 
@@ -1493,51 +1492,51 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         }
 
         scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
+    }
 
-        if (extraBirdieValue > 0 || extraEagleValue > 0) {
-            for (let i = 0; i < scorecards[0].holes.length; i++) {
-                const holeIndex = i;
+    if (extraBirdieValue > 0 || extraEagleValue > 0) {
+        for (let i = 0; i < scorecards[0].holes.length; i++) {
+            const holeIndex = i;
 
-                for (const scorer of scorecards) {
-                    const hole = scorer.holes[holeIndex];
-                    if (!hole || hole.score <= 0 || hole.par <= 0) continue;
+            for (const scorer of scorecards) {
+                const hole = scorer.holes[holeIndex];
+                if (!hole || hole.score <= 0 || hole.par <= 0) continue;
 
-                    const strokes = hole.score;
-                    const par = hole.par;
-                    const diff = par - strokes;
+                const strokes = hole.score;
+                const par = hole.par;
+                const diff = par - strokes;
 
-                    let bonusValue = 0;
-                    if (diff === 1) bonusValue = extraBirdieValue;
-                    else if (diff >= 2) bonusValue = extraEagleValue;
+                let bonusValue = 0;
+                if (diff === 1) bonusValue = extraBirdieValue;
+                else if (diff >= 2) bonusValue = extraEagleValue;
 
-                    if (bonusValue <= 0) continue;
+                if (bonusValue <= 0) continue;
 
-                    const scorerName = scorer.name;
-                    const scorerTeam = extraBirdieTeam ? findTeamFromTeams(scorerName, teams) : [scorerName];
-                    const teammates = scorerTeam; // includes scorer
-                    const nonTeammates = scorecards
-                        .map(p => p.name)
-                        .filter(name => !scorerTeam.includes(name));
+                const scorerName = scorer.name;
+                const scorerTeam = extraBirdieTeam ? findTeamFromTeams(scorerName, teams) : [scorerName];
+                const teammates = scorerTeam; // includes scorer
+                const nonTeammates = scorecards
+                    .map(p => p.name)
+                    .filter(name => !scorerTeam.includes(name));
 
-                    const totalPot = bonusValue * nonTeammates.length;
-                    const payoutPerTeammate = Math.round((totalPot / teammates.length) * 100) / 100;
+                const totalPot = bonusValue * nonTeammates.length;
+                const payoutPerTeammate = Math.round((totalPot / teammates.length) * 100) / 100;
 
-                    // Award to each teammate
-                    for (const name of teammates) {
-                        const player = scorecards.find(p => p.name === name);
-                        const playerHole = player?.holes?.[holeIndex];
-                        if (playerHole) {
-                            playerHole.plusMinus = (playerHole.plusMinus || 0) + payoutPerTeammate;
-                        }
+                // Award to each teammate
+                for (const name of teammates) {
+                    const player = scorecards.find(p => p.name === name);
+                    const playerHole = player?.holes?.[holeIndex];
+                    if (playerHole) {
+                        playerHole.plusMinus = (playerHole.plusMinus || 0) + payoutPerTeammate;
                     }
+                }
 
-                    // Deduct from each non-teammate
-                    for (const name of nonTeammates) {
-                        const player = scorecards.find(p => p.name === name);
-                        const playerHole = player?.holes?.[holeIndex];
-                        if (playerHole) {
-                            playerHole.plusMinus = (playerHole.plusMinus || 0) - bonusValue;
-                        }
+                // Deduct from each non-teammate
+                for (const name of nonTeammates) {
+                    const player = scorecards.find(p => p.name === name);
+                    const playerHole = player?.holes?.[holeIndex];
+                    if (playerHole) {
+                        playerHole.plusMinus = (playerHole.plusMinus || 0) - bonusValue;
                     }
                 }
             }
