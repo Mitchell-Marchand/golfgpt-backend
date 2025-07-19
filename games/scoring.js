@@ -1563,7 +1563,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     p.startingHole === press.startingHole &&
                     p.endingHole === press.endingHole &&
                     p.value === press.value &&
-                    p.key !== press.key
+                    !p.original
                 );
 
                 if (!alreadyExists) {
