@@ -178,7 +178,6 @@ const universalConfig = `{
     eaglesMultiply //true or false (default false) whether or not eagles multiply the points for the hole. NOTE: something like 10/20/50 means $50 for a win with eagle, $20 with birdie, and $10 otherwise, so this would be true
     eaglesFactor //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that, while 5/10/50 would be 10 because the base value is 5 and 50 for eagle which is 10x that
     autoPresses //true or false (default false) whether or not "presses", or new matches, automatically start at any point
-    autoPressesReset //true or false (default false) whether or not presses reset after 9
     autoPressTrigger //number (default 2) how many holes/points a team has to down down by before another match or "press" automatically starts
     extraBirdieValue //number (default 0) dollar value for how much a birdie is worth in addition to the results of the match, i.e. "extra $10/man for birdies" would make this 10
     extraEagleValue //number (default 0) dollar value for how much an eagle is worth in addition to the results of the match, i.e. "extra $25/man for eagles" would make this 25
