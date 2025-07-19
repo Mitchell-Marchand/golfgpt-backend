@@ -1605,7 +1605,10 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
         console.log("Match", JSON.stringify(allMatches[i], null, 2));
         console.log(`First team: Up ${firstTeamDown} with ${holesRemaining} to go`);
 
-        if ((type === "match" && Math.abs(firstTeamDown) > holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
+        if (holesRemaining === allMatches[i].endingHole - allMatches[i].startingHole + 1) {
+            firstTeamGotSwept = false;
+            firstTeamSwept = false;
+        } else if ((type === "match" && Math.abs(firstTeamDown) > holesRemaining) || (type === "stroke" && holesRemaining === 0)) {
             if (firstTeamDown >= 0) {
                 if (allMatches[i].original) {
                     firstTeamGotSwept = false;
@@ -1671,6 +1674,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     //Use original to determine sweep
     if (sweepValue > 0) {
         if (firstTeamGotSwept) {
+            console.log("firstTeamGotSwept?");
             const holeEnded = scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber;
             let largerTeam = teamsArrays[0].length;
             if (teamsArrays[1].length > teamsArrays[0].length) {
