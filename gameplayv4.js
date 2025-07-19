@@ -272,7 +272,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                 },
                 {
                     role: "user",
-                    content: `Return which type of golf match I am playing from the following options: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
+                    content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "match play" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
                 }
             ],
             temperature: 0.0
