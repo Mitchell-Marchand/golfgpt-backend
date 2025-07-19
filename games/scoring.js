@@ -1636,7 +1636,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                         } else {
                             hole.plusMinus -= teamPot / teamsArrays[1].length;
                         }
-                        console.log("adjusting plusMinus 1");
                     }
 
                     if (allMatches[i].original) {
@@ -1668,7 +1667,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                         hole.plusMinus += teamPot / teamsArrays[1].length;
                     }
 
-                    console.log("adjusting plusMinus 2");
                 }
 
                 if (allMatches[i].original) {
@@ -1684,7 +1682,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     //Use original to determine sweep
     if (sweepValue > 0) {
         if (firstTeamGotSwept) {
-            console.log("firstTeamGotSwept?");
             const holeEnded = scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber;
             let largerTeam = teamsArrays[0].length;
             if (teamsArrays[1].length > teamsArrays[0].length) {
@@ -1703,7 +1700,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 }
             }
         } else if (firstTeamSwept) {
-            console.log("firstTeamSwept?");
             const holeEnded = scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber;
             let largerTeam = teamsArrays[0].length;
             if (teamsArrays[1].length > teamsArrays[0].length) {
@@ -1733,7 +1729,6 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
     let holesRemaining = endingHole - startingHole + 1;
 
     console.log(JSON.stringify(teamsArrays))
-    console.log("starting hole, ending hole", startingHole, endingHole);
 
     for (let i = startingHole; i <= endingHole; i++) {
         const firstTeamScores = [];
@@ -1759,14 +1754,8 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
             holesRemaining--;
         }
 
-        console.log("first team scores", JSON.stringify(firstTeamScores));
-        console.log("second team scores", JSON.stringify(secondTeamScores));
-
         let firstTeamScore = combinedScore ? Math.sum(...firstTeamScores) : Math.min(...firstTeamScores);
         let secondTeamScore = combinedScore ? Math.sum(...secondTeamScores) : Math.min(...secondTeamScores);
-
-        console.log("first team score", firstTeamScore);
-        console.log("second team score", secondTeamScore);
 
         if (firstTeamScore < secondTeamScore) {
             type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
@@ -1774,8 +1763,6 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
             type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
         }
     }
-
-    console.log("first team points", firstTeamPoints);
 
     return { firstTeamDown: firstTeamPoints, holesRemaining }
 }
