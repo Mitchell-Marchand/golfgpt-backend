@@ -1486,21 +1486,25 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     );
 
                     const totalBonus = bonusValue * eligibleLosers.length;
-                    const splitAmount = extraBirdieTeam && partnerName
-                        ? Math.round((totalBonus / 2) * 100) / 100
-                        : totalBonus;
 
-                    // Award to scorer
-                    hole.plusMinus = (hole.plusMinus || 0) + splitAmount;
-
-                    // If team payout, split with partner
                     if (extraBirdieTeam && partnerName) {
+                        const split = Math.round((totalBonus / 2) * 100) / 100;
+
+                        // Scorer gets half
+                        hole.plusMinus = (hole.plusMinus || 0) + split;
+
+                        // Partner gets half
                         const partnerCard = scorecards.find(p => p.name === partnerName);
                         const partnerHole = partnerCard?.holes?.[holeIndex];
-                        if (partnerHole) partnerHole.plusMinus = (partnerHole.plusMinus || 0) + splitAmount;
+                        if (partnerHole) {
+                            partnerHole.plusMinus = (partnerHole.plusMinus || 0) + split;
+                        }
+                    } else {
+                        // Scorer gets full bonus
+                        hole.plusMinus = (hole.plusMinus || 0) + totalBonus;
                     }
 
-                    // Charge all other eligible golfers
+                    // Others pay
                     for (const opponent of eligibleLosers) {
                         const opponentHole = opponent.holes[holeIndex];
                         opponentHole.plusMinus = (opponentHole.plusMinus || 0) - bonusValue;
