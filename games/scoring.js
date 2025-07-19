@@ -1658,7 +1658,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
 
                 if (firstTeamDown > 0) {
                     //First team wins the hole
-                    const holeEnded = allMatches[i].endingHole - firstTeamDown + 1;
+                    const holeEnded = allMatches[i].endingHole - firstTeamDown;
                     let largerTeam = teamsArrays[0].length;
                     if (teamsArrays[1].length > teamsArrays[0].length) {
                         largerTeam = teamsArrays[1].length;
@@ -1688,7 +1688,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 }
 
                 //First team loses the hole
-                const holeEnded = allMatches[i].endingHole - holesRemaining;
+                const holeEnded = allMatches[i].endingHole - firstTeamDown;
                 let largerTeam = teamsArrays[0].length;
                 if (teamsArrays[1].length > teamsArrays[0].length) {
                     largerTeam = teamsArrays[1].length;
