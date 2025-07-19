@@ -166,7 +166,7 @@ const universalConfig = `{
     teams //an array consisting of the teams, always with each team as one string with player names separared by '&', e.g. ["Player A & Player B", "Player C & "Player D"]. ONLY use the exact names of the golfers provided. If no teams are provided, generate them yourself with the available names. Do NOT ever use "Me" -> only use the EXACT golfer names provided. If no teams are provided, the every golfer is on their own team, , e.g. ["Player A", "Player B", "Player C", "Player D"].
     type //string of either "match" or "stroke" (default "match") for match or stroke play
     perHoleOrMatch //string of either "hole" or "match" (default "match") for whether or not the bet is per hole or match play
-    perHoleValue //number (default 1) dollar value per hole if perHoleOrMatch is "hole"
+    perHoleValue //number (default 0) dollar value per hole if perHoleOrMatch is "hole"
     perMatchValue //number (default 10) dollar value per match if perHoleOrMatch is "match"
     perStrokeValue //number (default 0) dollar value per stroke that is paid for losing a hole/match
     carryovers //true or false (default false) whether or not money from tied holes or matches carrys over to the next
