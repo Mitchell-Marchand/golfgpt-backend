@@ -1741,8 +1741,8 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         console.log("first team scores", JSON.stringify(firstTeamScores));
         console.log("second team scores", JSON.stringify(firstTeamScores));
 
-        let firstTeamScore = combinedScore ? Math.sum(firstTeamScores) : Math.min(firstTeamScores);
-        let secondTeamScore = combinedScore ? Math.sum(secondTeamScores) : Math.min(secondTeamScores);
+        let firstTeamScore = combinedScore ? Math.sum(...firstTeamScores) : Math.min(...firstTeamScores);
+        let secondTeamScore = combinedScore ? Math.sum(...secondTeamScores) : Math.min(...secondTeamScores);
 
         console.log("first team score", firstTeamScore);
         console.log("second team score", secondTeamScore);
