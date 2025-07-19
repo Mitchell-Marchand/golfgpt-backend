@@ -1437,7 +1437,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 })
             }
 
-            for (let i = 0; i <  Math.floor(scorecards[0].holes.length / 6); i++) {
+            for (let i = 0; i < Math.floor(scorecards[0].holes.length / 6); i++) {
                 allMatches.push({
                     active: true,
                     startingHole: (i * 6) + 1,
@@ -1747,12 +1747,14 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         console.log("first team score", firstTeamScore);
         console.log("second team score", secondTeamScore);
 
-        if (firstTeamScore < secondTeamScore) {
-            type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
-            holesRemaining--;
-        } else if (firstTeamScore > secondTeamScore) {
-            type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
-            holesRemaining--;
+        if (!firstTeamScores.includes(0) && !secondTeamScores.includes(0)) {
+            if (firstTeamScore < secondTeamScore) {
+                type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
+                holesRemaining--;
+            } else if (firstTeamScore > secondTeamScore) {
+                type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
+                holesRemaining--;
+            }
         }
     }
 
