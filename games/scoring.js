@@ -1655,9 +1655,9 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     const hole = scorecards[j].holes.find(h => h.holeNumber === holeEnded);
 
                     if (teamsArrays[0].includes(scorecards[j].name)) {
-                        hole.plusMinus += teamPot / teamsArrays[0].length;
+                        hole.plusMinus -= teamPot / teamsArrays[0].length;
                     } else {
-                        hole.plusMinus -= teamPot / teamsArrays[1].length;
+                        hole.plusMinus += teamPot / teamsArrays[1].length;
                     }
                 }
 
