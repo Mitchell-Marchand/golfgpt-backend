@@ -1015,7 +1015,7 @@ function leftRight(scorecards, scores, config, answers) {
         // Get teams
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
         const teamsWithAnds = permanentTeams || getTeamsFromAnswers(holeAnswers, golfers);
-        console.log("TEAMS", permanentTeams)
+        console.log("TEAMS", teamsWithAnds)
         let teams = teamsWithAnds.map(team => team.split(' & '));
         let everyManForOne = 1;
 
@@ -1386,7 +1386,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         //Score just like a leftRight or whatever
         if (teams.length === 2) {
             scorecards = leftRight(scorecards, scores, {
-                permanentTeam: teams,
+                permanentTeams: teams,
                 holeValue: perHoleValue,
                 birdiesDouble,
                 eaglesMultiply,
