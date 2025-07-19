@@ -1720,7 +1720,7 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
     console.log(JSON.stringify(teamsArrays))
     console.log("starting hole, ending hole", startingHole, endingHole);
 
-    for (let i = startingHole; i < endingHole; i++) {
+    for (let i = startingHole; i <= endingHole; i++) {
         const firstTeamScores = [];
         const secondTeamScores = [];
 
