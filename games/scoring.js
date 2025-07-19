@@ -1579,6 +1579,14 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
         foundNewPress = false;
 
         for (let j = allMatches.length - 1; j >= 0; j--) {
+            if (teamsChangeEveryThree || teamsChangeEverySix) {
+                //Get teams somehow
+                const differentTeams = getTeamsFromAnswers(answers.find(h => h.hole === allMatches[i].startingHole).answers, teams.map(team => team.split(' & ')).flat());
+                if (differentTeams.length === 2) {
+                    teams = [...differentTeams];
+                }
+            }
+
             const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
                 teams,
                 scorecards,
@@ -1639,7 +1647,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     for (let i = 0; i < allMatches.length; i++) {
         if (teamsChangeEveryThree || teamsChangeEverySix) {
             //Get teams somehow
-            const differentTeams = getTeamsFromAnswers(answers.find(h => h.hole === allMatches[i].startingHole).answers, golfers);
+            const differentTeams = getTeamsFromAnswers(answers.find(h => h.hole === allMatches[i].startingHole).answers, teams.map(team => team.split(' & ')).flat());
             if (differentTeams.length === 2) {
                 teams = [...differentTeams];
             }
