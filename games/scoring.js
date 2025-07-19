@@ -1395,7 +1395,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         }
     }
 
-    if (perHoleOrMatch === "hole" || teams.length !== 2) {
+    if (perHoleOrMatch === "hole" || (teams.length !== 2 && !teamsChangeEveryThree && !teamsChangeEverySix)) {
         //Score just like a leftRight or whatever
         if (teams.length === 2) {
             scorecards = leftRight(scorecards, scores, {
