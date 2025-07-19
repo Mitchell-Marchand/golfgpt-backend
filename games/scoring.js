@@ -1632,6 +1632,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                         } else {
                             hole.plusMinus -= teamPot / teamsArrays[1].length;
                         }
+                        console.log("adjusting plusMinus 1");
                     }
 
                     if (allMatches[i].original) {
@@ -1662,6 +1663,8 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     } else {
                         hole.plusMinus += teamPot / teamsArrays[1].length;
                     }
+
+                    console.log("adjusting plusMinus 2");
                 }
 
                 if (allMatches[i].original) {
