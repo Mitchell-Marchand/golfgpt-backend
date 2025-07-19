@@ -1370,8 +1370,6 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             hole.points = 0;
         }
     }
-    
-    console.log("cleaned scorecard", JSON.stringify(scorecards, null, 2))
 
     for (const score of scores) {
         const player = scorecards.find(g => g.name === score.name);
@@ -1471,6 +1469,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         }
 
         scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
+
+        console.log("after matches scorecard", JSON.stringify(scorecards, null, 2))
 
         if (extraBirdieValue > 0 || extraEagleValue > 0) {
             for (let i = 0; i < scorecards[0].holes.length; i++) {
