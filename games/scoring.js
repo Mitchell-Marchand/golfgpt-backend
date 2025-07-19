@@ -1738,7 +1738,7 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         }
     }
 
-    return { firstTeamDown, holesRemaining }
+    return { firstTeamDown: firstTeamPoints, holesRemaining }
 }
 
 module.exports = {
