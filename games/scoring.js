@@ -1738,23 +1738,25 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
             }
         }
 
-        console.log("first team scores", JSON.stringify(firstTeamScores));
-        console.log("second team scores", JSON.stringify(firstTeamScores));
+        if (firstTeamScores.length === 0 || secondTeamScores.length === 0) {
+            continue;
+        }
 
-        let firstTeamScore = combinedScore ? Math.sum(...firstTeamScores) : Math.min(...firstTeamScores) || 0;
-        let secondTeamScore = combinedScore ? Math.sum(...secondTeamScores) : Math.min(...secondTeamScores) || 0;
+        console.log("first team scores", JSON.stringify(firstTeamScores));
+        console.log("second team scores", JSON.stringify(secondTeamScores));
+
+        let firstTeamScore = combinedScore ? Math.sum(...firstTeamScores) : Math.min(...firstTeamScores);
+        let secondTeamScore = combinedScore ? Math.sum(...secondTeamScores) : Math.min(...secondTeamScores);
 
         console.log("first team score", firstTeamScore);
         console.log("second team score", secondTeamScore);
 
-        if (!firstTeamScores.includes(0) && !secondTeamScores.includes(0)) {
-            if (firstTeamScore < secondTeamScore) {
-                type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
-                holesRemaining--;
-            } else if (firstTeamScore > secondTeamScore) {
-                type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
-                holesRemaining--;
-            }
+        if (firstTeamScore < secondTeamScore) {
+            type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
+            holesRemaining--;
+        } else if (firstTeamScore > secondTeamScore) {
+            type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
+            holesRemaining--;
         }
     }
 
