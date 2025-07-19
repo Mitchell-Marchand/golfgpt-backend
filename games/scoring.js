@@ -1585,7 +1585,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     }
 
     //Loop through all presses to determine winners and losers
-    const teamsArrays = teams.split(" & ").map(p => p.trim());
+    const teamsArrays = teams.map(team => team.split(' & '));
     let carryoverValue = 0;
     let firstTeamGotSwept = true;
     let firstTeamSwept = true;
@@ -1704,7 +1704,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
 }
 
 function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, type, combinedScore) {
-    const teamsArrays = teams.split(" & ").map(p => p.trim());
+    const teamsArrays = teams.map(team => team.split(' & '));
     const firstTeamPoints = 0;
     const holesRemaining = endingHole - startingHole;
 
