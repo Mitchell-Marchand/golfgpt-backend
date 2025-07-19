@@ -1468,7 +1468,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             }
         }
 
-        scorecards = trackMatchStatuses(scorecards, answers, teams, [...allMatches], perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
+        scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
 
         if (extraBirdieValue > 0 || extraEagleValue > 0) {
             for (let i = 0; i < scorecards[0].holes.length; i++) {
