@@ -1015,6 +1015,7 @@ function leftRight(scorecards, scores, config, answers) {
         // Get teams
         const holeAnswers = answers.find(h => h.hole === holeNumber)?.answers || [];
         const teamsWithAnds = permanentTeams || getTeamsFromAnswers(holeAnswers, golfers);
+        console.log("TEAMS", teamsWithAnds)
         let teams = teamsWithAnds.map(team => team.split(' & '));
         let everyManForOne = 1;
 
