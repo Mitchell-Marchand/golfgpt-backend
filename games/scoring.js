@@ -1658,7 +1658,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
 
                 if (firstTeamDown > 0) {
                     //First team wins the hole
-                    const holeEnded = allMatches[i].endingHole - firstTeamDown;
+                    const holeEnded = allMatches[i].endingHole - holesRemaining;
                     let largerTeam = teamsArrays[0].length;
                     if (teamsArrays[1].length > teamsArrays[0].length) {
                         largerTeam = teamsArrays[1].length;
@@ -1688,7 +1688,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 }
 
                 //First team loses the hole
-                const holeEnded = allMatches[i].endingHole - firstTeamDown;
+                const holeEnded = allMatches[i].endingHole - holesRemaining;
                 let largerTeam = teamsArrays[0].length;
                 if (teamsArrays[1].length > teamsArrays[0].length) {
                     largerTeam = teamsArrays[1].length;
@@ -1797,6 +1797,10 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
             type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
         } else if (firstTeamScore > secondTeamScore) {
             type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
+        }
+
+        if (type === "match" && Math.abs(firstTeamPoints) > holesRemaining) {
+            break;
         }
     }
 
