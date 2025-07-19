@@ -1414,8 +1414,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     const p2 = allGolfers[j];
                     const diff = (p1.hole.score - p1.hole.strokes || 0) - (p2.hole.score - p2.hole.strokes || 0);
                     if (diff > 0) {
-                        p1.hole.plusMinus = (p1.hole.plusMinus || 0) + diff * perStrokeValue;
-                        p2.hole.plusMinus = (p2.hole.plusMinus || 0) - diff * perStrokeValue;
+                        p1.hole.plusMinus = (p1.hole.plusMinus || 0) - diff * perStrokeValue;
+                        p2.hole.plusMinus = (p2.hole.plusMinus || 0) + diff * perStrokeValue;
                     }
                 }
             }
