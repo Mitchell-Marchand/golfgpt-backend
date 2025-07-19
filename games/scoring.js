@@ -1740,6 +1740,8 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
 
         if (firstTeamScores.length === 0 || secondTeamScores.length === 0) {
             continue;
+        } else {
+            holesRemaining--;
         }
 
         console.log("first team scores", JSON.stringify(firstTeamScores));
@@ -1753,10 +1755,8 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
 
         if (firstTeamScore < secondTeamScore) {
             type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
-            holesRemaining--;
         } else if (firstTeamScore > secondTeamScore) {
             type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
-            holesRemaining--;
         }
     }
 
