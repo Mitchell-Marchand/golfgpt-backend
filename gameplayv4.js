@@ -259,8 +259,8 @@ router.post("/create", authenticateUser, async (req, res) => {
         //Step 1: Determine game type
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
-            "middle-outside", "king of the hill", "standard match play", "bingo bango bongo", "standard stroke play",
-            "stableford", "stableford quota", "666", "nine point", "scramble", "shamble", "bramble", "chapman", "alt shot"
+            "middle-outside", "king of the hill", "match play", "bingo bango bongo", "stroke play",
+            "stableford", "stableford quota", "nine point", "scramble", "shamble", "bramble", "chapman", "alt shot"
         ];
 
         const gameType = await openai.chat.completions.create({
@@ -559,7 +559,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                     holes: "all"
                 })
             }
-        } else if (["standard match play", "standard stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(raw)) {
+        } else if (["match play", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(raw)) {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${universalConfig}`;
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
@@ -902,7 +902,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 scores,
                 answers
             )
-        } else if (["standard match play", "standard stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
+        } else if (["match play", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
             scorecards = universalMatchScorer(
                 scorecards, 
                 scores,
