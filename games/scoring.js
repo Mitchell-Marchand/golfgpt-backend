@@ -1412,7 +1412,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     if (i === j) continue;
                     const p1 = allGolfers[i];
                     const p2 = allGolfers[j];
-                    const diff = (p1.hole.score - p1.hole.strokes || 0) + (p2.hole.score - p2.hole.strokes || 0);
+                    const diff = (p1.hole.score - p1.hole.strokes || 0) - (p2.hole.score - p2.hole.strokes || 0);
                     if (diff > 0) {
                         p1.hole.plusMinus = (p1.hole.plusMinus || 0) + diff * perStrokeValue;
                         p2.hole.plusMinus = (p2.hole.plusMinus || 0) - diff * perStrokeValue;
