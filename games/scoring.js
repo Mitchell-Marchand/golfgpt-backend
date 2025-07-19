@@ -1556,14 +1556,15 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                     startingHole: allMatches[j].endingHole - holesRemaining,
                     endingHole: allMatches[j].endingHole,
                     value: matchValue,
-                    original: false
+                    original: false,
+                    key: `false${startingHole}`
                 };
 
                 const alreadyExists = allMatches.some(p =>
                     p.startingHole === press.startingHole &&
                     p.endingHole === press.endingHole &&
                     p.value === press.value &&
-                    !p.original
+                    p.key !== press.key
                 );
 
                 if (!alreadyExists) {
