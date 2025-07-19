@@ -1468,11 +1468,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             }
         }
 
-        console.log("before matches scorecard", JSON.stringify(scorecards[0], null, 2))
-
         scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue);
-
-        console.log("after matches scorecard", JSON.stringify(scorecards[0], null, 2))
 
         if (extraBirdieValue > 0 || extraEagleValue > 0) {
             for (let i = 0; i < scorecards[0].holes.length; i++) {
@@ -1700,6 +1696,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 }
             }
         } else if (firstTeamSwept) {
+            console.log("firstTeamSwept?");
             const holeEnded = scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber;
             let largerTeam = teamsArrays[0].length;
             if (teamsArrays[1].length > teamsArrays[0].length) {
