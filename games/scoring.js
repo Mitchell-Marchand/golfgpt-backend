@@ -1405,7 +1405,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             allMatches.push({
                 active: true,
                 startingHole: scorecards[0].holes[0].holeNumber,
-                endingHole: scorecards[0].holes[scorecards[0].holes.length - 1],
+                endingHole: scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber,
                 value: perMatchValue,
                 original: true
             })
@@ -1431,7 +1431,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 allMatches.push({
                     active: true,
                     startingHole: 1,
-                    endingHole: scorecards[0].holes[scorecards[0].holes.length - 1],
+                    endingHole: scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber,
                     value: sixSixSixOverallValue,
                     original: true
                 })
@@ -1451,7 +1451,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 allMatches.push({
                     active: true,
                     startingHole: 1,
-                    endingHole: scorecards[0].holes[scorecards[0].holes.length - 1],
+                    endingHole: scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber,
                     value: threeThreeThreeOverallValue,
                     original: true
                 })
@@ -1576,7 +1576,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 allMatches.push({
                     active: true,
                     startingHole: holeNumber,
-                    endingHole: answers[answers.length].holeNumber,
+                    endingHole: answers[answers.length - 1].hole,
                     value: matchValue,
                     original: false
                 })
