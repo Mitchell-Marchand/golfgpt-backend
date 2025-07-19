@@ -1365,14 +1365,19 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         onlyGrossBirdies = false,
     } = config;
 
+    for (const golfer of scorecards) {
+        for (const hole of golfer.holes) {
+            hole.plusMinus = 0;
+            hole.points = 0;
+        }
+    }
+
     for (const score of scores) {
         const player = scorecards.find(g => g.name === score.name);
         const hole = player?.holes.find(h => h.holeNumber === score.holeNumber);
         if (hole) {
             hole.score = score.score;
             hole.strokes = score.strokes || 0;
-            hole.plusMinus = 0;
-            hole.points = 0;
         }
     }
 
@@ -1479,7 +1484,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     if (bonusValue <= 0) continue;
 
                     const scorerName = scorer.name;
-                    const scorerTeam = findTeamFromTeams(scorerName, teams);
+                    const scorerTeam = extraBirdieTeam ? findTeamFromTeams(scorerName, teams) : [scorerName];
                     const teammates = scorerTeam; // includes scorer
                     const nonTeammates = scorecards
                         .map(p => p.name)
