@@ -1376,7 +1376,17 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         sweepValue = 0,
         onlyGrossBirdies = false,
         teamsChangeEverySix = false,
-        teamsChangeEveryThree = false
+        teamsChangeEveryThree = false,
+        stableford = false,
+        stablefordQuota = false,
+        stablefordPoints = {
+            double: 0,
+            bogey: 1,
+            par: 2,
+            birdie: 4,
+            eagle: 6,
+            albatross: 8
+        }
     } = config;
 
     for (const golfer of scorecards) {
@@ -1411,7 +1421,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                 teamsChangeEverySix,
                 teamsChangeEveryThree
             }, answers);
-        } else if (type === "stroke" && perStrokeValue > 0) {
+        } else if (!stableford && type === "stroke" && perStrokeValue > 0) {
             //Tally up the plusMinus based on their score relative to eachother each hole and the perStrokeValue
             const currentHole = scores[0]?.holeNumber;
             const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
@@ -1432,6 +1442,60 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     if (diff > 0) {
                         p1.hole.plusMinus = (p1.hole.plusMinus || 0) - diff * perStrokeValue;
                         p2.hole.plusMinus = (p2.hole.plusMinus || 0) + diff * perStrokeValue;
+                    }
+                }
+            }
+        } else if (stableford) {
+            //Stableford individual
+            //Set points based on scores
+            for (let j = 0; j < scorecards.length; j++) {
+                for (let i = 0; i < scorecards[j].holes[i]; i++) {
+                    const playerHole = scorecards[j].holes.find(h => h.holeNumber === i);
+                    const toPar = playerHole.score - playerHole.strokes - playerHole.par;
+
+                    if (playerHole.score > 0) {
+                        let points = stablefordPoints.par;
+                        if (toPar === -1) {
+                            points = stablefordPoints.birdie;
+                        } else if (toPar === -2) {
+                            points = stablefordPoints.eagle;
+                        } else if (toPar <= -3) {
+                            points = stablefordPoints.albatross;
+                        } else if (toPar === 1) {
+                            points = stablefordPoints.bogey;
+                        } else if (toPar >= 2) {
+                            points = stablefordPoints.double;
+                        }
+
+                        playerHole.points = points;
+                    }
+                }
+            }
+
+            if (stablefordQuota) {
+                //TODO: Everyone pay everyone on last hole relative to quota if all holes have been played
+                
+            } else {
+                const currentHole = scores[0]?.holeNumber;
+                const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
+                if (holeIndex === -1) return scorecards;
+
+                // Now handle plusMinus based on differences in points
+                const allGolfers = scorecards.map(g => ({
+                    name: g.name,
+                    hole: g.holes[holeIndex],
+                }));
+
+                for (let i = 0; i < allGolfers.length; i++) {
+                    for (let j = 0; j < allGolfers.length; j++) {
+                        if (i === j) continue;
+                        const p1 = allGolfers[i];
+                        const p2 = allGolfers[j];
+                        const diff = (p1.hole.points) - (p2.hole.points);
+                        if (diff > 0) {
+                            p1.hole.plusMinus = (p1.hole.plusMinus || 0) - diff * perStrokeValue;
+                            p2.hole.plusMinus = (p2.hole.plusMinus || 0) + diff * perStrokeValue;
+                        }
                     }
                 }
             }
@@ -1505,9 +1569,17 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                     original: true
                 })
             }
+        } else {
+            allMatches.push({
+                active: true,
+                startingHole: scorecards[0].holes[0].holeNumber,
+                endingHole: scorecards[0].holes[scorecards[0].holes.length - 1].holeNumber,
+                value: perMatchValue,
+                original: true
+            })
         }
 
-        scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue, teamsChangeEveryThree, teamsChangeEverySix);
+        scorecards = trackMatchStatuses(scorecards, answers, teams, allMatches, perMatchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue, teamsChangeEveryThree, teamsChangeEverySix, stableford, stablefordPoints, stablefordQuota);
     }
 
     if (extraBirdieValue > 0 || extraEagleValue > 0) {
@@ -1571,7 +1643,7 @@ function findTeamFromTeams(name, teams) {
     return [name];
 }
 
-function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue, teamsChangeEveryThree, teamsChangeEverySix) {
+function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, carryovers, type, combinedScore, autoPresses, autoPressTrigger, sweepValue, teamsChangeEveryThree, teamsChangeEverySix, stableford, stablefordPoints, stablefordQuota) {
     const allMatches = [...matches];
     let foundNewPress = true;
 
@@ -1593,7 +1665,10 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
                 allMatches[j].startingHole,
                 allMatches[j].endingHole,
                 type,
-                combinedScore
+                combinedScore,
+                stableford,
+                stablefordPoints,
+                stablefordQuota
             );
 
             //Determine any auto presses
@@ -1651,7 +1726,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             if (differentTeams.length === 2) {
                 teams = [...differentTeams];
             }
-        } 
+        }
 
         const teamsArrays = teams.map(team => team.split(' & '));
         const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
@@ -1660,7 +1735,10 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             allMatches[i].startingHole,
             allMatches[i].endingHole,
             type,
-            combinedScore
+            combinedScore,
+            stableford,
+            stablefordPoints,
+            stablefordQuota
         );
 
         //console.log("Match", JSON.stringify(allMatches[i], null, 2));
@@ -1777,7 +1855,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     return scorecards;
 }
 
-function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, type, combinedScore) {
+function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, type, combinedScore, stableford, stablefordPoints, stablefordQuota) {
     const teamsArrays = teams.map(team => team.split(' & '));
     let firstTeamPoints = 0;
     let holesRemaining = endingHole - startingHole + 1;
@@ -1789,13 +1867,35 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         for (let j = 0; j < scorecards.length; j++) {
             const playerHole = scorecards[j].holes.find(h => h.holeNumber === i);
             const netScore = playerHole.score - playerHole.strokes;
-            const toPar = playerHole.score - playerHole.par;
+            const toPar = playerHole.score - playerHole.strokes - playerHole.par;
 
             if (playerHole.score > 0) {
-                if (teamsArrays[0].includes(scorecards[j].name)) {
-                    firstTeamScores.push(combinedScore ? toPar : netScore);
+                if (!stableford) {
+                    if (teamsArrays[0].includes(scorecards[j].name)) {
+                        firstTeamScores.push(combinedScore ? toPar : netScore);
+                    } else {
+                        secondTeamScores.push(combinedScore ? toPar : netScore);
+                    }
                 } else {
-                    secondTeamScores.push(combinedScore ? toPar : netScore);
+                    let points = stablefordPoints.par;
+                    if (toPar === -1) {
+                        points = stablefordPoints.birdie;
+                    } else if (toPar === -2) {
+                        points = stablefordPoints.eagle;
+                    } else if (toPar <= -3) {
+                        points = stablefordPoints.albatross;
+                    } else if (toPar === 1) {
+                        points = stablefordPoints.bogey;
+                    } else if (toPar >= 2) {
+                        points = stablefordPoints.double;
+                    }
+
+                    playerHole.points = points;
+                    if (teamsArrays[0].includes(scorecards[j].name)) {
+                        firstTeamScores.push(points * -1);
+                    } else {
+                        secondTeamScores.push(points * -1);
+                    }
                 }
             }
         }
@@ -1809,10 +1909,12 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         let firstTeamScore = combinedScore ? Math.sum(...firstTeamScores) : Math.min(...firstTeamScores);
         let secondTeamScore = combinedScore ? Math.sum(...secondTeamScores) : Math.min(...secondTeamScores);
 
-        if (firstTeamScore < secondTeamScore) {
-            type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
-        } else if (firstTeamScore > secondTeamScore) {
-            type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
+        if (!stablefordQuota) {
+            if (firstTeamScore < secondTeamScore) {
+                type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
+            } else if (firstTeamScore > secondTeamScore) {
+                type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
+            }
         }
 
         if (type === "match" && Math.abs(firstTeamPoints) > holesRemaining) {
@@ -1820,7 +1922,104 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         }
     }
 
+    if (stablefordQuota) {
+        let firstTeamQuotaPoints = 0;
+        let secondTeamQuotaPoints = 0;
+
+        for (let i = 0; i < scorecards?.length; i++) {
+            let isFirstTeam = true;
+            if (teamsArrays[0].includes(scorecards[i].name)) {
+                firstTeamQuotaPoints += (36 - scorecards[i].handicap);
+            } else {
+                isFirstTeam = false;
+                secondTeamQuotaPoints += (36 - scorecards[i].handicap);
+            }
+
+            for (let j = startingHole; j <= endingHole; j++) {
+                if (isFirstTeam) {
+                    firstTeamQuotaPoints += (36 - scorecards[i].holes[j].points);
+                } else {
+                    secondTeamQuotaPoints += (36 - scorecards[i].holes[j].points);
+                }
+            }
+        }
+
+        firstTeamPoints = 0;
+        if (firstTeamQuotaPoints > secondTeamQuotaPoints) {
+            firstTeamPoints = 1;
+        } else if (secondTeamQuotaPoints > firstTeamQuotaPoints) {
+            firstTeamPoints = -1;
+        }
+    }
+
     return { firstTeamDown: firstTeamPoints, holesRemaining }
+}
+
+function stableford() {
+    const {
+        teams = [],
+        type = "stroke",
+        perHoleValue = 0,
+        perMatchValue = 0,
+        perPointValue = 0,
+        carryovers = false,
+        combinedScore = false,
+        autoPresses = false,
+        autoPressTrigger = 2,
+        extraBirdieValue = 0,
+        extraEagleValue = 0,
+        extraBirdieTeam = false,
+        nassau = false,
+        sixSixSix = false,
+        threeThreeThree = false,
+        sixSixSixOverallValue = 0,
+        threeThreeThreeOverallValue = 0,
+        sweepValue = 0,
+        onlyGrossBirdies = false,
+        teamsChangeEverySix = false,
+        teamsChangeEveryThree = false,
+        doublePoints = 0,
+        bogeyPoints = 1,
+        parPoints = 2,
+        birdiePoints = 4,
+        eaglePoints = 6,
+        albatrossPoints = 8,
+        quota = false
+    } = config;
+
+    return universalMatchScorer({
+        teams,
+        type,
+        perHoleValue,
+        perMatchValue,
+        perStrokeValue: perPointValue,
+        carryovers,
+        combinedScore,
+        autoPresses,
+        autoPressTrigger,
+        extraBirdieValue,
+        extraEagleValue,
+        extraBirdieTeam,
+        nassau,
+        sixSixSix,
+        threeThreeThree,
+        sixSixSixOverallValue,
+        threeThreeThreeOverallValue,
+        sweepValue,
+        onlyGrossBirdies,
+        teamsChangeEverySix,
+        teamsChangeEveryThree,
+        stableford: true,
+        stablefordQuota: quota,
+        stablefordPoints: {
+            double: doublePoints,
+            bogey: bogeyPoints,
+            par: parPoints,
+            birdie: birdiePoints,
+            eagle: eaglePoints,
+            albatross: albatrossPoints
+        }
+    });
 }
 
 module.exports = {
@@ -1831,5 +2030,6 @@ module.exports = {
     leftRight,
     ninePoint,
     banker,
-    universalMatchScorer
+    universalMatchScorer,
+    stableford
 }

@@ -196,14 +196,23 @@ const universalConfig = `{
 const stablefordConfig = `{
     teams //an array consisting of the teams, always with each team as one string with player names separared by '&', e.g. ["Player A & Player B", "Player C & "Player D"]. ONLY use the exact names of the golfers provided. Do NOT ever use "Me" -> only use the EXACT golfer names provided. If no teams are provided, then every golfer is on their own team, , e.g. ["Player A", "Player B", "Player C", "Player D"].
     quota //true or false (default false) whether or not everyone is playing to their quota
+    parPoints: //number (default 2) number of points for a par
+    birdiePoints: //number (default 4) number of points for a birdie
+    bogeyPoints: //number (default 1) number of points for a bogey
+    doubleOrWorsePoints: //number (default 0) number of points for a double bogey or worse
+    eaglePoints: //number (default 6) number of points for an eagle
+    albatrossPoints: //number (default 8) number of points for an albatross (-3 to par)
     combinedScore //true or false (default false) whether or not it's combined score for teams
-    modified //true or false (default false) whether or not it's modified stableford points
     perMatchValue //number (default 0) dollar value per match if perHoleOrMatch is "match"
     perPointValue //number (default 0) dollar value per point that is paid for losing a hole/match
     carryovers //true or false (default false) whether or not money from tied holes or matches carrys over to the next
+    autoPresses //true or false (default false) whether or not "presses", or new matches, automatically start at any point
+    autoPressTrigger //number (default 2) how many holes/points a team has to down down by before another match or "press" automatically starts
     extraBirdieValue //number (default 0) dollar value for how much a birdie is worth in addition to the results of the match, i.e. "extra $10/man for birdies" would make this 10
     extraEagleValue //number (default 0) dollar value for how much an eagle is worth in addition to the results of the match, i.e. "extra $25/man for eagles" would make this 25
     extraBirdieTeam //true or false (default false) whether or not the extra birdie or eagle value is for the team
+    presses //true or false (default is true) whether or not presses/cups/rolls/bridges/hammers are allowed
+    doublePresses //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
     nassau //true or false (default false) whether or not there is a nassau or match for front back overall
     sixSixSix //true or false (default false) whether or not the user has said this is a 666 match, or there are three separate 6 hole matches
     threeThreeThree //true or false (default false) whether or not the user has said this is a 33 match, or there are three separate 3 hole matches

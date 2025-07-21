@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
-const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer } = require("./games/scoring")
+const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -255,7 +255,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const scorecards = JSON.parse(rows2[0].scorecards);
         const nineScorecards = JSON.parse(rows2[0].nineScorecards);
 
-        //TODO: Generate config & questions from gpt-4o
+        //Generate config & questions from gpt-4o
         //Step 1: Determine game type
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
@@ -956,7 +956,12 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 answers
             );
         } else if (["stableford", "quota"].includes(configType)) {
-            //TODO: score stableford
+            scorecards = stableford(
+                scorecards, 
+                scores,
+                config, 
+                answers
+            )
         }
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
@@ -1284,7 +1289,6 @@ router.get("/matches/recent", authenticateUser, async (req, res) => {
 });
 
 router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
-    //TODO: Place new team names in original setup
     const { matchToEditId, matchToCopyId } = req.body;
     const userId = req.user.id;
 
