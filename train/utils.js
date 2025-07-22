@@ -325,10 +325,21 @@ function getTeamsFromAnswers(answeredQuestions, golfers) {
             teams.push(team1.join(" & "));
             teams.push(team2.join(" & "));
             break; // Stop after first team-related question
-        } 
+        }
     }
 
     return teams;
+}
+
+function hasUnplayedHoles(scorecards) {
+    for (const golfer of scorecards) {
+        for (const hole of golfer.holes) {
+            if (hole.score === 0) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 module.exports = {
@@ -348,6 +359,7 @@ module.exports = {
     getTeamScoresOnHole,
     getTeamsFromAnswers,
     capitalizeWords,
+    hasUnplayedHoles,
     scoringSystemMessage,
     setupSystemMessage
 }

@@ -1,4 +1,4 @@
-const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers } = require('../train/utils');
+const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers, hasUnplayedHoles } = require('../train/utils');
 
 function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golfers, value, isTeam) {
     if (isTeam && teamsWithAnds.length > 0) {
@@ -1474,7 +1474,37 @@ function universalMatchScorer(scorecards, scores, config, answers) {
 
             if (stablefordQuota) {
                 //TODO: Everyone pay everyone on last hole relative to quota if all holes have been played
-                
+                if (!hasUnplayedHoles(scorecards)) {
+                    const quotaPoints = [];
+
+                    for (let i = 0; i < scorecards?.length; i++) {
+                        let totalPoints = (scorecards[i].holes.length * 2) - scorecards[i].handicap;
+
+                        for (let j = 0; j < scorecards[i].holes.length; j++) {
+                            totalPoints += (36 - scorecards[i].holes[j].points);
+                        }
+
+                        quotaPoints.push({
+                            name: scorecards[i].name,
+                            points: quotaPoints
+                        });
+                    }
+
+                    for (let i = 0; i < scorecards.length; i++) {
+                        for (let j = 0; j < scorecards.length; j++) {
+                            if (i === j) continue;
+                            const p1 = quotaPoints.find(qp => qp.name === scorecards[i].name);
+                            const p2 = quotaPoints.find(qp => qp.name === scorecards[j].name);
+                            const diff = (p1.hole.points) - (p2.hole.points);
+                            if (diff > 0) {
+                                const p1Hole = scorecards[i].holes[holes.length - 1];
+                                const p2Hole = scorecards[j].holes[holes.length - 1];
+                                p1Hole.hole.plusMinus = (p1Hole.hole.plusMinus || 0) - diff * perStrokeValue;
+                                p2Hole.hole.plusMinus = (p2Hole.hole.plusMinus || 0) + diff * perStrokeValue;
+                            }
+                        }
+                    }
+                }
             } else {
                 const currentHole = scores[0]?.holeNumber;
                 const holeIndex = scorecards[0].holes.findIndex(h => h.holeNumber === currentHole);
@@ -1929,10 +1959,10 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
         for (let i = 0; i < scorecards?.length; i++) {
             let isFirstTeam = true;
             if (teamsArrays[0].includes(scorecards[i].name)) {
-                firstTeamQuotaPoints += (36 - scorecards[i].handicap);
+                firstTeamQuotaPoints += ((scorecards[i].holes.length * 2) - scorecards[i].handicap);
             } else {
                 isFirstTeam = false;
-                secondTeamQuotaPoints += (36 - scorecards[i].handicap);
+                secondTeamQuotaPoints += ((scorecards[i].holes.length * 2) - scorecards[i].handicap);
             }
 
             for (let j = startingHole; j <= endingHole; j++) {
