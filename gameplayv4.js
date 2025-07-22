@@ -1080,8 +1080,10 @@ router.put("/settings", authenticateUser, async (req, res) => {
 
         const newScorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, scores)
 
-        if (newScorecards.length > 1 && scorecards.length > 1 && newScorecards[0].holes?.length === scorecards[0].holes.length) {
+        if (newScorecards?.length > 1 && scorecards.length > 1 && newScorecards[0].holes?.length === scorecards[0].holes.length) {
             scorecards = newScorecards;
+        } else {
+            return res.status(403).json({ error: "Error applying settings update" });
         }
 
         await mariadbPool.query(

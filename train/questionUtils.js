@@ -434,6 +434,8 @@ function applyConfigToScorecards(scorecards, configType, config, strippedJunk, a
             allHolesPlayed = false;
         }
     }
+
+    return scorecards;
 }
 
 module.exports = {
