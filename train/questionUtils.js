@@ -337,7 +337,7 @@ function getQuestionsFromConfig(raw, config, sideConfig) {
     return questions;
 }
 
-function applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers) {
+function applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, scores) {
     if (configType === "scotch" || configType === "umbrella" || configType === "bridge") {
         scorecards = scotch(
             scorecards,

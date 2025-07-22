@@ -1071,7 +1071,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
             Object.entries(junkConfig).filter(([_, value]) => value.valid)
         );
 
-        scorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers)
+        scorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, [])
 
         await mariadbPool.query(
             "UPDATE Matches SET config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
