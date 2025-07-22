@@ -478,7 +478,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         console.log("stripped junk", JSON.stringify(strippedJunk, null, 2))
 
-        const questions = getQuestionsFromConfig(raw, config, sideConfig);
+        const questions = getQuestionsFromConfig(raw, config, sideConfig, golfers);
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
         
         if (builtScorecards?.length === 0) {
@@ -1059,7 +1059,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
         let golfers = JSON.parse(editRows[0].golfers);
 
         //Determine if any new questions are needed from gametype, update scorecard
-        const newQuestions = getQuestionsFromConfig(configType, config, junkConfig);
+        const newQuestions = getQuestionsFromConfig(configType, config, junkConfig, golfers);
         for (let i = 0; i < answers?.length; i++) {
             answers[i].answers = answers[i].answers.filter(q =>
                 newQuestions.find(nq => nq.question === q.question)

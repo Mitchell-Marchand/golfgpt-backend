@@ -1,7 +1,7 @@
 const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("../games/scoring");
 const { calculateWinPercents } = require("./utils");
 
-function getQuestionsFromConfig(raw, config, sideConfig) {
+function getQuestionsFromConfig(raw, config, sideConfig, golfers) {
     let questions = [];
 
     if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
