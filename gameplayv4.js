@@ -1061,7 +1061,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
         //Determine if any new questions are needed from gametype, update scorecard
         const newQuestions = getQuestionsFromConfig(configType, config, junkConfig);
         for (let i = 0; i < answers?.length; i++) {
-            answers[i].questions = answers[i].questions.filter(q =>
+            answers[i].answers = answers[i].answers.filter(q =>
                 newQuestions.find(nq => nq.question === q.question)
             );
         }
