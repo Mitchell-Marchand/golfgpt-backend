@@ -1074,11 +1074,12 @@ router.put("/settings", authenticateUser, async (req, res) => {
             return {
                 name: sc.name,
                 strokes: sc.holes[0].strokes,
-                score: sc.holes[0].score
+                score: sc.holes[0].score,
+                holeNumber: sc.holes[0].holeNumber
             }
         })
 
-        const newScorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, [])
+        const newScorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, scores)
 
         if (newScorecards?.length > 1 && scorecards.length > 1 && newScorecards[0].holes?.length === scorecards[0].holes.length) {
             scorecards = newScorecards;
