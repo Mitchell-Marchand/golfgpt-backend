@@ -171,7 +171,7 @@ const universalConfig = `{
     perStrokeValue //number (default 0) dollar value per stroke that is paid for losing a hole/match
     carryovers //true or false (default false) whether or not money from tied holes or matches carrys over to the next
     birdiesDoubleCarryovers //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole
-    presses //true or false (default is true) whether or not presses/cups/rolls/bridges/hammers are allowed
+    presses //true or false (default is false) whether or not presses/cups/rolls/bridges/hammers are allowed
     doublePresses //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
     combinedScore //true or default (default false) whether or not the scores for each team are combined net to par (true) or best ball (false)
     birdiesDouble //true or false (default false) whether or not birdies double the points for the hole. NOTE: something like 10/20 means $20 for a win with birdie and $10 otherwise, so this would be true
