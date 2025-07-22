@@ -6,7 +6,8 @@ const OpenAI = require("openai");
 require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
-const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring")
+const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring");
+const { applyConfigToScorecards } = require('./train/questionUtils');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
@@ -259,7 +260,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         //Step 1: Determine game type
         const options = [
             "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
-            "middle-outside", "king of the hill", "match play", "stroke play", "stableford", "quota", "nine point", 
+            "middle-outside", "king of the hill", "match play", "stroke play", "stableford", "quota", "nine point",
             "scramble", "shamble", "bramble", "chapman", "alt shot"
         ];
 
@@ -281,7 +282,6 @@ router.post("/create", authenticateUser, async (req, res) => {
         const raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
         let config;
         let sideConfig;
-        let questions = [];
 
         console.log("Type:", raw);
 
@@ -304,45 +304,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-                questions.push({
-                    question: `Who got the point for proximity?`,
-                    answers: golfers,
-                    numberOfAnswers: 2,
-                    holes: "all"
-                });
-
-                if (config.points === 8) {
-                    questions.push({
-                        question: `Who had the longest drive?`,
-                        answers: golfers,
-                        numberOfAnswers: 2,
-                        holes: "all"
-                    })
-                    questions.push({
-                        question: `Which team had the fewest putts?`,
-                        answers: config.teams,
-                        numberOfAnswers: 1,
-                        holes: "all"
-                    })
-                }
-
-                if (config.presses) {
-                    if (config.doublePresses) {
-                        questions.push({
-                            question: `Was there a press or a double press?`,
-                            answers: ["Press", "Double Press"],
-                            numberOfAnswers: 1,
-                            holes: "all"
-                        })
-                    } else {
-                        questions.push({
-                            question: `Was there a press?`,
-                            answers: ["No", "Yes"],
-                            numberOfAnswers: 1,
-                            holes: "all"
-                        })
-                    }
-                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -365,24 +326,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-
-                if (config.presses) {
-                    if (config.doublePresses) {
-                        questions.push({
-                            question: `Was there a press or a double press?`,
-                            answers: ["Press", "Double Press"],
-                            numberOfAnswers: 1,
-                            holes: "all"
-                        })
-                    } else {
-                        questions.push({
-                            question: `Was there a press?`,
-                            answers: ["No", "Yes"],
-                            numberOfAnswers: 1,
-                            holes: "all"
-                        })
-                    }
-                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -405,45 +348,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-
-                questions.push({
-                    question: `Who was the wolf?`,
-                    answers: golfers,
-                    numberOfAnswers: 1,
-                    holes: "all"
-                })
-
-                if (config.blindWolfAllowed) {
-                    questions.push({
-                        question: `Did the wolf go solo?`,
-                        answers: ["No", "Yes, Before Their Tee Shot", "Yes, After Their Tee Shot", "Yes, After Everyone's Tee Shot"],
-                        numberOfAnswers: 1,
-                        holes: "all"
-                    })
-                } else {
-                    questions.push({
-                        question: `Did the wolf go solo?`,
-                        answers: ["No", "Yes, After Their Tee Shot", "Yes, After Everyone's Tee Shot"],
-                        numberOfAnswers: 1,
-                        holes: "all"
-                    })
-                }
-
-                questions.push({
-                    question: `Who was their partner?`,
-                    answers: golfers,
-                    numberOfAnswers: 1,
-                    holes: "all"
-                })
-
-                if (config.crybaby) {
-                    questions.push({
-                        question: `Did the bet change? If so, enter the new dollar value:`,
-                        answers: [""],
-                        numberOfAnswers: 1,
-                        holes: `${config.crybabyHole || 16}+`
-                    })
-                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -466,64 +370,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-
-                if (raw === "left-right") {
-                    questions.push({
-                        question: `Who was on the left team?`,
-                        answers: golfers,
-                        numberOfAnswers: golfers.length,
-                        holes: "all"
-                    })
-                } else if (raw === "middle-outside") {
-                    questions.push({
-                        question: `Who was on the middle team?`,
-                        answers: golfers,
-                        numberOfAnswers: golfers.length,
-                        holes: "all"
-                    })
-                } else if (raw === "flip wolf") {
-                    questions.push({
-                        question: `Who was on the heads team?`,
-                        answers: golfers,
-                        numberOfAnswers: golfers.length,
-                        holes: "all"
-                    })
-                } else {
-                    config.soloMultiple = 1;
-                    questions.push({
-                        question: `Who was king of the hill?`,
-                        answers: golfers,
-                        numberOfAnswers: 1,
-                        holes: "all"
-                    })
-                }
-
-                if (config.presses) {
-                    if (config.doublePresses) {
-                        questions.push({
-                            question: `Was there a press or a double press?`,
-                            answers: ["Press", "Double Press"],
-                            numberOfAnswers: 1,
-                            holes: "all"
-                        })
-                    } else {
-                        questions.push({
-                            question: `Was there a press?`,
-                            answers: ["No", "Yes"],
-                            numberOfAnswers: 1,
-                            holes: "all"
-                        })
-                    }
-                }
-
-                if (config.crybaby) {
-                    questions.push({
-                        question: `Did the bet change? If so, enter the new dollar value:`,
-                        answers: [""],
-                        numberOfAnswers: 1,
-                        holes: `${config.crybabyHole || 16}+`
-                    })
-                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -551,22 +397,6 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "banker") {
             config = {};
-
-            questions.push({
-                question: `Who was the banker?`,
-                answers: golfers,
-                numberOfAnswers: 1,
-                holes: "all"
-            })
-
-            for (let i = 0; i < golfers.length; i++) {
-                questions.push({
-                    question: `What was the dollar value of their bet with ${golfers[i]}`,
-                    answers: [""],
-                    numberOfAnswers: 1,
-                    holes: "all"
-                })
-            }
         } else if (["match play", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(raw)) {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${universalConfig}`;
             const rawConfig = await openai.chat.completions.create({
@@ -586,58 +416,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             try {
                 config = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-
-                if (config.teamsChangeEveryThree) {
-                    questions.push({
-                        question: `Select the golfers on one team for this three hole match:`,
-                        answers: golfers,
-                        numberOfAnswers: golfers.length,
-                        holes: "1,4,7"
-                    })
-                } else if (config.teamsChangeEverySix) {
-                    questions.push({
-                        question: `Select the golfers on one team for this six hole match:`,
-                        answers: golfers,
-                        numberOfAnswers: golfers.length,
-                        holes: "1,7,13"
-                    })
-                }
-
-                if (config.presses) {
-                    if (config.perHoleOrMatch === "hole") {
-                        if (config.doublePresses) {
-                            questions.push({
-                                question: `Was there a press or a double press?`,
-                                answers: ["Press", "Double Press"],
-                                numberOfAnswers: 1,
-                                holes: "all"
-                            })
-                        } else {
-                            questions.push({
-                                question: `Was there a press?`,
-                                answers: ["No", "Yes"],
-                                numberOfAnswers: 1,
-                                holes: "all"
-                            })
-                        }
-                    } else if (!config.teamsChangeEveryThree && !config.teamsChangeEverySix) {
-                        if (config.autoPresses) {
-                            questions.push({
-                                question: `Did someone start a new press that is not an autopress?`,
-                                answers: ["No", "Yes"],
-                                numberOfAnswers: 1,
-                                holes: "all"
-                            })
-                        } else {
-                            questions.push({
-                                question: `Did someone start a new press on the teebox?`,
-                                answers: ["No", "Yes"],
-                                numberOfAnswers: 1,
-                                holes: "all"
-                            })
-                        }
-                    }
-                }
             } catch (err) {
                 return res.status(500).json({ error: "Error building match, please try again." });
             }
@@ -690,103 +468,6 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         try {
             sideConfig = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-
-            if (sideConfig.greenies?.valid) {
-                questions.push({
-                    question: `Who got closest to the pin?`,
-                    answers: golfers,
-                    numberOfAnswers: sideConfig.greenies?.teams ? 2 : 1,
-                    holes: "par 3s"
-                });
-            }
-
-            if (sideConfig.chipIns?.valid) {
-                questions.push({
-                    question: `Did anyone chip in?`,
-                    answers: golfers,
-                    numberOfAnswers: 4,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.sandies?.valid) {
-                questions.push({
-                    question: `Did anyone get a sandie?`,
-                    answers: golfers,
-                    numberOfAnswers: 4,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.polies?.valid) {
-                questions.push({
-                    question: `Did anyone get a polie?`,
-                    answers: golfers,
-                    numberOfAnswers: 4,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.barkies?.valid) {
-                questions.push({
-                    question: `Did anyone get a barkie?`,
-                    answers: golfers,
-                    numberOfAnswers: 4,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.arnies?.valid) {
-                questions.push({
-                    question: `Did anyone get an Arnie?`,
-                    answers: golfers,
-                    numberOfAnswers: 4,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.oozle?.valid || sideConfig.bingoBangoBongo?.valid) {
-                if (sideConfig.bingoBangoBongo?.valid) {
-                    questions.push({
-                        question: `Who was the first on the green?`,
-                        answers: golfers,
-                        numberOfAnswers: 1,
-                        holes: "all"
-                    });
-
-                    questions.push({
-                        question: `Who was CTP once all balls were on the green?`,
-                        answers: golfers,
-                        numberOfAnswers: 1,
-                        holes: "all"
-                    });
-                }
-
-                questions.push({
-                    question: `Who was the first to hole out?`,
-                    answers: golfers,
-                    numberOfAnswers: 1,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.fish?.valid) {
-                questions.push({
-                    question: `Did anyone hit into a water hazard?`,
-                    answers: golfers,
-                    numberOfAnswers: 4,
-                    holes: "all"
-                });
-            }
-
-            if (sideConfig.snake?.valid) {
-                questions.push({
-                    question: `Did anyone three-putt or worse?`,
-                    answers: golfers,
-                    numberOfAnswers: 1,
-                    holes: "all"
-                });
-            }
         } catch (err) {
             return res.status(500).json({ error: "Error building match, please try again." });
         }
@@ -797,7 +478,9 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         console.log("stripped junk", JSON.stringify(strippedJunk, null, 2))
 
+        const questions = getQuestionsFromConfig(raw, config, sideConfig);
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
+        
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
         }
@@ -950,16 +633,16 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             )
         } else if (["match play", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
             scorecards = universalMatchScorer(
-                scorecards, 
+                scorecards,
                 scores,
-                config, 
+                config,
                 answers
             );
         } else if (["stableford", "quota"].includes(configType)) {
             scorecards = stableford(
-                scorecards, 
+                scorecards,
                 scores,
-                config, 
+                config,
                 answers
             )
         }
@@ -1346,6 +1029,58 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
         res.json({ success: true, setup: newSummary });
     } catch (err) {
         console.error("Error in /matches/copy-setup:", err);
+        res.status(500).json({ error: "Failed to generate new setup." });
+    }
+});
+
+router.put("/settings", authenticateUser, async (req, res) => {
+    let { matchId, config, junkConfig } = req.body;
+    const userId = req.user.id;
+
+    if (!matchId) {
+        return res.status(400).json({ error: "Missing match IDs." });
+    }
+
+    try {
+        // Validate access to matchToEdit
+        const [editRows] = await mariadbPool.query(
+            `SELECT questions, answers, configType, scorecards, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            [matchToEditId, userId, userId]
+        );
+
+        if (editRows.length === 0) {
+            return res.status(403).json({ error: "Unauthorized to edit this match." });
+        }
+
+        const configType = editRows[0].configType;
+        let questions = JSON.parse(editRows[0].questions);
+        let answers = JSON.parse(editRows[0].answers);
+        let scorecards = JSON.parse(editRows[0].scorecards);
+        let golfers = JSON.parse(editRows[0].golfers);
+
+        //Determine if any new questions are needed from gametype, update scorecard
+        const newQuestions = getQuestionsFromConfig(configType, config, junkConfig);
+        for (let i = 0; i < answers?.length; i++) {
+            answers[i].questions = answers[i].questions.filter(q =>
+                newQuestions.find(nq => nq.question === q.question)
+            );
+        }
+
+        //TODO: generate new scorecard 
+        const strippedJunk = Object.fromEntries(
+            Object.entries(junkConfig).filter(([_, value]) => value.valid)
+        );
+
+        scorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers)
+
+        await mariadbPool.query(
+            "UPDATE Matches SET config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
+            [JSON.stringify(config), JSON.stringify(strippedJunk), JSON.stringify(newQuestions), JSON.stringify(answers), JSON.stringify(scorecards), matchId]
+        );
+
+        res.json({ success: true, scorecards, questions, answers });
+    } catch (err) {
+        console.error("Error in put /settings:", err);
         res.status(500).json({ error: "Failed to generate new setup." });
     }
 });
