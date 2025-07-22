@@ -1066,12 +1066,23 @@ router.put("/settings", authenticateUser, async (req, res) => {
             );
         }
 
-        //TODO: generate new scorecard 
         const strippedJunk = Object.fromEntries(
             Object.entries(junkConfig).filter(([_, value]) => value.valid)
         );
 
-        scorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, [])
+        const scores = scorecards.map(sc => {
+            return {
+                name: sc.name,
+                strokes: sc.holes[0].strokes,
+                score: sc.holes[0].score
+            }
+        })
+
+        const newScorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, scores)
+
+        if (newScorecards.length > 1 && scorecards.length > 1 && newScorecards[0].holes?.length === scorecards[0].holes.length) {
+            scorecards = newScorecards;
+        }
 
         await mariadbPool.query(
             "UPDATE Matches SET config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
