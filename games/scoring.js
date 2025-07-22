@@ -1455,7 +1455,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
 
                     if (playerHole.score > 0) {
                         let points = stablefordPoints.par;
-                        
+
                         if (toPar === -1) {
                             points = stablefordPoints.birdie;
                         } else if (toPar === -2) {
@@ -1500,8 +1500,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
                             if (diff > 0) {
                                 const p1Hole = scorecards[i].holes[holes.length - 1];
                                 const p2Hole = scorecards[j].holes[holes.length - 1];
-                                p1Hole.hole.plusMinus = (p1Hole.hole.plusMinus || 0) - diff * perStrokeValue;
-                                p2Hole.hole.plusMinus = (p2Hole.hole.plusMinus || 0) + diff * perStrokeValue;
+                                p1Hole.hole.plusMinus = (p1Hole.hole.plusMinus || 0) + diff * perStrokeValue;
+                                p2Hole.hole.plusMinus = (p2Hole.hole.plusMinus || 0) - diff * perStrokeValue;
                             }
                         }
                     }
