@@ -1037,9 +1037,6 @@ router.put("/settings", authenticateUser, async (req, res) => {
     let { matchId, config, junkConfig } = req.body;
     const userId = req.user.id;
 
-    console.log(junkConfig);
-    return res.status(400).json({ error: "Missing match IDs." });
-
     if (!matchId) {
         return res.status(400).json({ error: "Missing match IDs." });
     }
@@ -1047,7 +1044,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
     try {
         // Validate access to matchToEdit
         const [editRows] = await mariadbPool.query(
-            `SELECT questions, answers, configType, scorecards, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            `SELECT answers, configType, scorecards, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
             [matchId, userId, userId]
         );
 
@@ -1056,7 +1053,6 @@ router.put("/settings", authenticateUser, async (req, res) => {
         }
 
         const configType = editRows[0].configType;
-        let questions = JSON.parse(editRows[0].questions);
         let answers = JSON.parse(editRows[0].answers);
         let scorecards = JSON.parse(editRows[0].scorecards);
         let golfers = JSON.parse(editRows[0].golfers);
@@ -1097,7 +1093,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
             [summary, JSON.stringify(config), JSON.stringify(strippedJunk), JSON.stringify(newQuestions), JSON.stringify(answers), JSON.stringify(scorecards), matchId]
         );
 
-        res.json({ success: true, scorecards, questions, answers, summary });
+        res.json({ success: true, scorecards, questions: newQuestions, answers, summary });
     } catch (err) {
         console.error("Error in put /settings:", err);
         res.status(500).json({ error: "Failed to generate new setup." });
