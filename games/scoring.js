@@ -1985,7 +1985,7 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
     return { firstTeamDown: firstTeamPoints, holesRemaining }
 }
 
-function stableford() {
+function stableford(scorecards, scores, config, answers) {
     const {
         teams = [],
         type = "stroke",
@@ -2017,7 +2017,7 @@ function stableford() {
         quota = false
     } = config;
 
-    return universalMatchScorer({
+    return universalMatchScorer(scorecards, scores, {
         teams,
         type,
         perHoleValue,
@@ -2049,7 +2049,7 @@ function stableford() {
             eagle: eaglePoints,
             albatross: albatrossPoints
         }
-    });
+    }, answers);
 }
 
 module.exports = {
