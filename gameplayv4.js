@@ -7,7 +7,7 @@ require('dotenv').config();
 const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring");
-const { applyConfigToScorecards } = require('./train/questionUtils');
+const { applyConfigToScorecards, getQuestionsFromConfig } = require('./train/questionUtils');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const router = express.Router();
