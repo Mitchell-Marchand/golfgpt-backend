@@ -1037,6 +1037,9 @@ router.put("/settings", authenticateUser, async (req, res) => {
     let { matchId, config, junkConfig } = req.body;
     const userId = req.user.id;
 
+    console.log(junkConfig);
+    return res.status(400).json({ error: "Missing match IDs." });
+
     if (!matchId) {
         return res.status(400).json({ error: "Missing match IDs." });
     }
