@@ -1086,12 +1086,14 @@ router.put("/settings", authenticateUser, async (req, res) => {
             return res.status(403).json({ error: "Error applying settings update" });
         }
 
+        const summary = generateSummary(scorecards);
+
         await mariadbPool.query(
-            "UPDATE Matches SET config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
-            [JSON.stringify(config), JSON.stringify(strippedJunk), JSON.stringify(newQuestions), JSON.stringify(answers), JSON.stringify(scorecards), matchId]
+            "UPDATE Matches SET summary = ?, config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
+            [summary, JSON.stringify(config), JSON.stringify(strippedJunk), JSON.stringify(newQuestions), JSON.stringify(answers), JSON.stringify(scorecards), matchId]
         );
 
-        res.json({ success: true, scorecards, questions, answers });
+        res.json({ success: true, scorecards, questions, answers, summary });
     } catch (err) {
         console.error("Error in put /settings:", err);
         res.status(500).json({ error: "Failed to generate new setup." });
