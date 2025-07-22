@@ -1,4 +1,5 @@
-const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("../games/scoring")
+const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("../games/scoring");
+const { calculateWinPercents } = require("./utils");
 
 function getQuestionsFromConfig(raw, config, sideConfig) {
     let questions = [];
