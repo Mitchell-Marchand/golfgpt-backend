@@ -1045,7 +1045,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
         // Validate access to matchToEdit
         const [editRows] = await mariadbPool.query(
             `SELECT questions, answers, configType, scorecards, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
-            [matchToEditId, userId, userId]
+            [matchId, userId, userId]
         );
 
         if (editRows.length === 0) {
