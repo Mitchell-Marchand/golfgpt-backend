@@ -1451,7 +1451,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             //Set points based on scores
             for (let j = 0; j < scorecards.length; j++) {
                 for (let i = 0; i < scorecards[j].holes.length; i++) {
-                    const playerHole = scorecards[j].holes.find(h => h.holeNumber === i);
+                    const playerHole = scorecards[j].holes.find(h => h.holeNumber === scorecards[j].holes[i].holeNumber);
                     const toPar = playerHole.score - playerHole.strokes - playerHole.par;
 
                     if (playerHole.score > 0) {
