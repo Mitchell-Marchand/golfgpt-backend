@@ -1447,7 +1447,6 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             }
         } else if (stableford) {
             //Stableford individual
-            console.log("stableford individual");
             //Set points based on scores
             for (let j = 0; j < scorecards.length; j++) {
                 for (let i = 0; i < scorecards[j].holes.length; i++) {
@@ -1456,6 +1455,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
 
                     if (playerHole.score > 0) {
                         let points = stablefordPoints.par;
+                        
                         if (toPar === -1) {
                             points = stablefordPoints.birdie;
                         } else if (toPar === -2) {
