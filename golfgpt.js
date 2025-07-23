@@ -243,7 +243,7 @@ router.get("/ghin/course-details", async (req, res) => {
 });
 
 router.put('/user/update', authenticateUser, async (req, res) => {
-  const { firstName, lastName, homeClub } = req.body;
+  const { firstName, lastName, homeClub, isPublic } = req.body;
   const userId = req.user?.id;
 
   if (!firstName || !lastName) {
@@ -252,8 +252,8 @@ router.put('/user/update', authenticateUser, async (req, res) => {
 
   try {
     await mariadbPool.query(
-      'UPDATE Users SET firstName = ?, lastName = ?, homeClub = ? WHERE id = ?',
-      [firstName, lastName, homeClub || '', userId]
+      'UPDATE Users SET firstName = ?, lastName = ?, homeClub = ?, isPublic = ? WHERE id = ?',
+      [firstName, lastName, homeClub || '', isPublic, userId]
     );
 
     const [updatedUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [userId]);
