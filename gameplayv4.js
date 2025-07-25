@@ -759,7 +759,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId
+            `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId,
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
@@ -776,15 +776,15 @@ router.get("/matches", authenticateUser, async (req, res) => {
             id: match.id,
             displayName: match.displayName,
             golfers: match.golfers ? JSON.parse(match.golfers) : [],
-            golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
-            scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
-            questions: match.questions ? JSON.parse(match.questions) : [],
-            answers: match.answers ? JSON.parse(match.answers) : [],
-            strokes: match.strokes ? JSON.parse(match.strokes) : [],
-            configType: match.configType,
-            config: match.config ? JSON.parse(match.config) : {},
-            junkConfig: match.strippedJunk ? JSON.parse(match.strippedJunk) : {},
-            isPublic: match.isPublic,
+            //golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
+            //scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
+            //questions: match.questions ? JSON.parse(match.questions) : [],
+            //answers: match.answers ? JSON.parse(match.answers) : [],
+            //strokes: match.strokes ? JSON.parse(match.strokes) : [],
+            //configType: match.configType,
+            //config: match.config ? JSON.parse(match.config) : {},
+            //junkConfig: match.strippedJunk ? JSON.parse(match.strippedJunk) : {},
+            //isPublic: match.isPublic,
             summary: match.summary,
             status: match.status,
             teeTime: match.teeTime,
