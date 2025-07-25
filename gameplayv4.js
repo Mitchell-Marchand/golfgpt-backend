@@ -707,13 +707,13 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 });
 
 router.get("/match", authenticateUser, async (req, res) => {
-    //TODO: Pull all details for a match so the user can play it
+    //Pull all details for a match so the user can play it
     const userId = req.user.id;
     const matchId = req.query.id;
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT m.*
+            `SELECT m.*, c.courseName, c.courseId
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
              WHERE (
