@@ -512,7 +512,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             [JSON.stringify(strokes), JSON.stringify(config), raw, JSON.stringify(strippedJunk), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
-        res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName });
+        res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName, config, junkConfig: strippedJunk, configType: raw });
     } catch (err) {
         console.error("Error in /create:", err);
         res.status(500).json({ error: "Failed to generate match setup." });
