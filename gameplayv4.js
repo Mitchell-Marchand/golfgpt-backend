@@ -713,7 +713,7 @@ router.get("/match", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT *
+            `SELECT m.*
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
              WHERE (
