@@ -1158,7 +1158,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
     try {
         // Validate access to matchToEdit
         const [editRows] = await mariadbPool.query(
-            `SELECT scorecards, answers, tees FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            `SELECT scorecards, answers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
             [matchId, userId, userId]
         );
 
@@ -1168,7 +1168,6 @@ router.post("/extend", authenticateUser, async (req, res) => {
 
         const currentScorecards = JSON.parse(editRows[0].scorecards);
         const answers = JSON.parse(editRows[0].answers);
-        const tees = JSON.parse(editRows[0].tees);
 
         const [rows] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
         if (rows.length === 0) {
@@ -1184,7 +1183,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
             await mariadbPool.query("UPDATE Courses SET nineScorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
         } 
 
-        const newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, selectedTees || tees);
+        const newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, selectedTees);
         const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
         const summary = generateSummary(newScorecards);
 
