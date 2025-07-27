@@ -1148,7 +1148,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
 });
 
 router.post("/extend", authenticateUser, async (req, res) => {
-    const { matchId, course, selectedTees, selectedHoles, scorecards } = req.body;
+    const { matchId, course, selectedTees, selectedHoles, scorecards, holes } = req.body;
     const userId = req.user.id;
 
     if (!matchId) {
@@ -1170,15 +1170,18 @@ router.post("/extend", authenticateUser, async (req, res) => {
         const answers = JSON.parse(editRows[0].answers);
         const tees = JSON.parse(editRows[0].tees);
 
-        const [rows] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
+        const [rows] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
         const fullScorecards = rows[0].scorecards;
+        const nineScorecards = rows[0].nineScorecards;
 
         if (fullScorecards === "[]" && holes === 18) {
             await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
+        } else if (nineScorecards === "[]" && holes === 9) {
+            await mariadbPool.query("UPDATE Courses SET nineScorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
         } 
 
         const newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, selectedTees || tees);
