@@ -1183,7 +1183,8 @@ router.post("/extend", authenticateUser, async (req, res) => {
             await mariadbPool.query("UPDATE Courses SET nineScorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
         } 
 
-        const newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
+        let newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
+        newScorecards = calculateWinPercents(scorecards);
         const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
         const summary = generateSummary(newScorecards);
 
