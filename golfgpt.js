@@ -19,6 +19,8 @@ const mariadbPool = mysql.createPool({
   connectionLimit: 10,
 });
 
+const testAccounts = ["1234567890", "1234567001"];
+
 function formatAndValidatePhone(input) {
   if (!input) return null;
   const digits = input.replace(/\D/g, '');
@@ -35,8 +37,9 @@ router.get('/getCode', async (req, res) => {
 
   try {
     let phone = formattedPhone;
-    if (formattedPhone === "1234567890") {
+    if (testAccounts.includes(formattedPhone)) {
       res.status(200).json({ success: true, status: "OK" });
+      return;
     }
 
     const verification = await client.verify.v2
@@ -63,7 +66,7 @@ router.post('/signIn', async (req, res) => {
       return res.status(409).json({ success: false, message: 'User does not exist' });
     }
 
-    if (formattedPhone === "1234567001") {
+    if (testAccounts.includes(formattedPhone)) {
       if (code === "334677") {
         const [ids] = await mariadbPool.query('SELECT id FROM Users WHERE phone = ?', [formattedPhone]);
 
@@ -121,7 +124,7 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ success: false, message: 'User already exists' });
     }
 
-    if (formattedPhone === "1234567001") {
+    if (testAccounts.includes(formattedPhone)) {
       if (code === "334677") {
         const id = uuidv4();
         const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
