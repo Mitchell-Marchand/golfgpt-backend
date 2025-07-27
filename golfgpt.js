@@ -63,7 +63,7 @@ router.post('/signIn', async (req, res) => {
       return res.status(409).json({ success: false, message: 'User does not exist' });
     }
 
-    if (formattedPhone === "1234567890") {
+    if (formattedPhone === "1234567001") {
       if (code === "334677") {
         const [ids] = await mariadbPool.query('SELECT id FROM Users WHERE phone = ?', [formattedPhone]);
 
@@ -121,7 +121,7 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ success: false, message: 'User already exists' });
     }
 
-    if (formattedPhone === "1234567890") {
+    if (formattedPhone === "1234567001") {
       if (code === "334677") {
         const id = uuidv4();
         const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
