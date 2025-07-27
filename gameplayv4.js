@@ -1148,7 +1148,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
 });
 
 router.post("/extend", authenticateUser, async (req, res) => {
-    const { matchId, course, selectedTees, holes } = req.body;
+    const { matchId, course, selectedTees, selectedHoles } = req.body;
     const userId = req.user.id;
 
     if (!matchId) {
@@ -1176,8 +1176,8 @@ router.post("/extend", authenticateUser, async (req, res) => {
         }
 
         const allScorecards = JSON.parse(rows[0].scorecards);
-        const newScorecards = addHolesToScorecard(scorecards, allScorecards, holes, selectedTees || tees);
-        const newAnswers = addHolesToAnswers(answers, holes.length);
+        const newScorecards = addHolesToScorecard(scorecards, allScorecards, selectedHoles, selectedTees || tees);
+        const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
         const summary = generateSummary(newScorecards);
 
         await mariadbPool.query(
@@ -1187,8 +1187,8 @@ router.post("/extend", authenticateUser, async (req, res) => {
 
         res.json({ success: true, scorecards, answers, summary });
     } catch (err) {
-        console.error("Error in put /settings:", err);
-        res.status(500).json({ error: "Failed to generate new setup." });
+        console.error("Error in post /extend:", err);
+        res.status(500).json({ error: "Failed to add new holes." });
     }
 });
 
