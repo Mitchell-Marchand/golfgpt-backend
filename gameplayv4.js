@@ -1185,7 +1185,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
             [summary, JSON.stringify(newAnswers), JSON.stringify(newScorecards), matchId]
         );
 
-        res.json({ success: true, scorecards, answers, summary });
+        res.json({ success: true, scorecards: newScorecards, answers: newAnswers, summary });
     } catch (err) {
         console.error("Error in post /extend:", err);
         res.status(500).json({ error: "Failed to add new holes." });
