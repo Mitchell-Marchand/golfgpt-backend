@@ -480,7 +480,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         const questions = getQuestionsFromConfig(raw, config, sideConfig, golfers);
         const builtScorecards = buildScorecards(holes === 18 ? scorecards : nineScorecards, playerTees, strokes, holes);
-        
+
         if (builtScorecards?.length === 0) {
             return res.status(500).json({ error: "Couldn't build scorecard" });
         }
@@ -754,12 +754,12 @@ router.get("/match", authenticateUser, async (req, res) => {
     }
 }),
 
-router.get("/matches", authenticateUser, async (req, res) => {
-    const userId = req.user.id;
+    router.get("/matches", authenticateUser, async (req, res) => {
+        const userId = req.user.id;
 
-    try {
-        const [rows] = await mariadbPool.query(
-            `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId,
+        try {
+            const [rows] = await mariadbPool.query(
+                `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId,
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
@@ -769,38 +769,38 @@ router.get("/matches", authenticateUser, async (req, res) => {
             )
                AND m.status IN ('READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
              ORDER BY m.updatedAt DESC, m.serial DESC`,
-            [userId, userId]
-        );
+                [userId, userId]
+            );
 
-        const parsedMatches = rows.map(match => ({
-            id: match.id,
-            displayName: match.displayName,
-            golfers: match.golfers ? JSON.parse(match.golfers) : [],
-            //golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
-            //scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
-            //questions: match.questions ? JSON.parse(match.questions) : [],
-            //answers: match.answers ? JSON.parse(match.answers) : [],
-            //strokes: match.strokes ? JSON.parse(match.strokes) : [],
-            //configType: match.configType,
-            //config: match.config ? JSON.parse(match.config) : {},
-            //junkConfig: match.strippedJunk ? JSON.parse(match.strippedJunk) : {},
-            //isPublic: match.isPublic,
-            summary: match.summary,
-            status: match.status,
-            teeTime: match.teeTime,
-            updatedAt: match.updatedAt,
-            course: match.courseId ? {
-                courseId: match.courseId,
-                courseName: match.courseName
-            } : null
-        }));
+            const parsedMatches = rows.map(match => ({
+                id: match.id,
+                displayName: match.displayName,
+                golfers: match.golfers ? JSON.parse(match.golfers) : [],
+                //golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
+                //scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
+                //questions: match.questions ? JSON.parse(match.questions) : [],
+                //answers: match.answers ? JSON.parse(match.answers) : [],
+                //strokes: match.strokes ? JSON.parse(match.strokes) : [],
+                //configType: match.configType,
+                //config: match.config ? JSON.parse(match.config) : {},
+                //junkConfig: match.strippedJunk ? JSON.parse(match.strippedJunk) : {},
+                //isPublic: match.isPublic,
+                summary: match.summary,
+                status: match.status,
+                teeTime: match.teeTime,
+                updatedAt: match.updatedAt,
+                course: match.courseId ? {
+                    courseId: match.courseId,
+                    courseName: match.courseName
+                } : null
+            }));
 
-        res.json({ success: true, matches: parsedMatches });
-    } catch (err) {
-        console.error("Error in /matches:", err);
-        res.status(500).json({ error: "Failed to fetch user matches." });
-    }
-});
+            res.json({ success: true, matches: parsedMatches });
+        } catch (err) {
+            console.error("Error in /matches:", err);
+            res.status(500).json({ error: "Failed to fetch user matches." });
+        }
+    });
 
 router.get("/golfers", authenticateUser, async (req, res) => {
     const userId = req.user.id;
@@ -1148,7 +1148,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
 });
 
 router.post("/extend", authenticateUser, async (req, res) => {
-    const { matchId, course, selectedTees, selectedHoles } = req.body;
+    const { matchId, course, selectedTees, selectedHoles, scorecards } = req.body;
     const userId = req.user.id;
 
     if (!matchId) {
@@ -1166,17 +1166,22 @@ router.post("/extend", authenticateUser, async (req, res) => {
             return res.status(403).json({ error: "Unauthorized to edit this match." });
         }
 
-        const scorecards = JSON.parse(editRows[0].scorecards);
+        const currentScorecards = JSON.parse(editRows[0].scorecards);
         const answers = JSON.parse(editRows[0].answers);
         const tees = JSON.parse(editRows[0].tees);
 
-        const [rows] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
+        const [rows] = await mariadbPool.query("SELECT scorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Match not found." });
         }
 
-        const allScorecards = JSON.parse(rows[0].scorecards);
-        const newScorecards = addHolesToScorecard(scorecards, allScorecards, selectedHoles, selectedTees || tees);
+        const fullScorecards = rows[0].scorecards;
+
+        if (fullScorecards === "[]" && holes === 18) {
+            await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
+        } 
+
+        const newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, selectedTees || tees);
         const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
         const summary = generateSummary(newScorecards);
 
