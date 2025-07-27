@@ -68,7 +68,7 @@ router.post('/signIn', async (req, res) => {
 
     if (testAccounts.includes(formattedPhone)) {
       if (code === "334677") {
-        const [ids] = await mariadbPool.query('SELECT id FROM Users WHERE phone = ?', [formattedPhone]);
+        const [ids] = await mariadbPool.query('SELECT id, firstName, lastName FROM Users WHERE phone = ?', [formattedPhone]);
 
         const accessToken = jwt.sign({ id: ids[0].id, phone: formattedPhone, firstName: ids[0].firstName, lastName: ids[0].lastName }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
         await mariadbPool.query(
@@ -91,7 +91,7 @@ router.post('/signIn', async (req, res) => {
       .verificationChecks.create({ to: `+1${formattedPhone}`, code });
 
     if (verificationCheck.status === 'approved') {
-      const [ids] = await mariadbPool.query('SELECT id FROM Users WHERE phone = ?', [formattedPhone]);
+      const [ids] = await mariadbPool.query('SELECT id, firstName, lastName FROM Users WHERE phone = ?', [formattedPhone]);
 
       const accessToken = jwt.sign({ id: ids[0].id, phone: formattedPhone, firstName: ids[0].firstName, lastName: ids[0].lastName }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
       await mariadbPool.query(
