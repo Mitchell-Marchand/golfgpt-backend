@@ -1181,7 +1181,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
         const summary = generateSummary(newScorecards);
 
         await mariadbPool.query(
-            "UPDATE Matches SET summary = ?, config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
+            "UPDATE Matches SET summary = ?, answers = ?, scorecards = ? WHERE id = ?",
             [summary, JSON.stringify(newAnswers), JSON.stringify(newScorecards), matchId]
         );
 
