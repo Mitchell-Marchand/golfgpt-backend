@@ -871,6 +871,49 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
+        //TODO: Determine who is new and send push notification
+        const [rows] = await mariadbPool.query(
+            `SELECT golferIds, displayName from Matches WHERE id = ?`,
+            [matchId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Not authorized to update match." });
+        }
+
+        const displayName = rows[0].displayName;
+        const oldIds = JSON.parse(rows[0]?.golfers || "[]");
+        const newIds = golferIds.filter(id => !oldIds.includes(id));
+
+        for (let i = 0; i < newIds.length; i++) {
+            const [rows] = await mariadbPool.query('SELECT expoPushToken FROM Users WHERE id = ?', [newIds[i]]);
+            if (rows.length === 0) {
+                continue;
+            }
+
+            const { expoPushToken } = rows[0];
+
+            if (expoPushToken) {
+                const body = {
+                    to: expoPushToken,
+                    sound: 'default',
+                    title: 'Added To Game',
+                    body: `${req.user.firstName} ${req.user.lastName} added you to ${displayName}.`,
+                };
+    
+                const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+    
+                const result = await response.json();
+                console.log('Expo Push Response:', result);
+            } else {
+                console.log("No push token");
+            }
+        }
+
         await mariadbPool.query(
             "UPDATE Matches SET golferIds = ? WHERE id = ?",
             [JSON.stringify(golferIds), matchId]
@@ -1181,7 +1224,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
             await mariadbPool.query("UPDATE Courses SET scorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
         } else if (nineScorecards === "[]" && holes === 9) {
             await mariadbPool.query("UPDATE Courses SET nineScorecards = ? WHERE courseId = ?", [JSON.stringify(scorecards), course?.CourseID]);
-        } 
+        }
 
         let newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
         newScorecards = calculateWinPercents(newScorecards);
