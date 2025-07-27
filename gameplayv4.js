@@ -1184,7 +1184,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
         } 
 
         let newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
-        newScorecards = calculateWinPercents(scorecards);
+        newScorecards = calculateWinPercents(newScorecards);
         const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
         const summary = generateSummary(newScorecards);
 
