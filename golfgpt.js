@@ -36,7 +36,7 @@ router.get('/getCode', async (req, res) => {
   try {
     let phone = formattedPhone;
     if (formattedPhone === "1234567890") {
-      phone = "6038671558";
+      res.status(200).json({ success: true, status: "OK" });
     }
 
     const verification = await client.verify.v2
@@ -63,14 +63,29 @@ router.post('/signIn', async (req, res) => {
       return res.status(409).json({ success: false, message: 'User does not exist' });
     }
 
-    let phone = formattedPhone;
     if (formattedPhone === "1234567890") {
-      phone = "6038671558";
+      if (code === "334677") {
+        const [ids] = await mariadbPool.query('SELECT id FROM Users WHERE phone = ?', [formattedPhone]);
+
+        const accessToken = jwt.sign({ id: ids[0].id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
+        await mariadbPool.query(
+          'UPDATE Users SET accessToken = ? WHERE phone = ?',
+          [accessToken, formattedPhone]
+        );
+
+        const [users] = await mariadbPool.query('SELECT * FROM Users WHERE phone = ?', [formattedPhone]);
+
+        res.status(201).json({ success: true, user: users[0] });
+      } else {
+        res.status(200).json({ success: false, message: 'Invalid code' });
+      }
+
+      return;
     }
 
     const verificationCheck = await client.verify.v2
       .services(process.env.TWILIO_SERVICE_SID)
-      .verificationChecks.create({ to: `+1${phone}`, code });
+      .verificationChecks.create({ to: `+1${formattedPhone}`, code });
 
     if (verificationCheck.status === 'approved') {
       const [ids] = await mariadbPool.query('SELECT id FROM Users WHERE phone = ?', [formattedPhone]);
@@ -106,14 +121,28 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ success: false, message: 'User already exists' });
     }
 
-    let phone = formattedPhone;
     if (formattedPhone === "1234567890") {
-      phone = "6038671558";
+      if (code === "334677") {
+        const id = uuidv4();
+        const accessToken = jwt.sign({ id, phone: formattedPhone }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
+
+        await mariadbPool.query(
+          `INSERT INTO Users (id, phone, firstName, lastName, homeClub, accessToken) VALUES (?, ?, ?, ?, ?, ?)`,
+          [id, formattedPhone, firstName, lastName, homeClub || "", accessToken]
+        );
+
+        const [newUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [id]);
+        res.status(201).json({ success: true, user: newUser[0] });
+      } else {
+        res.status(200).json({ success: false, message: 'Invalid code' });
+      }
+
+      return;
     }
 
     const verificationCheck = await client.verify.v2
       .services(process.env.TWILIO_SERVICE_SID)
-      .verificationChecks.create({ to: `+1${phone}`, code });
+      .verificationChecks.create({ to: `+1${formattedPhone}`, code });
 
     if (verificationCheck.status === 'approved') {
       const id = uuidv4();
