@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring");
 const { applyConfigToScorecards, getQuestionsFromConfig } = require('./train/questionUtils');
@@ -1141,6 +1141,51 @@ router.put("/settings", authenticateUser, async (req, res) => {
         );
 
         res.json({ success: true, scorecards, questions: newQuestions, answers, summary });
+    } catch (err) {
+        console.error("Error in put /settings:", err);
+        res.status(500).json({ error: "Failed to generate new setup." });
+    }
+});
+
+router.post("/extend", authenticateUser, async (req, res) => {
+    const { matchId, course, selectedTees, holes } = req.body;
+    const userId = req.user.id;
+
+    if (!matchId) {
+        return res.status(400).json({ error: "Missing match IDs." });
+    }
+
+    try {
+        // Validate access to matchToEdit
+        const [editRows] = await mariadbPool.query(
+            `SELECT scorecards, answers, tees FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            [matchId, userId, userId]
+        );
+
+        if (editRows.length === 0) {
+            return res.status(403).json({ error: "Unauthorized to edit this match." });
+        }
+
+        const scorecards = JSON.parse(editRows[0].scorecards);
+        const answers = JSON.parse(editRows[0].answers);
+        const tees = JSON.parse(editRows[0].tees);
+
+        const [rows] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
+
+        const allScorecards = JSON.parse(rows[0].scorecards);
+        const newScorecards = addHolesToScorecard(scorecards, allScorecards, holes, selectedTees || tees);
+        const newAnswers = addHolesToAnswers(answers, holes.length);
+        const summary = generateSummary(newScorecards);
+
+        await mariadbPool.query(
+            "UPDATE Matches SET summary = ?, config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
+            [summary, JSON.stringify(newAnswers), JSON.stringify(newScorecards), matchId]
+        );
+
+        res.json({ success: true, scorecards, answers, summary });
     } catch (err) {
         console.error("Error in put /settings:", err);
         res.status(500).json({ error: "Failed to generate new setup." });

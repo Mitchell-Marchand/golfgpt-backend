@@ -35,6 +35,63 @@ function pickTeam(names, teamLength) {
     return [`${selected.join(' & ')}`, `${unselected.join(' & ')}`];
 }
 
+function addHolesToScorecard(currentScorecard, scorecards, holesToAdd, playerTees) {
+    return currentScorecard.map((playerScorecard) => {
+        const { name, holes: existingHoles } = playerScorecard;
+
+        const teeName = playerTees[name];
+        if (!teeName) {
+            console.warn(`No tee provided for player: ${name}`);
+            return playerScorecard;
+        }
+
+        const scorecard = scorecards.find(sc => sc.TeeSetRatingName === teeName);
+        if (!scorecard) {
+            console.warn(`No scorecard found for tee: ${teeName}`);
+            return playerScorecard;
+        }
+
+        // Get next available match hole number
+        let nextHoleNumber = existingHoles.reduce((max, h) => Math.max(max, h.holeNumber), 0) + 1;
+
+        // Use strokes from old scorecard if matching hole exists
+        const strokesByCourseHole = {};
+        existingHoles.forEach(h => {
+            strokesByCourseHole[h.courseHoleNumber || h.holeNumber] = h.strokes;
+        });
+
+        const courseHolesToAdd = scorecard.Holes.filter(h => holesToAdd.includes(h.Number));
+
+        const newHoles = courseHolesToAdd.map(courseHole => ({
+            holeNumber: nextHoleNumber++,
+            courseHoleNumber: courseHole.Number, // Original course hole
+            allocation: courseHole.Allocation,
+            yardage: courseHole.Length,
+            par: courseHole.Par,
+            plusMinus: 0,
+            strokes: strokesByCourseHole[courseHole.Number] || 0,
+            score: 0,
+            points: 0
+        }));
+
+        return {
+            ...playerScorecard,
+            tees: teeName,
+            holes: [...existingHoles, ...newHoles]
+        };
+    });
+}
+
+function addHolesToAnswers(existingAnswers, numberOfNewHoles) {
+    const maxHole = existingAnswers.reduce((max, a) => Math.max(max, a.hole), 0);
+    const newAnswers = [];
+
+    for (let i = 1; i <= numberOfNewHoles; i++) {
+        newAnswers.push({ hole: maxHole + i, answers: [] });
+    }
+
+    return [...existingAnswers, ...newAnswers];
+}
 
 function buildScorecards(scorecards, playerTees, strokes = [], holes) {
     const builtScorecards = [];
@@ -360,6 +417,8 @@ module.exports = {
     getTeamsFromAnswers,
     capitalizeWords,
     hasUnplayedHoles,
+    addHolesToScorecard,
+    addHolesToAnswers,
     scoringSystemMessage,
     setupSystemMessage
 }
