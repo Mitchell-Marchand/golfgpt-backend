@@ -61,7 +61,7 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
             LEFT JOIN MatchPlayers mp ON mp.matchId = m.id
             LEFT JOIN Courses c ON m.courseId = c.courseId
             WHERE (m.createdBy IN (${placeholders}) OR mp.userId IN (${placeholders}))
-              AND m.status IN (${statusPlaceholders})
+              AND m.status IN (${statusPlaceholders}) AND m.isPublic = true
             ORDER BY m.updatedAt DESC
             LIMIT ? OFFSET ?
             `,
