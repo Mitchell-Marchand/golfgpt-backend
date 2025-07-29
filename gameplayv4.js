@@ -247,6 +247,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         const playerTees = JSON.parse(rows1[0].tees);
         const holes = rows1[0].holeCount;
         const golfers = JSON.parse(rows1[0].golfers);
+        const golferIds = JSON.parse(rows1[0].golferIds);
 
         const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
@@ -258,34 +259,71 @@ router.post("/create", authenticateUser, async (req, res) => {
 
         //Generate config & questions from gpt-4o
         //Step 1: Determine game type
-        const options = [
-            "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
-            "middle-outside", "king of the hill", "match play", "stroke play", "stableford", "quota", "nine point",
-            "scramble", "shamble", "bramble", "chapman", "alt shot"
-        ];
+        let raw = "stroke play";
+        if (rules?.trim() !== "") {
+            const options = [
+                "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
+                "middle-outside", "king of the hill", "match play", "stroke play", "stableford", "quota", "nine point",
+                "scramble", "shamble", "bramble", "chapman", "alt shot"
+            ];
 
-        const gameType = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert in determining which golf game a user is playing based on their description of it. You are to choose from a list of options and ONLY return ONE of those options and NOTHING else. You must return an option from the list."
-                },
-                {
-                    role: "user",
-                    content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "match play" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
-                }
-            ],
-            temperature: 0.0
-        });
+            const gameType = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert in determining which golf game a user is playing based on their description of it. You are to choose from a list of options and ONLY return ONE of those options and NOTHING else. You must return an option from the list."
+                    },
+                    {
+                        role: "user",
+                        content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "match play" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
+                    }
+                ],
+                temperature: 0.0
+            });
 
-        const raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
+            raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
+        }
+
         let config;
         let sideConfig;
 
         console.log("Type:", raw);
 
-        if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
+        if (rules?.trim() === "") {
+            //Set empty config
+            config = {
+                teams: golfers, //an array consisting of the teams, always with each team as one string with player names separared by '&', e.g. ["Player A & Player B", "Player C & "Player D"]. ONLY use the exact names of the golfers provided. Do NOT ever use "Me" -> only use the EXACT golfer names provided. If no teams are provided, the every golfer is on their own team, , e.g. ["Player A", "Player B", "Player C", "Player D"].
+                type: "stroke", //string of either "match" or "stroke" (default "match") for match or stroke play
+                perHoleOrMatch: "match", //string of either "hole" or "match" (default "match") for whether or not the bet is per hole or match play
+                perHoleValue: 0, //number (default 0) dollar value per hole if perHoleOrMatch is "hole"
+                perMatchValue: 0, //number (default 0) dollar value per match if perHoleOrMatch is "match"
+                perStrokeValue: 0, //number (default 0) dollar value per stroke that is paid for losing a hole/match
+                carryovers: false, //true or false (default false) whether or not money from tied holes or matches carrys over to the next
+                birdiesDoubleCarryovers: false, //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole
+                presses: false, //true or false (default is false) whether or not presses/cups/rolls/bridges/hammers are allowed
+                doublePresses: false, //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
+                combinedScore: false, //true or default (default false) whether or not the scores for each team are combined net to par (true) or best ball (false)
+                birdiesDouble: false, //true or false (default false) whether or not birdies double the points for the hole. NOTE: something like 10/20 means $20 for a win with birdie and $10 otherwise, so this would be true
+                eaglesMultiply: false, //true or false (default false) whether or not eagles multiply the points for the hole. NOTE: something like 10/20/50 means $50 for a win with eagle, $20 with birdie, and $10 otherwise, so this would be true
+                eaglesFactor: 1, //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that, while 5/10/50 would be 10 because the base value is 5 and 50 for eagle which is 10x that
+                autoPresses: false, //true or false (default false) whether or not "presses", or new matches, automatically start at any point
+                autoPressTrigger: false, //number (default 2) how many holes/points a team has to down down by before another match or "press" automatically starts
+                extraBirdieValue: 0, //number (default 0) dollar value for how much a birdie is worth in addition to the results of the match, i.e. "extra $10/man for birdies" would make this 10
+                extraEagleValue: 0, //number (default 0) dollar value for how much an eagle is worth in addition to the results of the match, i.e. "extra $25/man for eagles" would make this 25
+                extraBirdieTeam: false, //true or false (default false) whether or not the extra birdie or eagle value is for the team
+                nassau: false, //true or false (default false) whether or not there is a nassau or match for front back overall
+                sixSixSix: false, //true or false (default false) whether or not the user has said this is a 666 match, or there are three separate 6 hole matches
+                threeThreeThree: false, //true or false (default false) whether or not the user has said this is a 33 match, or there are three separate 3 hole matches
+                sixSixSixOverallValue: 0, //number (default 0) if the user is playing three 6 hole matches and there is an additional match for the overall, this is the dollar value
+                threeThreeThreeOverallValue: 0, //number (default 0) if the user is playing three 3 hole matches and there is an additional match for the overall, this is the dollar value
+                sweepValue: 0, //number (default 0) the amount a team gets if they sweep, or win all of the matches/points in the match
+                onlyGrossBirdies: false, //true or false (default is false) whether or not only gross birdies or eagles are worth anything extra
+                teamsChangeEverySix: false, //true or false (default is false) whether or not teams change every 6 holes
+                teamsChangeEveryThree: false, //true or false (default is false) whether or not teams change every 3 holes
+            };
+            sideConfig = {};
+        } else if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${scotchConfig}`;
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
@@ -450,26 +488,28 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         //Get side action
-        const prompt = `Based on the details for my golf match, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation.\n\nDetails: ${rules}\n\nJSON Object: ${junkConfig}`;
-        const rawConfig = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert in understanding the rules of side games/junk in golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                },
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            temperature: 0.0
-        });
+        if (rules?.trim() !== "") {
+            const prompt = `Based on the details for my golf match, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation.\n\nDetails: ${rules}\n\nJSON Object: ${junkConfig}`;
+            const rawConfig = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert in understanding the rules of side games/junk in golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                temperature: 0.0
+            });
 
-        try {
-            sideConfig = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
-        } catch (err) {
-            return res.status(500).json({ error: "Error building match, please try again." });
+            try {
+                sideConfig = JSON.parse(extractJsonBlock(rawConfig.choices[0].message.content.trim()));
+            } catch (err) {
+                return res.status(500).json({ error: "Error building match, please try again." });
+            }
         }
 
         const strippedJunk = Object.fromEntries(
@@ -486,25 +526,6 @@ router.post("/create", authenticateUser, async (req, res) => {
         }
 
         const formattedTeeTime = formatDateForSQL(teeTime);
-
-        //Get creative displayName from AI.
-        /*let displayName = "Golf Match";
-        const displayNameResponse = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: `You're an assistant who can return a creative but not cheesy display name for a golf match. Your job is to generate short, clear display names.`
-                },
-                { role: "user", content: `Based on these the type of match and stakes, generate a display name. Limit it to 6 words or fewer: ${rules}` }
-            ],
-            temperature: 0.2
-        });
-
-        if (displayNameResponse.choices[0].message.content) {
-            displayName = displayNameResponse.choices[0].message.content?.trim()?.replaceAll('"', '');
-        }*/
-
         const displayName = capitalizeWords(raw);
 
         await mariadbPool.query(
@@ -901,13 +922,13 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
                     title: 'Added To Game',
                     body: `${req.user.firstName} ${req.user.lastName} added you to ${displayName}.`,
                 };
-    
+
                 const response = await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
                 });
-    
+
                 const result = await response.json();
                 console.log('Expo Push Response:', result);
             } else {
