@@ -293,34 +293,34 @@ router.post("/create", authenticateUser, async (req, res) => {
         if (rules?.trim() === "") {
             //Set empty config
             config = {
-                teams: golfers, //an array consisting of the teams, always with each team as one string with player names separared by '&', e.g. ["Player A & Player B", "Player C & "Player D"]. ONLY use the exact names of the golfers provided. Do NOT ever use "Me" -> only use the EXACT golfer names provided. If no teams are provided, the every golfer is on their own team, , e.g. ["Player A", "Player B", "Player C", "Player D"].
-                type: "stroke", //string of either "match" or "stroke" (default "match") for match or stroke play
-                perHoleOrMatch: "match", //string of either "hole" or "match" (default "match") for whether or not the bet is per hole or match play
-                perHoleValue: 0, //number (default 0) dollar value per hole if perHoleOrMatch is "hole"
-                perMatchValue: 0, //number (default 0) dollar value per match if perHoleOrMatch is "match"
-                perStrokeValue: 0, //number (default 0) dollar value per stroke that is paid for losing a hole/match
-                carryovers: false, //true or false (default false) whether or not money from tied holes or matches carrys over to the next
-                birdiesDoubleCarryovers: false, //true or false (default false) whether or not birdies double the entire value of the carryover or just the hole
-                presses: false, //true or false (default is false) whether or not presses/cups/rolls/bridges/hammers are allowed
-                doublePresses: false, //true or false (default is true) whether or not double presses/bowls/rolls/bridges/hammers are allowed
-                combinedScore: false, //true or default (default false) whether or not the scores for each team are combined net to par (true) or best ball (false)
-                birdiesDouble: false, //true or false (default false) whether or not birdies double the points for the hole. NOTE: something like 10/20 means $20 for a win with birdie and $10 otherwise, so this would be true
-                eaglesMultiply: false, //true or false (default false) whether or not eagles multiply the points for the hole. NOTE: something like 10/20/50 means $50 for a win with eagle, $20 with birdie, and $10 otherwise, so this would be true
-                eaglesFactor: 1, //number (default 5) the amount that eagles multiply by, e.g. 10/20/50 would be 5 because the base value is 10 and 50 for eagle is 5x that, while 5/10/50 would be 10 because the base value is 5 and 50 for eagle which is 10x that
-                autoPresses: false, //true or false (default false) whether or not "presses", or new matches, automatically start at any point
-                autoPressTrigger: false, //number (default 2) how many holes/points a team has to down down by before another match or "press" automatically starts
-                extraBirdieValue: 0, //number (default 0) dollar value for how much a birdie is worth in addition to the results of the match, i.e. "extra $10/man for birdies" would make this 10
-                extraEagleValue: 0, //number (default 0) dollar value for how much an eagle is worth in addition to the results of the match, i.e. "extra $25/man for eagles" would make this 25
-                extraBirdieTeam: false, //true or false (default false) whether or not the extra birdie or eagle value is for the team
-                nassau: false, //true or false (default false) whether or not there is a nassau or match for front back overall
-                sixSixSix: false, //true or false (default false) whether or not the user has said this is a 666 match, or there are three separate 6 hole matches
-                threeThreeThree: false, //true or false (default false) whether or not the user has said this is a 33 match, or there are three separate 3 hole matches
-                sixSixSixOverallValue: 0, //number (default 0) if the user is playing three 6 hole matches and there is an additional match for the overall, this is the dollar value
-                threeThreeThreeOverallValue: 0, //number (default 0) if the user is playing three 3 hole matches and there is an additional match for the overall, this is the dollar value
-                sweepValue: 0, //number (default 0) the amount a team gets if they sweep, or win all of the matches/points in the match
-                onlyGrossBirdies: false, //true or false (default is false) whether or not only gross birdies or eagles are worth anything extra
-                teamsChangeEverySix: false, //true or false (default is false) whether or not teams change every 6 holes
-                teamsChangeEveryThree: false, //true or false (default is false) whether or not teams change every 3 holes
+                teams: golfers,
+                type: "stroke",
+                perHoleOrMatch: "match",
+                perHoleValue: 0,
+                perMatchValue: 0,
+                perStrokeValue: 0,
+                carryovers: false,
+                birdiesDoubleCarryovers: false,
+                presses: false,
+                doublePresses: false,
+                combinedScore: false,
+                birdiesDouble: false,
+                eaglesMultiply: false,
+                eaglesFactor: 1,
+                autoPresses: false,
+                autoPressTrigger: false,
+                extraBirdieValue: 0,
+                extraEagleValue: 0,
+                extraBirdieTeam: false,
+                nassau: false,
+                sixSixSix: false,
+                threeThreeThree: false,
+                sixSixSixOverallValue: 0,
+                threeThreeThreeOverallValue: 0,
+                sweepValue: 0,
+                onlyGrossBirdies: false,
+                teamsChangeEverySix: false,
+                teamsChangeEveryThree: false,
             };
             sideConfig = {};
         } else if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
@@ -532,6 +532,39 @@ router.post("/create", authenticateUser, async (req, res) => {
             "UPDATE Matches SET strokes = ?, config = ?, configType = ?, strippedJunk = ?, setup = ?, displayName = ?, teeTime = ?, isPublic = ?, questions = ?, scorecards = ?, status = ? WHERE id = ?",
             [JSON.stringify(strokes), JSON.stringify(config), raw, JSON.stringify(strippedJunk), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
+
+        //Push notificiations for other golfers
+        for (let i = 0; i < golferIds?.length; i++) {
+            if (golferIds[i] !== "Guest" && golferIds[i] !== req.user.id) {
+                //Send push note
+                const [rows] = await mariadbPool.query('SELECT expoPushToken FROM Users WHERE id = ?', [golferIds[i]]);
+                if (rows.length === 0) {
+                    continue;
+                }
+
+                const { expoPushToken } = rows[0];
+
+                if (expoPushToken) {
+                    const body = {
+                        to: expoPushToken,
+                        sound: 'default',
+                        title: 'Added To Game',
+                        body: `${req.user.firstName} ${req.user.lastName} added you to ${displayName}.`,
+                    };
+
+                    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+
+                    const result = await response.json();
+                    console.log('Expo Push Response:', result);
+                } else {
+                    console.log("No push token");
+                }
+            }
+        }
 
         res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName, config, junkConfig: strippedJunk, configType: raw });
     } catch (err) {
