@@ -743,6 +743,7 @@ router.get("/match", authenticateUser, async (req, res) => {
             updatedAt: match.updatedAt,
             course: match.courseId ? {
                 courseId: match.courseId,
+                courseName: match.courseName,
                 FullName: match.courseName
             } : null
         }));
