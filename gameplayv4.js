@@ -566,6 +566,45 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         }
 
+        //Push notificiations for follwers of user
+        const [followsRows] = await mariadbPool.query(
+            `SELECT followerId FROM Follows WHERE followedId = ? AND status = 'accepted'`,
+            [req.user.id]
+        );
+
+        for (let i = 0; i < followsRows.length; i++) {
+            if (golferIds.includes(followsRows[i].followerId)) {
+                continue;
+            }
+            
+            const [rows] = await mariadbPool.query('SELECT expoPushToken FROM Users WHERE id = ?', [followsRows[i].followerId]);
+            if (rows.length === 0) {
+                continue;
+            }
+
+            const { expoPushToken } = rows[0];
+
+            if (expoPushToken) {
+                const body = {
+                    to: expoPushToken,
+                    sound: 'default',
+                    title: '🚨 New Match Started',
+                    body: `${req.user.firstName} ${req.user.lastName} just started a game of ${raw}. Follow the action!`,
+                };
+
+                const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+
+                const result = await response.json();
+                console.log('Expo Push Response:', result);
+            } else {
+                console.log("No push token");
+            }
+        }
+
         res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName, config, junkConfig: strippedJunk, configType: raw });
     } catch (err) {
         console.error("Error in /create:", err);
