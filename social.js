@@ -523,6 +523,31 @@ router.post('/match/:matchId/messages', authenticateUser, async (req, res) => {
             }
         }
 
+        //Get original messager id and send push notification
+        const [ogRows] = await mariadbPool.query('SELECT expoPushToken FROM Users WHERE id = ?', [replyToId]);
+        if (ogRows.length === 1) {
+            const expoPushToken = ogRows[0].expoPushToken;
+            if (expoPushToken) {
+                const body = {
+                    to: expoPushToken,
+                    sound: 'default',
+                    title: 'Message Reply',
+                    body: `${req.user.firstName} ${req.user.lastName} replied to your message`,
+                };
+
+                const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+
+                const result = await response.json();
+                console.log('Expo Push Response:', result);
+            } else {
+                console.log("No push token");
+            }
+        }
+
         res.status(201).json({
             id,
             matchId,
@@ -549,7 +574,7 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
     try {
         // Get current handshakes
         const [rows] = await mariadbPool.query(
-            `SELECT handshakes FROM MatchMessages WHERE id = ? AND matchId = ?`,
+            `SELECT userId, handshakes FROM MatchMessages WHERE id = ? AND matchId = ?`,
             [messageId, matchId]
         );
 
@@ -561,6 +586,8 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
         if (handshakes.includes(userId)) {
             return res.status(400).json({ error: 'You’ve already handshook this message.' });
         }
+
+        const replyToId = rows[0].userId;
 
         handshakes.push(userId);
 
@@ -574,6 +601,31 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
             `SELECT id, firstName, lastName FROM Users WHERE id IN (${placeholders})`,
             handshakes
         );
+
+        //TODO: get original messenger and send push notification
+        const [ogRows] = await mariadbPool.query('SELECT expoPushToken FROM Users WHERE id = ?', [replyToId]);
+        if (ogRows.length === 1) {
+            const expoPushToken = ogRows[0].expoPushToken;
+            if (expoPushToken) {
+                const body = {
+                    to: expoPushToken,
+                    sound: 'default',
+                    title: 'Message Reply',
+                    body: `${req.user.firstName} ${req.user.lastName} replied to your message`,
+                };
+
+                const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+
+                const result = await response.json();
+                console.log('Expo Push Response:', result);
+            } else {
+                console.log("No push token");
+            }
+        }
 
         res.status(200).json({
             success: true,
