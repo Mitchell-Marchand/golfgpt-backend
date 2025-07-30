@@ -807,14 +807,14 @@ router.get("/match", authenticateUser, async (req, res) => {
         console.error("Error in /matches:", err);
         res.status(500).json({ error: "Failed to fetch user matches." });
     }
-}),
+})
 
-    router.get("/matches", authenticateUser, async (req, res) => {
-        const userId = req.user.id;
+router.get("/matches", authenticateUser, async (req, res) => {
+    const userId = req.user.id;
 
-        try {
-            const [rows] = await mariadbPool.query(
-                `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId,
+    try {
+        const [rows] = await mariadbPool.query(
+            `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId,
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
@@ -824,38 +824,38 @@ router.get("/match", authenticateUser, async (req, res) => {
             )
                AND m.status IN ('READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
              ORDER BY m.updatedAt DESC, m.serial DESC`,
-                [userId, userId]
-            );
+            [userId, userId]
+        );
 
-            const parsedMatches = rows.map(match => ({
-                id: match.id,
-                displayName: match.displayName,
-                golfers: match.golfers ? JSON.parse(match.golfers) : [],
-                //golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
-                //scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
-                //questions: match.questions ? JSON.parse(match.questions) : [],
-                //answers: match.answers ? JSON.parse(match.answers) : [],
-                //strokes: match.strokes ? JSON.parse(match.strokes) : [],
-                //configType: match.configType,
-                //config: match.config ? JSON.parse(match.config) : {},
-                //junkConfig: match.strippedJunk ? JSON.parse(match.strippedJunk) : {},
-                //isPublic: match.isPublic,
-                summary: match.summary,
-                status: match.status,
-                teeTime: match.teeTime,
-                updatedAt: match.updatedAt,
-                course: match.courseId ? {
-                    courseId: match.courseId,
-                    courseName: match.courseName
-                } : null
-            }));
+        const parsedMatches = rows.map(match => ({
+            id: match.id,
+            displayName: match.displayName,
+            golfers: match.golfers ? JSON.parse(match.golfers) : [],
+            //golferIds: match.golferIds ? JSON.parse(match.golferIds) : [],
+            //scorecards: match.scorecards ? JSON.parse(match.scorecards) : [],
+            //questions: match.questions ? JSON.parse(match.questions) : [],
+            //answers: match.answers ? JSON.parse(match.answers) : [],
+            //strokes: match.strokes ? JSON.parse(match.strokes) : [],
+            //configType: match.configType,
+            //config: match.config ? JSON.parse(match.config) : {},
+            //junkConfig: match.strippedJunk ? JSON.parse(match.strippedJunk) : {},
+            //isPublic: match.isPublic,
+            summary: match.summary,
+            status: match.status,
+            teeTime: match.teeTime,
+            updatedAt: match.updatedAt,
+            course: match.courseId ? {
+                courseId: match.courseId,
+                courseName: match.courseName
+            } : null
+        }));
 
-            res.json({ success: true, matches: parsedMatches });
-        } catch (err) {
-            console.error("Error in /matches:", err);
-            res.status(500).json({ error: "Failed to fetch user matches." });
-        }
-    });
+        res.json({ success: true, matches: parsedMatches });
+    } catch (err) {
+        console.error("Error in /matches:", err);
+        res.status(500).json({ error: "Failed to fetch user matches." });
+    }
+});
 
 router.get("/golfers", authenticateUser, async (req, res) => {
     const userId = req.user.id;
