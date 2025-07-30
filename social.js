@@ -611,7 +611,7 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
                     to: expoPushToken,
                     sound: 'default',
                     title: 'Message Reply',
-                    body: `${req.user.firstName} ${req.user.lastName} replied to your message`,
+                    body: `${req.user.firstName} ${req.user.lastName} gave you a 🤝`,
                 };
 
                 const response = await fetch('https://exp.host/--/api/v2/push/send', {
