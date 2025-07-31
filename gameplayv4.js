@@ -47,24 +47,24 @@ async function canUserAccessMatch(matchId, userId) {
 }
 
 function generateSummary(scorecards) {
-    if (!Array.isArray(scorecards) || scorecards.length === 0) return ""
+    if (!Array.isArray(scorecards) || scorecards.length === 0) return "";
 
     // 1. Count total holes played (i.e., at least one golfer has non-zero score)
     const holesPlayed = scorecards[0].holes.filter(hole =>
         scorecards.some(g => {
-            const h = g.holes.find(x => x.holeNumber === hole.holeNumber)
-            return h?.score && h.score !== 0
+            const h = g.holes.find(x => x.holeNumber === hole.holeNumber);
+            return h?.score && h.score !== 0;
         })
-    ).length
+    ).length;
 
-    if (holesPlayed === 0) return ""
+    if (holesPlayed === 0) return "";
 
-    // 2. Check plusMinus standings
-    const maxPlusMinus = Math.max(...scorecards.map(g => g.plusMinus))
-    const leaders = scorecards.filter(g => g.plusMinus === maxPlusMinus)
+    // 2. Check plusMinus standings (i.e., money)
+    const maxPlusMinus = Math.max(...scorecards.map(g => g.plusMinus));
+    const moneyLeaders = scorecards.filter(g => g.plusMinus === maxPlusMinus);
 
-    if (maxPlusMinus !== 0 && leaders.length < scorecards.length) {
-        const names = leaders.map(g => {
+    if (maxPlusMinus !== 0 && moneyLeaders.length < scorecards.length) {
+        const names = moneyLeaders.map(g => {
             const parts = g.name.trim().split(" ");
             return parts.length === 1
                 ? parts[0]
@@ -75,28 +75,57 @@ function generateSummary(scorecards) {
             ? names[0]
             : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
 
-        return `${joined} ${names.length === 1 ? "is" : "are"} up $${maxPlusMinus} through ${holesPlayed}`;
+        const moneyDisplay =
+            Number.isInteger(maxPlusMinus)
+                ? `$${maxPlusMinus}`
+                : `$${maxPlusMinus.toFixed(2)}`;
+
+        return `${joined} ${names.length === 1 ? "is" : "are"} up ${moneyDisplay} through ${holesPlayed}`;
     }
 
-    // 3. Check points if money is tied
-    const maxPoints = Math.max(...scorecards.map(g =>
-        g.holes.reduce((sum, h) => sum + (h.points || 0), 0)
-    ))
+    // 3. Check points
+    const getTotalPoints = g =>
+        g.holes.reduce((sum, h) => sum + (h.points || 0), 0);
+    const maxPoints = Math.max(...scorecards.map(getTotalPoints));
 
     if (maxPoints > 0) {
-        const pointLeaders = scorecards.filter(g =>
-            g.holes.reduce((sum, h) => sum + (h.points || 0), 0) === maxPoints
-        )
-
-        const names = pointLeaders.map(g => g.name)
+        const pointLeaders = scorecards.filter(g => getTotalPoints(g) === maxPoints);
+        const names = pointLeaders.map(g => g.name);
         const joined = names.length === 1
             ? names[0]
-            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
+            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
 
-        return `${joined} ${names.length === 1 ? "is" : "are"} up ${maxPoints} through ${holesPlayed}`
+        return `${joined} ${names.length === 1 ? "is" : "are"} up ${maxPoints} through ${holesPlayed}`;
     }
 
-    // 4. Everything tied
+    // 4. Fallback: use net score comparison (score - strokes)
+    const getNetScore = g =>
+        g.holes.reduce((sum, h) => sum + ((h.score || 0) - (h.strokes || 0)), 0);
+
+    const netScores = scorecards.map(g => ({
+        name: g.name,
+        net: getNetScore(g)
+    }));
+
+    const minNet = Math.min(...netScores.map(n => n.net));
+    const netLeaders = netScores.filter(n => n.net === minNet);
+
+    if (netLeaders.length < scorecards.length) {
+        const names = netLeaders.map(n => {
+            const parts = n.name.trim().split(" ");
+            return parts.length === 1
+                ? parts[0]
+                : `${parts[0]} ${parts[1][0]}`;
+        });
+
+        const joined = names.length === 1
+            ? names[0]
+            : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+
+        return `${joined} ${names.length === 1 ? "is" : "are"} up (net) through ${holesPlayed}`;
+    }
+
+    // 5. Everything tied
     return `Tied through ${holesPlayed}`;
 }
 

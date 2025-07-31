@@ -883,7 +883,10 @@ function wolf(scorecards, scores, config, answers) {
 
         // Carryover logic
         const thisHolePoints = basePoints;
-        const totalPoints = carryovers ? thisHolePoints + carryoverPoints : thisHolePoints;
+        let totalPoints = carryovers ? thisHolePoints + carryoverPoints : thisHolePoints;
+
+        if ((wolfBirdieLow === par - 1 || opponentBirdieLow === par - 1) && birdiesDouble && carryovers && birdiesDoubleCarryovers) totalPoints *= 2;
+        if ((wolfBirdieLow <= par - 2 || opponentBirdieLow <= par - 2) && eaglesMultiply && carryovers && birdiesDoubleCarryovers) totalPoints *= eaglesFactor;
 
         const perOpponent = totalPoints * effectiveHoleValue;
         const biggestTeam = oppTeam.length > wolfTeam.length ? oppTeam.length : wolfTeam.length
@@ -944,7 +947,7 @@ function wolf(scorecards, scores, config, answers) {
         }
 
         // If birdie on win & carryover && birdiesDoubleCarryovers
-        if ((wolfBirdieLow < par || opponentBirdieLow < par) && carryovers && birdiesDoubleCarryovers) {
+        /*if ((wolfBirdieLow < par || opponentBirdieLow < par) && carryovers && birdiesDoubleCarryovers) {
             let factor = 2;
             if (eaglesMultiply && eaglesFactor && (wolfBirdieLow <= par - 2 || opponentBirdieLow <= par - 2)) {
                 factor = eaglesFactor
@@ -956,7 +959,7 @@ function wolf(scorecards, scores, config, answers) {
             }
 
             carryoverPoints *= factor;
-        }
+        }*/
     }
 
     return scorecards;
@@ -1477,7 +1480,7 @@ function universalMatchScorer(scorecards, scores, config, answers) {
             }
 
             if (stablefordQuota) {
-                //TODO: Everyone pay everyone on last hole relative to quota if all holes have been played
+                //Everyone pay everyone on last hole relative to quota if all holes have been played
                 if (!hasUnplayedHoles(scorecards)) {
                     const quotaPoints = [];
 
