@@ -1131,7 +1131,10 @@ function leftRight(scorecards, scores, config, answers) {
         if ((team1BirdieLow === par - 1 || team2BirdieLow === par - 1) && birdiesDouble && !(carryovers && birdiesDoubleCarryovers)) value *= 2;
         if ((team1BirdieLow <= par - 2 || team2BirdieLow <= par - 2) && eaglesMultiply && !(carryovers && birdiesDoubleCarryovers)) value *= eaglesFactor;
 
-        const totalValue = carryovers ? value + carryoverPoints : value;
+        let totalValue = carryovers ? value + carryoverPoints : value;
+
+        if ((team1BirdieLow === par - 1 || team2BirdieLow === par - 1) && birdiesDouble && carryovers && birdiesDoubleCarryovers) totalValue *= 2;
+        if ((team1BirdieLow <= par - 2 || team2BirdieLow <= par - 2) && eaglesMultiply && carryovers && birdiesDoubleCarryovers) totalValue *= eaglesFactor;
 
         if (team1Wins || team2Wins) {
             carryoverPoints = 0;

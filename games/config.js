@@ -21,7 +21,7 @@ const junkConfig = `{
         sharedPenalty //true or false (default false) whether the user pays each golfer the pot amount or distributes the amount amongst everyone
     },
     skins: {
-        valid //true or false (default false) if the user says that skins have a monetary value
+        valid //true or false (default false) if the user says that skins have a monetary value. ONLY set as true if the user explicitly says there are "skins"
         value //number (default 0) the value of a skin
         fromPot //true or false (default true) - true if each golfer is in for a fixed amount that is then split amongst the skins, or false if each skin is just worth a certain dollar amount from each golfer
         potValue //number (default 0) the amount that each golfer puts in the pot or "buys in" for skins
