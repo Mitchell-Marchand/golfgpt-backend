@@ -304,7 +304,7 @@ router.get('/follow/followers/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followerId
-         WHERE f.followedId = ? AND f.status = 'accepted' ORDER BY createdAt DESC`,
+         WHERE f.followedId = ? AND f.status = 'accepted' ORDER BY f.createdAt DESC`,
             [userId]
         );
 
@@ -312,7 +312,7 @@ router.get('/follow/followers/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followerId
-         WHERE f.followedId = ? AND f.status = 'pending' ORDER BY createdAt DESC`,
+         WHERE f.followedId = ? AND f.status = 'pending' ORDER BY f.createdAt DESC`,
             [userId]
         );
 
@@ -331,7 +331,7 @@ router.get('/follow/following/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followedId
-         WHERE f.followerId = ? AND f.status = 'accepted' ORDER BY createdAt DESC`,
+         WHERE f.followerId = ? AND f.status = 'accepted' ORDER BY f.createdAt DESC`,
             [userId]
         );
 
@@ -350,7 +350,7 @@ router.get('/follow/requests/:userId', authenticateUser, async (req, res) => {
             `SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
          FROM Follows f
          JOIN Users u ON u.id = f.followedId
-         WHERE f.followerId = ? AND f.status = 'pending' ORDER BY createdAt DESC`,
+         WHERE f.followerId = ? AND f.status = 'pending' ORDER BY f.createdAt DESC`,
             [userId]
         );
 
@@ -370,7 +370,7 @@ router.get('/follow/blocked', authenticateUser, async (req, res) => {
         SELECT u.id, u.firstName, u.lastName, u.homeClub, u.isPublic
         FROM Follows f
         JOIN Users u ON u.id = f.followerId
-        WHERE f.followedId = ? AND f.status = 'rejected' ORDER BY createdAt DESC
+        WHERE f.followedId = ? AND f.status = 'rejected' ORDER BY f.createdAt DESC
         `,
             [followedId]
         );
