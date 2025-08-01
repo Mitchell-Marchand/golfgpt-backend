@@ -1317,6 +1317,8 @@ router.put("/settings", authenticateUser, async (req, res) => {
 
 router.post("/remove", authenticateUser, async (req, res) => {
     const { matchId, selectedHoles } = req.body;
+    const userId = req.user.id;
+
     if (!matchId) {
         return res.status(400).json({ error: "Missing match IDs." });
     }
@@ -1429,7 +1431,7 @@ router.post("/remove", authenticateUser, async (req, res) => {
 
         res.json({ success: true, scorecards, summary });
     } catch (err) {
-        console.error("Error in post /extend:", err);
+        console.error("Error in post /remove:", err);
         res.status(500).json({ error: "Failed to add new holes." });
     }
 });
