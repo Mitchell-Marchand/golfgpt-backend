@@ -1326,7 +1326,7 @@ router.post("/remove", authenticateUser, async (req, res) => {
     try {
         // Validate access to matchToEdit
         const [editRows] = await mariadbPool.query(
-            `SELECT scorecards, answers, config, junkConfig, configType, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            `SELECT scorecards, answers, config, strippedJunk, configType, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
             [matchId, userId, userId]
         );
 
@@ -1337,7 +1337,7 @@ router.post("/remove", authenticateUser, async (req, res) => {
         let scorecards = JSON.parse(editRows[0].scorecards);
         let answers = JSON.parse(editRows[0].answers);
         const config = JSON.parse(editRows[0].config);
-        const junkConfig = JSON.parse(editRows[0].junkConfig);
+        const strippedJunk = JSON.parse(editRows[0].strippedJunk);
         const golfers = JSON.parse(editRows[0].golfers);
         const configType = editRows[0].configType;
 
@@ -1375,11 +1375,6 @@ router.post("/remove", authenticateUser, async (req, res) => {
         }
 
         answers.sort((a, b) => a.hole - b.hole);
-
-        //Regenerate money based on config, junk, and config type
-        const strippedJunk = Object.fromEntries(
-            Object.entries(junkConfig).filter(([_, value]) => value.valid)
-        );
 
         const scores = scorecards.map(sc => {
             return {
