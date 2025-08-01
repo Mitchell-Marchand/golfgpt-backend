@@ -1315,6 +1315,125 @@ router.put("/settings", authenticateUser, async (req, res) => {
     }
 });
 
+router.post("/remove", authenticateUser, async (req, res) => {
+    const { matchId, selectedHoles } = req.body;
+    if (!matchId) {
+        return res.status(400).json({ error: "Missing match IDs." });
+    }
+
+    try {
+        // Validate access to matchToEdit
+        const [editRows] = await mariadbPool.query(
+            `SELECT scorecards, answers, config, junkConfig, configType, golfers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            [matchId, userId, userId]
+        );
+
+        if (editRows.length === 0) {
+            return res.status(403).json({ error: "Unauthorized to edit this match." });
+        }
+
+        let scorecards = JSON.parse(editRows[0].scorecards);
+        let answers = JSON.parse(editRows[0].answers);
+        const config = JSON.parse(editRows[0].config);
+        const junkConfig = JSON.parse(editRows[0].junkConfig);
+        const golfers = JSON.parse(editRows[0].golfers);
+        const configType = editRows[0].configType;
+
+        // Sort selected holes for predictable ordering
+        const sortedSelectedHoles = [...selectedHoles].sort((a, b) => a - b);
+
+        // Update scorecards
+        for (let i = 0; i < scorecards.length; i++) {
+            const golfer = scorecards[i];
+
+            // Remove selected holes
+            golfer.holes = golfer.holes.filter(h => !sortedSelectedHoles.includes(h.holeNumber));
+
+            // Adjust hole numbers for remaining holes
+            for (let removed of sortedSelectedHoles) {
+                golfer.holes.forEach(h => {
+                    if (h.holeNumber > removed) {
+                        h.holeNumber -= 1;
+                    }
+                });
+            }
+
+            golfer.holes.sort((a, b) => a.holeNumber - b.holeNumber);
+        }
+
+        // Update answers
+        answers = answers.filter(a => !sortedSelectedHoles.includes(a.hole));
+
+        for (let removed of sortedSelectedHoles) {
+            answers.forEach(a => {
+                if (a.hole > removed) {
+                    a.hole -= 1;
+                }
+            });
+        }
+
+        answers.sort((a, b) => a.hole - b.hole);
+
+        //Regenerate money based on config, junk, and config type
+        const strippedJunk = Object.fromEntries(
+            Object.entries(junkConfig).filter(([_, value]) => value.valid)
+        );
+
+        const scores = scorecards.map(sc => {
+            return {
+                name: sc.name,
+                strokes: sc.holes[0].strokes,
+                score: sc.holes[0].score,
+                holeNumber: sc.holes[0].holeNumber
+            }
+        })
+
+        scorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, scores)
+
+        let allHolesPlayed = true;
+        for (i = 0; i < scorecards.length; i++) {
+            let plusMinus = 0;
+            let handicap = 0;
+            let points = 0;
+            let golferPlayedAllHoles = true;
+
+            for (j = 0; j < scorecards[i].holes.length; j++) {
+                plusMinus += scorecards[i].holes[j].plusMinus;
+                handicap += scorecards[i].holes[j].strokes;
+                points += scorecards[i].holes[j].points;
+
+                if (scorecards[i].holes[j].score === 0) {
+                    golferPlayedAllHoles = false;
+                }
+            }
+
+            scorecards[i].plusMinus = plusMinus;
+            scorecards[i].handicap = handicap;
+            scorecards[i].points = points;
+
+            if (allHolesPlayed && !golferPlayedAllHoles) {
+                allHolesPlayed = false;
+            }
+        }
+
+        let status = "IN_PROGRESS";
+        if (allHolesPlayed) {
+            status = "COMPLETED";
+        }
+
+        const summary = generateSummary(scorecards);
+        await mariadbPool.query(
+            "UPDATE Matches SET summary = ?, scorecards = ?, answers = ?, status = ? WHERE id = ?",
+            [summary, JSON.stringify(scorecards), JSON.stringify(answers), status, matchId]
+        );
+
+        res.json({ success: true, scorecards, summary });
+    } catch (err) {
+        console.error("Error in post /extend:", err);
+        res.status(500).json({ error: "Failed to add new holes." });
+    }
+});
+
 router.post("/extend", authenticateUser, async (req, res) => {
     const { matchId, course, teesByGolfer, selectedHoles, scorecards, holes } = req.body;
     const userId = req.user.id;
