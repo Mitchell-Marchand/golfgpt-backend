@@ -349,7 +349,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             continue;
         }
 
-        if (autoDoubleWhileTiedTrigger) {
+        /*if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
                 if (getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber) !== 0) {
@@ -436,6 +436,54 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                     console.log("6", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} to back to reg`);
                 }
             }
+        }*/
+
+        // Helper functions
+        const isMatchTiedAtHole = (holeNumber) => {
+            return currentScorecard.every(golfer =>
+                getPlusMinusSumUpToHole(golfer, holeNumber) === 0
+            );
+        };
+
+        const isAnyGolferDownByTrigger = (holeNumber) => {
+            return currentScorecard.some(golfer =>
+                Math.abs(getPlusMinusSumUpToHole(golfer, holeNumber)) >= autoDoubleMoneyTrigger
+            );
+        };
+
+        const shouldAutoDouble = (holeNumber) => {
+            if (!autoDoubles || isDoubled) return false;
+
+            if (autoDoubleAfterNineTrigger && holeNumber > 9) return true;
+            if (autoDoubleMoneyTrigger > 0 && isAnyGolferDownByTrigger(holeNumber)) return true;
+            if (autoDoubleWhileTiedTrigger && isMatchTiedAtHole(holeNumber)) return true;
+
+            return false;
+        };
+
+        const shouldRevertDouble = (holeNumber) => {
+            if (!autoDoubles || !isDoubled || autoDoubleStays) return false;
+
+            const moneyTriggerCleared = autoDoubleMoneyTrigger > 0 &&
+                !isAnyGolferDownByTrigger(holeNumber);
+
+            const tieTriggerCleared = autoDoubleWhileTiedTrigger &&
+                !isMatchTiedAtHole(holeNumber);
+
+            return moneyTriggerCleared && tieTriggerCleared;
+        };
+
+        // Main logic
+        const holeNumber = currentScorecard[0].holes[i].holeNumber;
+
+        if (shouldAutoDouble(holeNumber)) {
+            pointWorth = autoDoubleValue;
+            isDoubled = true;
+            console.log("Auto-double triggered on hole", holeNumber);
+        } else if (shouldRevertDouble(holeNumber)) {
+            pointWorth = pointVal;
+            isDoubled = false;
+            console.log("Auto-double reverted on hole", holeNumber);
         }
 
         const answers = allAnswers[i].answers;
