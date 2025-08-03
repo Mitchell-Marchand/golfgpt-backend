@@ -419,51 +419,62 @@ function getPointWorthForHole({
     autoDoubleStays,
     priorDoubledState
 }) {
-    let isDoubled = priorDoubledState; // true/false depending on whether the last hole was doubled
+    let isDoubled = priorDoubledState;
 
-    // Helper: check if match is tied at this hole
-    const isMatchTied = currentScorecard.every(golfer =>
+    // Helper: is match tied up to this hole
+    const isTied = currentScorecard.every(golfer =>
         getPlusMinusSumUpToHole(golfer, holeNumber) === 0
     );
 
-    // Helper: check if any golfer is down enough to trigger money-based auto double
-    const isMoneyTriggerHit = autoDoubleMoneyTrigger > 0 &&
+    // Helper: is any golfer down enough to trigger money double
+    const isMoneyTriggerHit =
+        autoDoubleMoneyTrigger > 0 &&
         currentScorecard.some(golfer =>
             Math.abs(getPlusMinusSumUpToHole(golfer, holeNumber)) >= autoDoubleMoneyTrigger
         );
 
-    // === Decide if the point value should be doubled ===
+    const isAfterNine = holeNumber > 9;
+
+    // === Determine if we should double ===
     if (autoDoubles) {
         const shouldDouble =
-            (autoDoubleWhileTiedTrigger && isMatchTied) ||
-            (autoDoubleAfterNineTrigger && holeNumber > 9) ||
+            (autoDoubleWhileTiedTrigger && isTied) ||
+            (autoDoubleAfterNineTrigger && isAfterNine) ||
             isMoneyTriggerHit;
 
-        if (shouldDouble) {
+        if (shouldDouble && !isDoubled) {
             return {
-                pointWorth: autoDoubleValue,
+                pointValue: autoDoubleValue,
                 isDoubled: true
             };
         }
 
-        // If it's currently doubled but shouldn't stay doubled
-        const tiedCleared = !isMatchTied || !autoDoubleWhileTiedTrigger;
-        const moneyCleared = !isMoneyTriggerHit || !autoDoubleMoneyTrigger;
+        // === Determine if we should revert back to base value ===
+        const noTriggersActive =
+            (!autoDoubleWhileTiedTrigger || !isTied) &&
+            (!autoDoubleAfterNineTrigger || !isAfterNine) &&
+            (!isMoneyTriggerHit);
 
-        const shouldRevert = isDoubled && !autoDoubleStays && tiedCleared && moneyCleared;
-
-        if (shouldRevert) {
+        if (isDoubled && !autoDoubleStays && noTriggersActive) {
             return {
-                pointWorth: pointVal,
+                pointValue: pointVal,
                 isDoubled: false
+            };
+        }
+
+        // If doubled and autoDoubleStays is true, or triggers still active
+        if (isDoubled) {
+            return {
+                pointValue: autoDoubleValue,
+                isDoubled: true
             };
         }
     }
 
-    // Default case: no auto-double or conditions not met
+    // Default case: no doubles or not triggered
     return {
-        pointWorth: pointVal,
-        isDoubled
+        pointValue: pointVal,
+        isDoubled: false
     };
 }
 
