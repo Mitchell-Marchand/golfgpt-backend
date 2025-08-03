@@ -337,7 +337,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
 
     //Populate currentScorecard with new values based on scores
     let pointWorth = pointVal;
-    let priorDoubledState = false;
     for (let i = 0; i < currentScorecard[0].holes.length; i++) {
         let firstTeamPoints = 0;
         let secondTeamPoints = 0;
@@ -349,7 +348,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             continue;
         }
 
-        let { pointValue, isDoubled } = getPointWorthForHole({
+        pointWorth = getPointWorthForHole({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             currentScorecard,
             pointVal,
@@ -358,12 +357,8 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             autoDoubleWhileTiedTrigger,
             autoDoubleAfterNineTrigger,
             autoDoubleMoneyTrigger,
-            autoDoubleStays,
-            priorDoubledState
+            autoDoubleStays
         });
-
-        priorDoubledState = isDoubled;
-        pointWorth = pointValue;
 
         /*if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;

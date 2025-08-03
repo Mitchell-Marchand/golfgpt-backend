@@ -416,60 +416,52 @@ function getPointWorthForHole({
     autoDoubleWhileTiedTrigger,
     autoDoubleAfterNineTrigger,
     autoDoubleMoneyTrigger,
-    autoDoubleStays,
-    priorDoubledState
+    autoDoubleStays
 }) {
-    let isDoubled = priorDoubledState;
+    if (!autoDoubles) {
+        return pointVal;
+    }
 
-    const isTied = currentScorecard.every(golfer =>
-        getPlusMinusSumUpToHole(golfer, holeNumber) === 0
-    );
+    // 1. Auto double if match is tied at this hole
+    const isMatchTied = autoDoubleWhileTiedTrigger &&
+        currentScorecard.every(golfer =>
+            getPlusMinusSumUpToHole(golfer, holeNumber) === 0
+        );
 
-    const isMoneyTriggerHit =
+    if (isMatchTied) {
+        return autoDoubleValue;
+    }
+
+    // 2. Auto double if after 9 and setting is true
+    if (autoDoubleAfterNineTrigger && holeNumber > 9) {
+        return autoDoubleValue;
+    }
+
+    // 3. Auto double if money trigger is hit at this hole
+    const isMoneyTriggerHitThisHole =
         autoDoubleMoneyTrigger > 0 &&
         currentScorecard.some(golfer =>
             Math.abs(getPlusMinusSumUpToHole(golfer, holeNumber)) >= autoDoubleMoneyTrigger
         );
 
-    const isAfterNine = holeNumber > 9;
-
-    // === Determine what should be true at this hole ===
-    const isTiedDouble = autoDoubleWhileTiedTrigger && isTied;
-    const isAfterNineDouble = autoDoubleAfterNineTrigger && isAfterNine;
-
-    // If any condition is active, it should double
-    const shouldDouble = isTiedDouble || isAfterNineDouble || isMoneyTriggerHit;
-
-    // Case 1: Should double now (regardless of previous state)
-    if (shouldDouble) {
-        return {
-            pointValue: autoDoubleValue,
-            isDoubled: true
-        };
+    if (isMoneyTriggerHitThisHole) {
+        return autoDoubleValue;
     }
 
-    // Case 2: Was doubled previously — should we stay doubled?
-    if (isDoubled) {
-        // We only stay doubled if the *previous* double was due to the money trigger AND autoDoubleStays is true
-        if (autoDoubleStays && isMoneyTriggerHit) {
-            return {
-                pointValue: autoDoubleValue,
-                isDoubled: true
-            };
+    // 4. Auto double if money trigger was hit on *any prior* hole and stays is enabled
+    if (autoDoubleStays && autoDoubleMoneyTrigger > 0) {
+        for (let h = 1; h < holeNumber; h++) {
+            const moneyTriggerHitPreviously = currentScorecard.some(golfer =>
+                Math.abs(getPlusMinusSumUpToHole(golfer, h)) >= autoDoubleMoneyTrigger
+            );
+            if (moneyTriggerHitPreviously) {
+                return autoDoubleValue;
+            }
         }
-
-        // All triggers cleared, and either it wasn’t money-based or stays is false — revert
-        return {
-            pointValue: pointVal,
-            isDoubled: false
-        };
     }
 
-    // Case 3: Not doubled before, not now — remain at base value
-    return {
-        pointValue: pointVal,
-        isDoubled: false
-    };
+    // 5. Default case: no auto double
+    return pointVal;
 }
 
 module.exports = {
