@@ -1753,6 +1753,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     let carryoverValue = 0;
     let firstTeamGotSwept = true;
     let firstTeamSwept = true;
+    const teamsArrays = teams.map(team => team.split(' & '));
 
     //console.log("matches length", allMatches.length);
 
@@ -1765,7 +1766,6 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             }
         }
 
-        const teamsArrays = teams.map(team => team.split(' & '));
         const { firstTeamDown, holesRemaining } = getFirstTeamDownInMatch(
             teams,
             scorecards,
