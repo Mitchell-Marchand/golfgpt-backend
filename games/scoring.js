@@ -353,7 +353,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             console.log(currentScorecard[0].holes[i].holeNumber, "4");
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
-                if (currentScorecard[j].plusMinus !== 0) {
+                if (getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber) !== 0) {
                     needsToDouble = false;
                     break;
                 }
