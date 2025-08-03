@@ -373,7 +373,9 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
-            } else if (autoDoubleMoneyTrigger > 0) {
+            }
+            
+            if (autoDoubleMoneyTrigger > 0) {
                 //Check if any golfer is above the trigger
                 for (let j = 0; j < currentScorecard.length; j++) {
                     if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
@@ -382,7 +384,9 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                         break;
                     }
                 }
-            } else if (autoDoubleWhileTiedTrigger) {
+            } 
+            
+            if (autoDoubleWhileTiedTrigger) {
                 let change = true;
                 for (let j = 0; j < currentScorecard.length; j++) {
                     if (currentScorecard[j].plusMinus !== 0) {
