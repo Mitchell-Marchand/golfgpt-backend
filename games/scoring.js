@@ -371,14 +371,17 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         //Determine if we're any autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
+                console.log(currentScorecard[0].holes[i].holeNumber, "1");
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
             }
             
             if (autoDoubleMoneyTrigger > 0) {
+                console.log(currentScorecard[0].holes[i].holeNumber, "2");
                 //Check if any golfer is above the trigger
                 for (let j = 0; j < currentScorecard.length; j++) {
-                    if (Math.abs(currentScorecard[j].plusMinus) >= autoDoubleMoneyTrigger) {
+                    //TODO: get sum of plusMinus up to hole number
+                    if (Math.abs(getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber)) >= autoDoubleMoneyTrigger) {
                         pointWorth = autoDoubleValue;
                         isDoubled = true;
                         break;
@@ -387,9 +390,11 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             } 
             
             if (autoDoubleWhileTiedTrigger) {
+                console.log(currentScorecard[0].holes[i].holeNumber, "3");
                 let change = true;
                 for (let j = 0; j < currentScorecard.length; j++) {
-                    if (currentScorecard[j].plusMinus !== 0) {
+                    //TODO: get sum of plusMinus up to hole number
+                    if (getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber) !== 0) {
                         change = false;
                         break;
                     }
@@ -400,7 +405,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                     isDoubled = true;
                 }
             }
-            console.log(currentScorecard[0].holes[i].holeNumber, "1");
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {

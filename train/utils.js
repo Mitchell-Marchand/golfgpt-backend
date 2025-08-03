@@ -334,6 +334,14 @@ function extractJsonBlock(responseText) {
         .trim();                      // clean up whitespace
 }
 
+function getPlusMinusSumUpToHole(scorecard, holeNumber) {
+    if (!scorecard || !Array.isArray(scorecard.holes)) return 0;
+
+    return scorecard.holes
+        .filter(hole => hole.holeNumber < holeNumber)
+        .reduce((sum, hole) => sum + (hole.plusMinus || 0), 0);
+}
+
 function getTeamTotals(teamScores) {
     return teamScores.reduce((sum, num) => sum + num, 0);
 }
@@ -419,6 +427,7 @@ module.exports = {
     hasUnplayedHoles,
     addHolesToScorecard,
     addHolesToAnswers,
+    getPlusMinusSumUpToHole,
     scoringSystemMessage,
     setupSystemMessage
 }
