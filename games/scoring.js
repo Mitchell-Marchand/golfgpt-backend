@@ -352,14 +352,14 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         let { pointValue, isDoubled } = getPointWorthForHole({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             currentScorecard,
-            pointVal: 1,
-            autoDoubleValue: 2,
-            autoDoubles: true,
-            autoDoubleWhileTiedTrigger: true,
-            autoDoubleAfterNineTrigger: true,
-            autoDoubleMoneyTrigger: 3,
-            autoDoubleStays: false,
-            priorDoubledState: false // or true if the previous hole was doubled
+            pointVal,
+            autoDoubleValue,
+            autoDoubles,
+            autoDoubleWhileTiedTrigger,
+            autoDoubleAfterNineTrigger,
+            autoDoubleMoneyTrigger,
+            autoDoubleStays,
+            priorDoubledState
         });
 
         priorDoubledState = isDoubled;
