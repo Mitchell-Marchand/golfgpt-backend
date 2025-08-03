@@ -350,6 +350,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         if (autoDoubleWhileTiedTrigger) {
+            console.log("3");
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
                 if (currentScorecard[j].plusMinus !== 0) {
@@ -367,7 +368,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             }
         }
 
-        //Determine if we're ay autodouble somehow and apply
+        //Determine if we're any autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
                 pointWorth = autoDoubleValue;
@@ -382,6 +383,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                     }
                 }
             }
+            console.log("1");
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
@@ -411,6 +413,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                     isDoubled = false;
                 }
             }
+            console.log("2");
         }
 
         const answers = allAnswers[i].answers;
