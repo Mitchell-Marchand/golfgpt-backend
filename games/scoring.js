@@ -349,7 +349,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             continue;
         }
 
-        if (autoDoubleWhileTiedTrigger) {
+        /*if (autoDoubleWhileTiedTrigger) {
             console.log(currentScorecard[0].holes[i].holeNumber, "4");
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
@@ -366,7 +366,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                 isDoubled = false;
                 pointWorth = pointVal;
             }
-        }
+        }*/
 
         //Determine if we're any autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
