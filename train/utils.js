@@ -462,7 +462,7 @@ function getPointWorthForHole({
 
     // Default case: no auto-double or conditions not met
     return {
-        pointWorth: pointVal,
+        pointValue: pointVal,
         isDoubled
     };
 }

@@ -349,7 +349,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             continue;
         }
 
-        let { pointWorth, isDoubled } = getPointWorthForHole({
+        let { pointValue, isDoubled } = getPointWorthForHole({
             holeNumber: currentScorecard[0].holes[i].holeNumber,
             currentScorecard,
             pointVal: 1,
@@ -363,6 +363,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         });
 
         priorDoubledState = isDoubled;
+        pointWorth = pointValue;
 
         /*if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
