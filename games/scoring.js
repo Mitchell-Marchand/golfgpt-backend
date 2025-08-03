@@ -350,7 +350,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         if (autoDoubleWhileTiedTrigger) {
-            console.log("3");
+            console.log(currentScorecard[0].holes[i].holeNumber, "3");
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
                 if (currentScorecard[j].plusMinus !== 0) {
@@ -382,8 +382,21 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                         break;
                     }
                 }
+            } else if (autoDoubleWhileTiedTrigger) {
+                let change = true;
+                for (let j = 0; j < currentScorecard.length; j++) {
+                    if (currentScorecard[j].plusMinus !== 0) {
+                        change = false;
+                        break;
+                    }
+                }
+
+                if (change) {
+                    pointWorth = autoDoubleValue;
+                    isDoubled = true;
+                }
             }
-            console.log("1");
+            console.log(currentScorecard[0].holes[i].holeNumber, "1");
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
             //Check if no longer needed from trigger or match tied
             if (autoDoubleMoneyTrigger > 0 || autoDoubleWhileTiedTrigger) {
