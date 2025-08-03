@@ -421,12 +421,10 @@ function getPointWorthForHole({
 }) {
     let isDoubled = priorDoubledState;
 
-    // Helper: is match tied up to this hole
     const isTied = currentScorecard.every(golfer =>
         getPlusMinusSumUpToHole(golfer, holeNumber) === 0
     );
 
-    // Helper: is any golfer down enough to trigger money double
     const isMoneyTriggerHit =
         autoDoubleMoneyTrigger > 0 &&
         currentScorecard.some(golfer =>
@@ -435,43 +433,39 @@ function getPointWorthForHole({
 
     const isAfterNine = holeNumber > 9;
 
-    // === Determine if we should double ===
-    if (autoDoubles) {
-        const shouldDouble =
-            (autoDoubleWhileTiedTrigger && isTied) ||
-            (autoDoubleAfterNineTrigger && isAfterNine) ||
-            isMoneyTriggerHit;
+    // === Determine what should be true at this hole ===
+    const isTiedDouble = autoDoubleWhileTiedTrigger && isTied;
+    const isAfterNineDouble = autoDoubleAfterNineTrigger && isAfterNine;
 
-        if (shouldDouble && !isDoubled) {
-            return {
-                pointValue: autoDoubleValue,
-                isDoubled: true
-            };
-        }
+    // If any condition is active, it should double
+    const shouldDouble = isTiedDouble || isAfterNineDouble || isMoneyTriggerHit;
 
-        // === Determine if we should revert back to base value ===
-        const noTriggersActive =
-            (!autoDoubleWhileTiedTrigger || !isTied) &&
-            (!autoDoubleAfterNineTrigger || !isAfterNine) &&
-            (!isMoneyTriggerHit);
-
-        if (isDoubled && !autoDoubleStays && noTriggersActive) {
-            return {
-                pointValue: pointVal,
-                isDoubled: false
-            };
-        }
-
-        // If doubled and autoDoubleStays is true, or triggers still active
-        if (isDoubled) {
-            return {
-                pointValue: autoDoubleValue,
-                isDoubled: true
-            };
-        }
+    // Case 1: Should double now (regardless of previous state)
+    if (shouldDouble) {
+        return {
+            pointValue: autoDoubleValue,
+            isDoubled: true
+        };
     }
 
-    // Default case: no doubles or not triggered
+    // Case 2: Was doubled previously — should we stay doubled?
+    if (isDoubled) {
+        // We only stay doubled if the *previous* double was due to the money trigger AND autoDoubleStays is true
+        if (autoDoubleStays && isMoneyTriggerHit) {
+            return {
+                pointValue: autoDoubleValue,
+                isDoubled: true
+            };
+        }
+
+        // All triggers cleared, and either it wasn’t money-based or stays is false — revert
+        return {
+            pointValue: pointVal,
+            isDoubled: false
+        };
+    }
+
+    // Case 3: Not doubled before, not now — remain at base value
     return {
         pointValue: pointVal,
         isDoubled: false
