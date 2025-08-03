@@ -350,7 +350,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         if (autoDoubleWhileTiedTrigger) {
-            console.log(currentScorecard[0].holes[i].holeNumber, "3");
+            console.log(currentScorecard[0].holes[i].holeNumber, "4");
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
                 if (currentScorecard[j].plusMinus !== 0) {
