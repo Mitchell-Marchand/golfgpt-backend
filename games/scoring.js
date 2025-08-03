@@ -337,7 +337,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
 
     //Populate currentScorecard with new values based on scores
     let pointWorth = pointVal;
-    let isDoubled = false;
+    let priorDoubledState = false;
     for (let i = 0; i < currentScorecard[0].holes.length; i++) {
         let firstTeamPoints = 0;
         let secondTeamPoints = 0;
@@ -348,6 +348,21 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         if (teamScores[0].includes(0) || teamScores[1].includes(0)) {
             continue;
         }
+
+        let { pointWorth, isDoubled } = getPointWorthForHole({
+            holeNumber: 10,
+            currentScorecard,
+            pointVal: 1,
+            autoDoubleValue: 2,
+            autoDoubles: true,
+            autoDoubleWhileTiedTrigger: true,
+            autoDoubleAfterNineTrigger: true,
+            autoDoubleMoneyTrigger: 3,
+            autoDoubleStays: false,
+            priorDoubledState: false // or true if the previous hole was doubled
+        });
+
+        priorDoubledState = isDoubled;
 
         /*if (autoDoubleWhileTiedTrigger) {
             let needsToDouble = true;
@@ -438,53 +453,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             }
         }*/
 
-        // Helper functions
-        const isMatchTiedAtHole = (holeNumber) => {
-            return currentScorecard.every(golfer =>
-                getPlusMinusSumUpToHole(golfer, holeNumber) === 0
-            );
-        };
 
-        const isAnyGolferDownByTrigger = (holeNumber) => {
-            return currentScorecard.some(golfer =>
-                Math.abs(getPlusMinusSumUpToHole(golfer, holeNumber)) >= autoDoubleMoneyTrigger
-            );
-        };
-
-        const shouldAutoDouble = (holeNumber) => {
-            if (!autoDoubles || isDoubled) return false;
-
-            if (autoDoubleAfterNineTrigger && holeNumber > 9) return true;
-            if (autoDoubleMoneyTrigger > 0 && isAnyGolferDownByTrigger(holeNumber)) return true;
-            if (autoDoubleWhileTiedTrigger && isMatchTiedAtHole(holeNumber)) return true;
-
-            return false;
-        };
-
-        const shouldRevertDouble = (holeNumber) => {
-            if (!autoDoubles || !isDoubled || autoDoubleStays) return false;
-
-            const moneyTriggerCleared = autoDoubleMoneyTrigger > 0 &&
-                !isAnyGolferDownByTrigger(holeNumber);
-
-            const tieTriggerCleared = autoDoubleWhileTiedTrigger &&
-                !isMatchTiedAtHole(holeNumber);
-
-            return moneyTriggerCleared && tieTriggerCleared;
-        };
-
-        // Main logic
-        const holeNumber = currentScorecard[0].holes[i].holeNumber;
-
-        if (shouldAutoDouble(holeNumber)) {
-            pointWorth = autoDoubleValue;
-            isDoubled = true;
-            console.log("Auto-double triggered on hole", holeNumber);
-        } else if (shouldRevertDouble(holeNumber)) {
-            pointWorth = pointVal;
-            isDoubled = false;
-            console.log("Auto-double reverted on hole", holeNumber);
-        }
 
         const answers = allAnswers[i].answers;
         let pointsNeededToSweep = points;

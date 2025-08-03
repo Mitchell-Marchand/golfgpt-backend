@@ -407,6 +407,66 @@ function hasUnplayedHoles(scorecards) {
     return false;
 }
 
+function getPointWorthForHole({
+    holeNumber,
+    currentScorecard,
+    pointVal,
+    autoDoubleValue,
+    autoDoubles,
+    autoDoubleWhileTiedTrigger,
+    autoDoubleAfterNineTrigger,
+    autoDoubleMoneyTrigger,
+    autoDoubleStays,
+    priorDoubledState
+}) {
+    let isDoubled = priorDoubledState; // true/false depending on whether the last hole was doubled
+
+    // Helper: check if match is tied at this hole
+    const isMatchTied = currentScorecard.every(golfer =>
+        getPlusMinusSumUpToHole(golfer, holeNumber) === 0
+    );
+
+    // Helper: check if any golfer is down enough to trigger money-based auto double
+    const isMoneyTriggerHit = autoDoubleMoneyTrigger > 0 &&
+        currentScorecard.some(golfer =>
+            Math.abs(getPlusMinusSumUpToHole(golfer, holeNumber)) >= autoDoubleMoneyTrigger
+        );
+
+    // === Decide if the point value should be doubled ===
+    if (autoDoubles) {
+        const shouldDouble =
+            (autoDoubleWhileTiedTrigger && isMatchTied) ||
+            (autoDoubleAfterNineTrigger && holeNumber > 9) ||
+            isMoneyTriggerHit;
+
+        if (shouldDouble) {
+            return {
+                pointWorth: autoDoubleValue,
+                isDoubled: true
+            };
+        }
+
+        // If it's currently doubled but shouldn't stay doubled
+        const tiedCleared = !isMatchTied || !autoDoubleWhileTiedTrigger;
+        const moneyCleared = !isMoneyTriggerHit || !autoDoubleMoneyTrigger;
+
+        const shouldRevert = isDoubled && !autoDoubleStays && tiedCleared && moneyCleared;
+
+        if (shouldRevert) {
+            return {
+                pointWorth: pointVal,
+                isDoubled: false
+            };
+        }
+    }
+
+    // Default case: no auto-double or conditions not met
+    return {
+        pointWorth: pointVal,
+        isDoubled
+    };
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -428,6 +488,7 @@ module.exports = {
     addHolesToScorecard,
     addHolesToAnswers,
     getPlusMinusSumUpToHole,
+    getPointWorthForHole,
     scoringSystemMessage,
     setupSystemMessage
 }
