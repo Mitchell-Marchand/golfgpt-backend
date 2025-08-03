@@ -350,7 +350,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         let { pointWorth, isDoubled } = getPointWorthForHole({
-            holeNumber: 10,
+            holeNumber: currentScorecard[0].holes[i].holeNumber,
             currentScorecard,
             pointVal: 1,
             autoDoubleValue: 2,
