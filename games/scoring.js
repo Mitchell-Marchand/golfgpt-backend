@@ -350,7 +350,6 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
         }
 
         if (autoDoubleWhileTiedTrigger) {
-            console.log(currentScorecard[0].holes[i].holeNumber, "4");
             let needsToDouble = true;
             for (let j = 0; j < currentScorecard.length; j++) {
                 if (getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber) !== 0) {
@@ -362,38 +361,39 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
             if (needsToDouble && !isDoubled) {
                 isDoubled = true;
                 pointWorth = autoDoubleValue;
+                console.log("1", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} to double`);
             } else if (isDoubled && !needsToDouble) {
                 isDoubled = false;
                 pointWorth = pointVal;
+                console.log("2", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} back to reg`);
             }
         }
 
         //Determine if we're any autodouble somehow and apply
         if (autoDoubles && !isDoubled) {
             if (autoDoubleAfterNineTrigger && currentScorecard[0].holes[i].holeNumber > 9) {
-                console.log(currentScorecard[0].holes[i].holeNumber, "1");
                 pointWorth = autoDoubleValue;
                 isDoubled = true;
+                console.log("3", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} to double`);
             }
             
             if (autoDoubleMoneyTrigger > 0) {
-                console.log(currentScorecard[0].holes[i].holeNumber, "2");
                 //Check if any golfer is above the trigger
                 for (let j = 0; j < currentScorecard.length; j++) {
-                    //TODO: get sum of plusMinus up to hole number
+                    //get sum of plusMinus up to hole number
                     if (Math.abs(getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber)) >= autoDoubleMoneyTrigger) {
                         pointWorth = autoDoubleValue;
                         isDoubled = true;
+                        console.log("4", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} to double`);
                         break;
                     }
                 }
             } 
             
             if (autoDoubleWhileTiedTrigger) {
-                console.log(currentScorecard[0].holes[i].holeNumber, "3");
                 let change = true;
                 for (let j = 0; j < currentScorecard.length; j++) {
-                    //TODO: get sum of plusMinus up to hole number
+                    //get sum of plusMinus up to hole number
                     if (getPlusMinusSumUpToHole(currentScorecard[j], currentScorecard[0].holes[i].holeNumber) !== 0) {
                         change = false;
                         break;
@@ -403,6 +403,7 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                 if (change) {
                     pointWorth = autoDoubleValue;
                     isDoubled = true;
+                    console.log("5", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} to double`);
                 }
             }
         } else if (autoDoubles && isDoubled && !autoDoubleStays) {
@@ -432,9 +433,9 @@ function scotch(currentScorecard, allAnswers, scores, nameTeams, teams, pointVal
                 if (change) {
                     pointWorth = pointVal;
                     isDoubled = false;
+                    console.log("6", `changing point worth on hole ${currentScorecard[0].holes[i].holeNumber} to back to reg`);
                 }
             }
-            console.log("2");
         }
 
         const answers = allAnswers[i].answers;
