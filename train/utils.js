@@ -441,7 +441,7 @@ function getPointWorthForHole({
 
         if (shouldDouble) {
             return {
-                pointValue: autoDoubleValue,
+                pointWorth: autoDoubleValue,
                 isDoubled: true
             };
         }
@@ -454,7 +454,7 @@ function getPointWorthForHole({
 
         if (shouldRevert) {
             return {
-                pointValue: pointVal,
+                pointWorth: pointVal,
                 isDoubled: false
             };
         }
@@ -462,7 +462,7 @@ function getPointWorthForHole({
 
     // Default case: no auto-double or conditions not met
     return {
-        pointValue: pointVal,
+        pointWorth: pointVal,
         isDoubled
     };
 }
