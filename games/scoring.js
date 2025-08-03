@@ -1,4 +1,4 @@
-const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers, hasUnplayedHoles } = require('../train/utils');
+const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers, hasUnplayedHoles, getPlusMinusSumUpToHole } = require('../train/utils');
 
 function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golfers, value, isTeam) {
     if (isTeam && teamsWithAnds.length > 0) {
