@@ -464,6 +464,155 @@ function getPointWorthForHole({
     return pointVal;
 }
 
+function generateSummary(scorecards, configType, config) {
+    if (!Array.isArray(scorecards) || scorecards.length === 0) return "";
+
+    const holesPlayed = scorecards[0].holes.filter(h =>
+        scorecards.some(g => g.holes.find(x => x.holeNumber === h.holeNumber && x?.score && x.score !== 0))
+    ).length;
+
+    if (holesPlayed === 0) return "";
+
+    const formatNames = golfers => golfers
+        .map(g => {
+            const parts = g.name.trim().split(" ");
+            return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
+        })
+        .join(golfers.length === 2 ? " and " : ", ");
+
+    const getTotal = (g, key) =>
+        g.holes.reduce((sum, h) => sum + (h[key] || 0), 0);
+
+    const parseTeams = () =>
+        config.teams?.map(t => t.split(" & ").map(n => n.trim())) || scorecards.map(g => [g.name]);
+
+    const isTied = (a, b) => Math.abs(a - b) < 0.001;
+
+    const dollar = amt => `$${Math.abs(amt).toFixed(2)}`;
+
+    const moneyGames = ["scotch", "umbrella", "bridge", "vegas", "daytona", "wolf", "left-right", "middle-outside", "flip wolf", "king of the hill", "banker"];
+    if (moneyGames.includes(configType)) {
+        const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
+        const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
+        if (maxMoney !== 0 && leaders.length < scorecards.length) {
+            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} through ${holesPlayed}`;
+        } else {
+            return `Tied through ${holesPlayed}`;
+        }
+    }
+
+    if (["nine point", "stableford", "quota"].includes(configType)) {
+        const pointVal = config.pointVal || config.perPointValue || 0;
+        const byMoney = pointVal > 0;
+        const stat = byMoney ? "plusMinus" : "points";
+        const maxStat = Math.max(...scorecards.map(g => getTotal(g, stat)));
+        const leaders = scorecards.filter(g => getTotal(g, stat) === maxStat);
+        if (maxStat !== 0 && leaders.length < scorecards.length) {
+            const display = byMoney ? dollar(maxStat) : `${maxStat} pts`;
+            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} through ${holesPlayed}`;
+        } else {
+            return `Tied through ${holesPlayed}`;
+        }
+    }
+
+    if (["match play", "stroke play", "best ball", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
+        const type = config.type || "match";
+        const isMatch = config.perHoleOrMatch === "match";
+        const teams = parseTeams();
+
+        if (isMatch && teams.length === 2) {
+            let team1 = teams[0];
+            let team2 = teams[1];
+            let t1Points = 0;
+            let t2Points = 0;
+
+            for (let i = 0; i < holesPlayed; i++) {
+                const scores = scorecards.map(g => {
+                    const h = g.holes[i];
+                    return {
+                        name: g.name,
+                        score: h?.score || 0,
+                        strokes: h?.strokes || 0
+                    };
+                });
+
+                const teamScore = team =>
+                    team.map(name => {
+                        const s = scores.find(s => s.name === name);
+                        return (s.score || 0) - (s.strokes || 0);
+                    });
+
+                const t1 = teamScore(team1);
+                const t2 = teamScore(team2);
+
+                const v1 = type === "stroke" ? t1.reduce((a, b) => a + b, 0) : Math.min(...t1);
+                const v2 = type === "stroke" ? t2.reduce((a, b) => a + b, 0) : Math.min(...t2);
+
+                if (v1 < v2) t1Points += type === "stroke" ? v2 - v1 : 1;
+                else if (v2 < v1) t2Points += type === "stroke" ? v1 - v2 : 1;
+                else t1Points += 0.5, t2Points += 0.5;
+            }
+
+            if (!isTied(t1Points, t2Points)) {
+                const lead = t1Points > t2Points ? team1 : team2;
+                const diff = Math.abs(t1Points - t2Points).toFixed(1);
+                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${diff} through ${holesPlayed}`;
+            } else {
+                return `Tied through ${holesPlayed}`;
+            }
+        }
+
+        if (configType === "stroke play" && !config.perMatchValue && !config.perHoleValue) {
+            const netScores = scorecards.map(g => ({
+                name: g.name,
+                net: g.holes.reduce((sum, h) => sum + ((h.score || 0) - (h.strokes || 0)), 0),
+                handicap: g.handicap || 0
+            }));
+
+            const minNet = Math.min(...netScores.map(n => n.net));
+            const netLeaders = netScores.filter(n => n.net === minNet);
+            if (netLeaders.length < scorecards.length) {
+                const label = netLeaders.some(n => n.handicap > 0) ? " (net)" : "";
+                const names = netLeaders.map(n => {
+                    const parts = n.name.trim().split(" ");
+                    return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
+                });
+                return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} through ${holesPlayed}`;
+            }
+        }
+
+        if (config.perHoleOrMatch === "hole") {
+            const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
+            const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
+            if (maxMoney !== 0 && leaders.length < scorecards.length) {
+                return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} through ${holesPlayed}`;
+            } else {
+                return `Tied through ${holesPlayed}`;
+            }
+        }
+    }
+
+    const netScores = scorecards.map(g => ({
+        name: g.name,
+        net: g.holes.reduce((sum, h) => sum + ((h.score || 0) - (h.strokes || 0)), 0),
+        handicap: g.handicap || 0
+    }));
+
+    const minNet = Math.min(...netScores.map(n => n.net));
+    const netLeaders = netScores.filter(n => n.net === minNet);
+
+    if (netLeaders.length < scorecards.length) {
+        const label = netLeaders.some(n => n.handicap > 0) ? " (net)" : "";
+        const names = netLeaders.map(n => {
+            const parts = n.name.trim().split(" ");
+            return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
+        });
+        return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} through ${holesPlayed}`;
+    }
+
+    return `Tied through ${holesPlayed}`;
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -486,6 +635,7 @@ module.exports = {
     addHolesToAnswers,
     getPlusMinusSumUpToHole,
     getPointWorthForHole,
+    generateSummary,
     scoringSystemMessage,
     setupSystemMessage
 }

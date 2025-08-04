@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers, generateSummary } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring");
 const { applyConfigToScorecards, getQuestionsFromConfig } = require('./train/questionUtils');
@@ -46,7 +46,7 @@ async function canUserAccessMatch(matchId, userId) {
     }
 }
 
-function generateSummary(scorecards) {
+/*function generateSummary(scorecards) {
     if (!Array.isArray(scorecards) || scorecards.length === 0) return "";
 
     // 1. Count total holes played (i.e., at least one golfer has non-zero score)
@@ -127,7 +127,7 @@ function generateSummary(scorecards) {
 
     // 5. Everything tied
     return `Tied through ${holesPlayed}`;
-}
+}*/
 
 async function upsertResults({ matchId, scorecards, golfers, golferIds, mariadbPool }) {
     try {
@@ -292,7 +292,7 @@ router.post("/create", authenticateUser, async (req, res) => {
         if (rules?.trim() !== "") {
             const options = [
                 "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
-                "middle-outside", "king of the hill", "match play", "stroke play", "stableford", "quota", "nine point",
+                "middle-outside", "king of the hill", "match play", "best ball", "stroke play", "stableford", "quota", "nine point",
                 "scramble", "shamble", "bramble", "chapman", "alt shot"
             ];
 
@@ -305,7 +305,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                     },
                     {
                         role: "user",
-                        content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "match play" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
+                        content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "best ball" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
                     }
                 ],
                 temperature: 0.0
@@ -464,7 +464,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "banker") {
             config = {};
-        } else if (["match play", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(raw)) {
+        } else if (["match play", "best ball", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(raw)) {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${universalConfig}`;
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
@@ -764,7 +764,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
                 scores,
                 answers
             )
-        } else if (["match play", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
+        } else if (["match play", "best ball", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(configType)) {
             scorecards = universalMatchScorer(
                 scorecards,
                 scores,
@@ -814,7 +814,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             status = "COMPLETED";
         }
 
-        const summary = generateSummary(scorecards);
+        const summary = generateSummary(scorecards, configType, config);
 
         await mariadbPool.query(
             "UPDATE Matches SET scorecards = ?, summary = ?, answers = ?, status = ? WHERE id = ?",
@@ -1315,7 +1315,7 @@ router.put("/settings", authenticateUser, async (req, res) => {
             return res.status(403).json({ error: "Error applying settings update" });
         }
 
-        const summary = generateSummary(scorecards);
+        const summary = generateSummary(scorecards, configType, config);
 
         await mariadbPool.query(
             "UPDATE Matches SET summary = ?, config = ?, strippedJunk = ?, questions = ?, answers = ?, scorecards = ? WHERE id = ?",
@@ -1432,7 +1432,7 @@ router.post("/remove", authenticateUser, async (req, res) => {
             status = "COMPLETED";
         }
 
-        const summary = generateSummary(scorecards);
+        const summary = generateSummary(scorecards, configType, config);
         await mariadbPool.query(
             "UPDATE Matches SET summary = ?, scorecards = ?, answers = ?, status = ? WHERE id = ?",
             [summary, JSON.stringify(scorecards), JSON.stringify(answers), status, matchId]
@@ -1456,7 +1456,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
     try {
         // Validate access to matchToEdit
         const [editRows] = await mariadbPool.query(
-            `SELECT scorecards, answers FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
+            `SELECT scorecards, answers, configType, config FROM Matches WHERE id = ? AND (createdBy = ? OR JSON_CONTAINS(golferIds, JSON_QUOTE(?)))`,
             [matchId, userId, userId]
         );
 
@@ -1466,6 +1466,8 @@ router.post("/extend", authenticateUser, async (req, res) => {
 
         const currentScorecards = JSON.parse(editRows[0].scorecards);
         const answers = JSON.parse(editRows[0].answers);
+        const config = JSON.parse(editRows[0].config);
+        const configType = editRows[0].config;
 
         const [rows] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [course?.CourseID]);
         if (rows.length === 0) {
@@ -1484,7 +1486,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
         let newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
         newScorecards = calculateWinPercents(newScorecards);
         const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
-        const summary = generateSummary(newScorecards);
+        const summary = generateSummary(newScorecards, configType, config);
 
         await mariadbPool.query(
             "UPDATE Matches SET summary = ?, answers = ?, scorecards = ?, status = 'IN_PROGRESS' WHERE id = ?",
