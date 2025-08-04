@@ -1164,6 +1164,7 @@ router.delete("/delete/:matchId", authenticateUser, async (req, res) => {
             return res.status(403).json({ error: "You are not authorized to delete this match." });
         }
 
+        await mariadbPool.query("DELETE FROM Results WHERE matchId = ?", [matchId]);
         await mariadbPool.query("DELETE FROM Messages WHERE threadId = ?", [matchId]);
         await mariadbPool.query("DELETE FROM Matches WHERE id = ?", [matchId]);
 
