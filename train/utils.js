@@ -561,7 +561,7 @@ function generateSummary(scorecards, configType, config) {
             if (!isTied(t1Points, t2Points)) {
                 const lead = t1Points > t2Points ? team1 : team2;
                 const diff = Math.abs(t1Points - t2Points);
-                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)} through ${holesPlayed}`;
+                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " points": ""} through ${holesPlayed}`;
             } else {
                 return `Tied through ${holesPlayed}`;
             }
