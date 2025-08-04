@@ -28,6 +28,17 @@ function formatAndValidatePhone(input) {
   return /^\d{10}$/.test(normalized) ? normalized : null;
 }
 
+function sanitizeForJson(input) {
+  if (typeof input !== 'string') return '';
+
+  return input
+    .replace(/[\r\n]+/g, ' ')     // Replace newlines and carriage returns with space
+    .replace(/["']/g, '')         // Remove double and single quotes
+    .replace(/,/g, '')            // Remove commas
+    .replace(/\s*&\s*/g, ' ')     // Remove " & " and similar (e.g. " &", "& ", etc.)
+    .trim();                      // Trim whitespace from ends
+}
+
 router.get('/getCode', async (req, res) => {
   const phone = req.query.phone;
   const formattedPhone = formatAndValidatePhone(phone);
@@ -114,7 +125,10 @@ router.post('/signIn', async (req, res) => {
 router.post('/register', async (req, res) => {
   const { phone, firstName, lastName, homeClub, code } = req.body;
   const formattedPhone = formatAndValidatePhone(phone);
-  if (!formattedPhone || !firstName || !lastName) {
+  const formattedFirst = sanitizeForJson(firstName);
+  const formattedLast = sanitizeForJson(lastName);
+
+  if (!formattedPhone || !formattedFirst || !formattedLast) {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
   }
 
@@ -127,11 +141,11 @@ router.post('/register', async (req, res) => {
     if (testAccounts.includes(formattedPhone)) {
       if (code === "334677") {
         const id = uuidv4();
-        const accessToken = jwt.sign({ id, phone: formattedPhone, firstName, lastName }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
+        const accessToken = jwt.sign({ id, phone: formattedPhone, firstName: formattedFirst, lastName: formattedLast }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
 
         await mariadbPool.query(
           `INSERT INTO Users (id, phone, firstName, lastName, homeClub, accessToken) VALUES (?, ?, ?, ?, ?, ?)`,
-          [id, formattedPhone, firstName, lastName, homeClub || "", accessToken]
+          [id, formattedPhone, formattedFirst, formattedLast, homeClub?.trim() || "", accessToken]
         );
 
         const [newUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [id]);
@@ -149,11 +163,11 @@ router.post('/register', async (req, res) => {
 
     if (verificationCheck.status === 'approved') {
       const id = uuidv4();
-      const accessToken = jwt.sign({ id, phone: formattedPhone, firstName, lastName }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
+      const accessToken = jwt.sign({ id, phone: formattedPhone, firstName: formattedFirst, lastName: formattedLast }, process.env.JWT_SECRET || 'insecure-dev-secret', { expiresIn: '365d' });
 
       await mariadbPool.query(
         `INSERT INTO Users (id, phone, firstName, lastName, homeClub, accessToken) VALUES (?, ?, ?, ?, ?, ?)`,
-        [id, formattedPhone, firstName, lastName, homeClub || "", accessToken]
+        [id, formattedPhone, formattedFirst, formattedLast, homeClub?.trim() || "", accessToken]
       );
 
       const [newUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [id]);
@@ -277,15 +291,17 @@ router.get("/ghin/course-details", async (req, res) => {
 router.put('/user/update', authenticateUser, async (req, res) => {
   const { firstName, lastName, homeClub, isPublic } = req.body;
   const userId = req.user?.id;
+  const formattedFirst = sanitizeForJson(firstName);
+  const formattedLast = sanitizeForJson(lastName);
 
-  if (!firstName || !lastName) {
+  if (!formattedFirst || !formattedLast) {
     return res.status(400).json({ success: false, message: 'Missing required fields' });
   }
 
   try {
     await mariadbPool.query(
       'UPDATE Users SET firstName = ?, lastName = ?, homeClub = ?, isPublic = ? WHERE id = ?',
-      [firstName, lastName, homeClub || '', isPublic, userId]
+      [formattedFirst, formattedLast, homeClub?.trim() || '', isPublic, userId]
     );
 
     const [updatedUser] = await mariadbPool.query('SELECT * FROM Users WHERE id = ?', [userId]);
