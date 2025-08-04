@@ -62,7 +62,7 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
             LEFT JOIN Courses c ON m.courseId = c.courseId
             WHERE (m.createdBy IN (${placeholders}) OR mp.userId IN (${placeholders}))
               AND m.status IN (${statusPlaceholders}) AND m.isPublic = true
-            ORDER BY m.updatedAt DESC
+            ORDER BY m.createdAt DESC
             LIMIT ? OFFSET ?
             `,
             [...followedIds, ...followedIds, pageSize, offset]

@@ -883,8 +883,8 @@ router.get("/match", authenticateUser, async (req, res) => {
 
         res.json({ success: true, match: parsedMatches[0] });
     } catch (err) {
-        console.error("Error in /matches:", err);
-        res.status(500).json({ error: "Failed to fetch user matches." });
+        console.error("Error in /match:", err);
+        res.status(500).json({ error: "Failed to fetch match." });
     }
 })
 
@@ -893,7 +893,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
 
     try {
         const [rows] = await mariadbPool.query(
-            `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId, m.createdBy,
+            `SELECT m.id, m.displayName, m.golfers, m.status, m.summary, m.teeTime, m.courseId, m.createdBy, m.createdAt,
                     c.courseId AS courseId, c.courseName AS courseName
              FROM Matches m
              LEFT JOIN Courses c ON m.courseId = c.courseId
@@ -902,7 +902,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
                 OR JSON_CONTAINS(golferIds, JSON_QUOTE(?))
             )
                AND m.status IN ('READY_TO_START', 'IN_PROGRESS', 'COMPLETED') 
-             ORDER BY m.updatedAt DESC, m.serial DESC`,
+             ORDER BY m.createdAt DESC, m.serial DESC`,
             [userId, userId]
         );
 
@@ -924,6 +924,7 @@ router.get("/matches", authenticateUser, async (req, res) => {
             status: match.status,
             teeTime: match.teeTime,
             updatedAt: match.updatedAt,
+            createdAt: match.createdAt,
             course: match.courseId ? {
                 courseId: match.courseId,
                 courseName: match.courseName
@@ -1070,8 +1071,8 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
 
         res.json({ success: true, golferIds });
     } catch (err) {
-        console.error("Error in /matches:", err);
-        res.status(500).json({ error: "Failed to fetch user matches." });
+        console.error("Error in /golfers/update:", err);
+        res.status(500).json({ error: "Failed to update golfers for match." });
     }
 });
 
@@ -1099,8 +1100,8 @@ router.get("/courses", authenticateUser, async (req, res) => {
 
         res.json({ success: true, courses });
     } catch (err) {
-        console.error("Error in /matches:", err);
-        res.status(500).json({ error: "Failed to fetch user matches." });
+        console.error("Error in /courses:", err);
+        res.status(500).json({ error: "Failed to fetch user courses." });
     }
 });
 
