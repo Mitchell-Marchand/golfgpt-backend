@@ -488,7 +488,12 @@ function generateSummary(scorecards, configType, config) {
 
     const isTied = (a, b) => Math.abs(a - b) < 0.001;
 
-    const dollar = amt => `$${Math.abs(amt).toFixed(2)}`;
+    const dollar = amt => {
+        const abs = Math.abs(amt);
+        return abs % 1 === 0 ? `$${abs}` : `$${abs.toFixed(2)}`;
+    };
+
+    const formatStat = val => (val % 1 === 0 ? val : val.toFixed(1));
 
     const moneyGames = ["scotch", "umbrella", "bridge", "vegas", "daytona", "wolf", "left-right", "middle-outside", "flip wolf", "king of the hill", "banker"];
     if (moneyGames.includes(configType)) {
@@ -508,7 +513,7 @@ function generateSummary(scorecards, configType, config) {
         const maxStat = Math.max(...scorecards.map(g => getTotal(g, stat)));
         const leaders = scorecards.filter(g => getTotal(g, stat) === maxStat);
         if (maxStat !== 0 && leaders.length < scorecards.length) {
-            const display = byMoney ? dollar(maxStat) : `${maxStat} pts`;
+            const display = byMoney ? dollar(maxStat) : `${formatStat(maxStat)} pts`;
             return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} through ${holesPlayed}`;
         } else {
             return `Tied through ${holesPlayed}`;
@@ -555,8 +560,8 @@ function generateSummary(scorecards, configType, config) {
 
             if (!isTied(t1Points, t2Points)) {
                 const lead = t1Points > t2Points ? team1 : team2;
-                const diff = Math.abs(t1Points - t2Points).toFixed(1);
-                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${diff} through ${holesPlayed}`;
+                const diff = Math.abs(t1Points - t2Points);
+                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)} through ${holesPlayed}`;
             } else {
                 return `Tied through ${holesPlayed}`;
             }
