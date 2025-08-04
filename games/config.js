@@ -89,7 +89,7 @@ const scotchConfig = `{
     autoDoubleAfterNineTrigger //true or false (default is false). whether or not the money automatically increases after nine holes
     autoDoubleMoneyTrigger //number (default is 0). how much money someone has to be down for the bet to automatically increase
     autoDoubleWhileTiedTrigger //true or false (default is false). whether or not the money automatically increases while the match is tied
-    autoDoubleValue //number (default is 1). the amount of money that the bet is increased to if the money automatically increases automatically at any point
+    autoDoubleValue //number (default is 2 times the pointVal). the amount of money that the bet is increased to if the money automatically increases automatically at any point
     autoDoubleStays //true or false (default is false) whether or not the increase in point value stays permanently after it's automaticaly increased due to someone going down by a certain amount. words like "while" vs "when"/"once" are key here
     miracle //true or false (default is true) whether or not extra birdies double (these are also called miracles)
     presses //true or false (default is true) whether or not presses/cups/rolls/bridges/hammers are allowed
