@@ -643,9 +643,9 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
                     to: expoPushToken,
                     sound: 'default',
                     title: 'Message Reply',
-                    body: `${req.user.firstName} ${req.user.lastName} replied to your message.`,
+                    body: `${req.user.firstName} ${req.user.lastName} gave you a 🤝`,
                     data: {
-                        type: 'commentReply',
+                        type: 'handshake',
                         view: isPlayer ? 'play' : 'follow',
                         match: matchData
                     }
