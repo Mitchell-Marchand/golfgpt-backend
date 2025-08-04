@@ -562,6 +562,38 @@ router.post("/create", authenticateUser, async (req, res) => {
             [JSON.stringify(strokes), JSON.stringify(config), raw, JSON.stringify(strippedJunk), rules, displayName, formattedTeeTime, isPublic ? 1 : 0, JSON.stringify(questions), JSON.stringify(builtScorecards), "RULES_PROVIDED", matchId]
         );
 
+        res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName, config, junkConfig: strippedJunk, configType: raw });
+    } catch (err) {
+        console.error("Error in /create:", err);
+        res.status(500).json({ error: "Failed to generate match setup." });
+    }
+});
+
+router.post("/confirm", authenticateUser, async (req, res) => {
+    const { matchId, displayName } = req.body;
+
+    try {
+        if (!(await canUserAccessMatch(matchId, req.user.id))) {
+            return res.status(404).json({ error: "Not authorized to update match." });
+        }
+
+        const [matchRows] = await mariadbPool.query("SELECT scorecards, golferIds, isPublic, status, configType FROM Matches WHERE id = ?", [matchId]);
+        if (matchRows.length === 0) {
+            return res.status(404).json({ error: "Match not found." });
+        }
+
+        const scorecards = JSON.parse(matchRows[0]?.scorecards);
+        const golferIds = JSON.parse(matchRows[0]?.golferIds);
+        const isPublic = matchRows[0]?.isPublic;
+        const raw = matchRows[0]?.configType;
+
+        if (matchRows[0]?.status === "RULES_PROVIDED") {
+            await mariadbPool.query(
+                "UPDATE Matches SET status = ?, answers = ?, displayName = ? WHERE id = ?",
+                ["READY_TO_START", blankAnswers(scorecards), displayName, matchId]
+            );
+        }
+
         //Push notificiations for other golfers
         for (let i = 0; i < golferIds?.length; i++) {
             if (golferIds[i] !== "Guest" && golferIds[i] !== req.user.id) {
@@ -579,6 +611,9 @@ router.post("/create", authenticateUser, async (req, res) => {
                         sound: 'default',
                         title: 'Added To Game',
                         body: `${req.user.firstName} ${req.user.lastName} added you to ${displayName}.`,
+                        data: {
+                            type: 'addedToMatch',
+                        }
                     };
 
                     const response = await fetch('https://exp.host/--/api/v2/push/send', {
@@ -620,6 +655,9 @@ router.post("/create", authenticateUser, async (req, res) => {
                         sound: 'default',
                         title: '🚨 New Match Started',
                         body: `${req.user.firstName} ${req.user.lastName} just started a game of ${raw}. Follow the action!`,
+                        data: {
+                            type: 'followingStartedMatch',
+                        }
                     };
 
                     const response = await fetch('https://exp.host/--/api/v2/push/send', {
@@ -634,35 +672,6 @@ router.post("/create", authenticateUser, async (req, res) => {
                     console.log("No push token");
                 }
             }
-        }
-
-        res.status(201).json({ success: true, questions, scorecards: builtScorecards, displayName, config, junkConfig: strippedJunk, configType: raw });
-    } catch (err) {
-        console.error("Error in /create:", err);
-        res.status(500).json({ error: "Failed to generate match setup." });
-    }
-});
-
-router.post("/confirm", authenticateUser, async (req, res) => {
-    const { matchId, displayName } = req.body;
-
-    try {
-        if (!(await canUserAccessMatch(matchId, req.user.id))) {
-            return res.status(404).json({ error: "Not authorized to update match." });
-        }
-
-        const [rows] = await mariadbPool.query("SELECT scorecards, status FROM Matches WHERE id = ?", [matchId]);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: "Match not found." });
-        }
-
-        const scorecards = JSON.parse(rows[0]?.scorecards);
-
-        if (rows[0]?.status === "RULES_PROVIDED") {
-            await mariadbPool.query(
-                "UPDATE Matches SET status = ?, answers = ?, displayName = ? WHERE id = ?",
-                ["READY_TO_START", blankAnswers(scorecards), displayName, matchId]
-            );
         }
 
         res.json({ success: true, scorecards });
@@ -997,7 +1006,7 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
             return res.status(404).json({ error: "Not authorized to update match." });
         }
 
-        //TODO: Determine who is new and send push notification
+        //Determine who is new and send push notification
         const [rows] = await mariadbPool.query(
             `SELECT golferIds, displayName from Matches WHERE id = ?`,
             [matchId]
@@ -1025,6 +1034,9 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
                     sound: 'default',
                     title: 'Added To Game',
                     body: `${req.user.firstName} ${req.user.lastName} added you to ${displayName}.`,
+                    data: {
+                        type: 'addedToMatch'
+                    }
                 };
 
                 const response = await fetch('https://exp.host/--/api/v2/push/send', {

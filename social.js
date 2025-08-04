@@ -135,6 +135,9 @@ router.post('/follow/request', authenticateUser, async (req, res) => {
                 sound: 'default',
                 title: 'New Follow Request',
                 body: `${follower.firstName} ${follower.lastName} ${status === 'pending' ? "wants to follow you." : "started following you."}`,
+                data: {
+                    type: 'followRequest'
+                }
             };
 
             const response = await fetch('https://exp.host/--/api/v2/push/send', {
@@ -582,11 +585,70 @@ router.post('/match/:matchId/messages/:messageId/handshake', authenticateUser, a
         if (ogRows.length === 1) {
             const expoPushToken = ogRows[0].expoPushToken;
             if (expoPushToken) {
+                const [matchRows] = await mariadbPool.query(`
+                    SELECT m.*, c.courseName
+                    FROM Matches m
+                    LEFT JOIN Courses c ON m.courseId = c.courseId
+                    WHERE m.id = ?
+                  `, [matchId]);
+
+                const match = matchRows[0];
+                if (!match) return;
+
+                const golferIds = JSON.parse(match.golferIds || '[]');
+                const golfers = JSON.parse(match.golfers || '[]');
+                const isPlayer = golferIds.includes(replyToId) || match.createdBy === replyToId;
+
+                const matchData = isPlayer
+                    ? {
+                        id: match.id,
+                        displayName: match.displayName,
+                        golfers,
+                        golferIds,
+                        scorecards: JSON.parse(match.scorecards || '[]'),
+                        questions: JSON.parse(match.questions || '[]'),
+                        answers: JSON.parse(match.answers || '[]'),
+                        strokes: JSON.parse(match.strokes || '[]'),
+                        configType: match.configType,
+                        config: JSON.parse(match.config || '{}'),
+                        junkConfig: JSON.parse(match.strippedJunk || '{}'),
+                        isPublic: match.isPublic,
+                        summary: match.summary,
+                        status: match.status,
+                        teeTime: match.teeTime,
+                        updatedAt: match.updatedAt,
+                        course: {
+                            courseId: match.courseId,
+                            courseName: match.courseName,
+                            FullName: match.courseName
+                        }
+                    }
+                    : {
+                        id: match.id,
+                        displayName: match.displayName,
+                        status: match.status,
+                        summary: match.summary,
+                        teeTime: match.teeTime,
+                        updatedAt: match.updatedAt,
+                        course: {
+                            courseId: match.courseId,
+                            courseName: match.courseName
+                        },
+                        golfers,
+                        golferIds: golferIds,
+                        createdBy: match.createdBy
+                    };
+
                 const body = {
                     to: expoPushToken,
                     sound: 'default',
                     title: 'Message Reply',
-                    body: `${req.user.firstName} ${req.user.lastName} gave you a 🤝`,
+                    body: `${req.user.firstName} ${req.user.lastName} replied to your message.`,
+                    data: {
+                        type: 'commentReply',
+                        view: isPlayer ? 'play' : 'follow',
+                        match: matchData
+                    }
                 };
 
                 const response = await fetch('https://exp.host/--/api/v2/push/send', {
