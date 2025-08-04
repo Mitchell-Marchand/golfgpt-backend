@@ -473,6 +473,9 @@ function generateSummary(scorecards, configType, config) {
 
     if (holesPlayed === 0) return "";
 
+    let through = "through";
+    if (holesPlayed === scorecards[0].holes?.length) through = "after";
+
     const formatNames = golfers => golfers
         .map(g => {
             const parts = g.name.trim().split(" ");
@@ -500,9 +503,9 @@ function generateSummary(scorecards, configType, config) {
         const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
         const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
         if (maxMoney !== 0 && leaders.length < scorecards.length) {
-            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} through ${holesPlayed}`;
+            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${through} ${holesPlayed}`;
         } else {
-            return `Tied through ${holesPlayed}`;
+            return `Tied ${through} ${holesPlayed}`;
         }
     }
 
@@ -514,9 +517,9 @@ function generateSummary(scorecards, configType, config) {
         const leaders = scorecards.filter(g => getTotal(g, stat) === maxStat);
         if (maxStat !== 0 && leaders.length < scorecards.length) {
             const display = byMoney ? dollar(maxStat) : `${formatStat(maxStat)} pts`;
-            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} through ${holesPlayed}`;
+            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} ${through} ${holesPlayed}`;
         } else {
-            return `Tied through ${holesPlayed}`;
+            return `Tied ${through} ${holesPlayed}`;
         }
     }
 
@@ -561,9 +564,9 @@ function generateSummary(scorecards, configType, config) {
             if (!isTied(t1Points, t2Points)) {
                 const lead = t1Points > t2Points ? team1 : team2;
                 const diff = Math.abs(t1Points - t2Points);
-                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)": ""} through ${holesPlayed}`;
+                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)": ""} ${through} ${holesPlayed}`;
             } else {
-                return `Tied through ${holesPlayed}`;
+                return `Tied ${through} ${holesPlayed}`;
             }
         }
 
@@ -582,7 +585,7 @@ function generateSummary(scorecards, configType, config) {
                     const parts = n.name.trim().split(" ");
                     return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
                 });
-                return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} through ${holesPlayed}`;
+                return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} ${through} ${holesPlayed}`;
             }
         }
 
@@ -590,9 +593,9 @@ function generateSummary(scorecards, configType, config) {
             const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
             const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
             if (maxMoney !== 0 && leaders.length < scorecards.length) {
-                return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} through ${holesPlayed}`;
+                return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${through} ${holesPlayed}`;
             } else {
-                return `Tied through ${holesPlayed}`;
+                return `Tied ${through} ${holesPlayed}`;
             }
         }
     }
