@@ -43,7 +43,7 @@ router.post('/track', async (req, res) => {
             ]
         );
 
-        console.log("Event tracked", eventName, screenName, properties);
+        console.log("Event tracked", eventName);
 
         return res.status(201).json({ success: true });
     } catch (err) {
