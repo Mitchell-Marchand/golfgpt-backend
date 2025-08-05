@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
