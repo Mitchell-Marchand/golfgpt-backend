@@ -236,7 +236,7 @@ function trackStreaks(scorecards, config, toPar) {
                 if (toPar === -1 || toPar === 0) {
                     hole.plusMinus = (hole.plusMinus || 0) + config.value;
                 } else if (toPar === 1) {
-                    hole.plusMinus = (hole.plusMinus || 0) - config.value;
+                    hole.plusMinus = (hole.plusMinus || 0) - Math.abs(config.value);
                 }
 
                 if (!config.canOverlap) {
