@@ -843,13 +843,15 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             let golferPlayedAllHoles = true;
 
             for (j = 0; j < scorecards[i].holes.length; j++) {
+                if (scorecards[i].holes[j].score === 0) {
+                    scorecards[i].holes[j].plusMinus = 0;
+                    scorecards[i].holes[j].points = 0;
+                    golferPlayedAllHoles = false;
+                }
+
                 plusMinus += scorecards[i].holes[j].plusMinus;
                 handicap += scorecards[i].holes[j].strokes;
                 points += scorecards[i].holes[j].points;
-
-                if (scorecards[i].holes[j].score === 0) {
-                    golferPlayedAllHoles = false;
-                }
             }
 
             scorecards[i].plusMinus = plusMinus;
