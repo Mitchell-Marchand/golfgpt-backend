@@ -302,7 +302,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         scorecards = trackSkins(scorecards, strippedJunk.skins, golfers);
     }
 
-    /*if (strippedJunk.birdieStreak?.valid) {
+    if (strippedJunk.birdieStreak?.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.birdieStreak, -1)
     }
 
@@ -312,7 +312,7 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
 
     if (strippedJunk.bogeyStreak?.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.bogeyStreak, 1)
-    }*/
+    }
 
     console.log("scorecards length ended", scorecards?.length);
 
