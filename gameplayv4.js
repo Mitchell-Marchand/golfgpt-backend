@@ -828,12 +828,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             )
         }
 
-        console.log("scorecards", JSON.stringify(scorecards));
-
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
-        scorecards = calculateWinPercents(scorecards);
-
-        //console.log("scorecards", JSON.stringify(scorecards));
 
         let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
@@ -868,6 +863,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             status = "COMPLETED";
         }
 
+        scorecards = calculateWinPercents(scorecards);
         const summary = generateSummary(scorecards, configType, config);
 
         await mariadbPool.query(
