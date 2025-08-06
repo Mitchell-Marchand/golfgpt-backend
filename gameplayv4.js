@@ -276,7 +276,6 @@ router.post("/create", authenticateUser, async (req, res) => {
         const playerTees = JSON.parse(rows1[0].tees);
         const holes = rows1[0].holeCount;
         const golfers = JSON.parse(rows1[0].golfers);
-        const golferIds = JSON.parse(rows1[0].golferIds);
 
         const [rows2] = await mariadbPool.query("SELECT scorecards, nineScorecards FROM Courses WHERE courseId = ?", [courseId]);
         if (rows2.length === 0) {
@@ -312,6 +311,10 @@ router.post("/create", authenticateUser, async (req, res) => {
             });
 
             raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
+        } else if (rules?.length > 3000) {
+            return res.status(400).json({ error: "Rules too long, please shorten." });
+        } else {
+            //TODO: Rate limit user somehow
         }
 
         let config;
