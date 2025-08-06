@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers, generateSummary } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers, generateSummary, countTokensForMessages } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring");
 const { applyConfigToScorecards, getQuestionsFromConfig } = require('./train/questionUtils');
@@ -295,18 +295,23 @@ router.post("/create", authenticateUser, async (req, res) => {
                 "scramble", "shamble", "bramble", "chapman", "alt shot"
             ];
 
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in determining which golf game a user is playing based on their description of it. You are to choose from a list of options and ONLY return ONE of those options and NOTHING else. You must return an option from the list."
+                },
+                {
+                    role: "user",
+                    content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "best ball" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+
             const gameType = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in determining which golf game a user is playing based on their description of it. You are to choose from a list of options and ONLY return ONE of those options and NOTHING else. You must return an option from the list."
-                    },
-                    {
-                        role: "user",
-                        content: `Return which type of golf match I am playing from the following options. If you're not sure, default to "best ball" if teams are provided and "stroke play" if not: ${JSON.stringify(options)}. Here's a description of the game: ${rules}`
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -357,18 +362,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             sideConfig = {};
         } else if (raw === "scotch" || raw === "bridge" || raw === "umbrella") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${scotchConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+            
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -379,18 +389,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "vegas" || raw === "daytona") {
             const prompt = `Based on the following rules of a vegas match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${vegasConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+            
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -401,18 +416,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "wolf") {
             const prompt = `Based on the following rules of a wolf match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${wolfConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+            
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -423,18 +443,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "left-right" || raw === "middle-outside" || raw === "flip wolf" || raw === "king of the hill") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${lrmoConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+            
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -445,18 +470,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "nine point") {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${ninePointConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -469,18 +499,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             config = {};
         } else if (["match play", "best ball", "stroke play", "scramble", "shamble", "bramble", "chapman", "alt shot"].includes(raw)) {
             const prompt = `Based on the following rules of a ${raw} match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${universalConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+            
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -491,18 +526,23 @@ router.post("/create", authenticateUser, async (req, res) => {
             }
         } else if (raw === "stableford" || raw === "quota") {
             const prompt = `Based on the following rules of a stableford match in golf, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation. For names, ONLY include the following: ${JSON.stringify(golfers)}\n\nRules: ${rules}\n\nJSON Object: ${stablefordConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -522,18 +562,23 @@ router.post("/create", authenticateUser, async (req, res) => {
         //Get side action
         if (rules?.trim() !== "") {
             const prompt = `Based on the details for my golf match, fill out and return the JSON template below with the correct values. Return ONLY the valid JSON object with no explanation.\n\nDetails: ${rules}\n\nJSON Object: ${junkConfig}`;
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an expert in understanding the rules of side games/junk in golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ];
+            
+            const tokens = countTokensForMessages(messages);
+            console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
+            
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an expert in understanding the rules of side games/junk in golf matches and filling out the values for a JSON object with specific keys. Return ONLY the valid JSON object."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
+                messages,
                 temperature: 0.0
             });
 
@@ -1243,18 +1288,24 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
 
         //TODO: If golfers are the same, just copy the config
         const prompt = `Here is a list of golfers who are playing a match. Update this prompt with the names of the golfers playing in this new match. NEVER use "Me" - only EXACT golfer names from the list. Old Golfers: ${JSON.stringify(oldGolfers)}. New Golfers: ${JSON.stringify(golfers)}\nPrompt: ${oldSummary}\n\nIf the original prompt didn't include any of the old golfer names, just return the original prompt.`
+        const messages = [
+            {
+                role: "system",
+                content: "You are an expert in changing prompts to swap in and out names. Swap the names in this prompt and return the new prompt and ONLY the new prompt."
+            },
+            {
+                role: "user",
+                content: prompt
+            }
+        ]
+
+        //TODO: Determine if user has exceeded token length
+        const tokens = countTokensForMessages(messages);
+        console.log(`sending ${tokens} tokens to openai`, userId);
+
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert in changing prompts to swap in and out names. Swap the names in this prompt and return the new prompt and ONLY the new prompt."
-                },
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
+            messages,
             temperature: 0.3
         });
 

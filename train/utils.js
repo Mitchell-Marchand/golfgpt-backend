@@ -191,7 +191,7 @@ async function delay(ms) {
 }
 
 function countTokensForMessages(messages) {
-    const enc = encoding_for_model("gpt-3.5-turbo-1106")
+    const enc = encoding_for_model("gpt-4o")
     let totalTokens = 0;
 
     for (const message of messages) {
