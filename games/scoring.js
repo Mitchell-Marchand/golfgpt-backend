@@ -1670,7 +1670,10 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         }
     }
 
-    //TODO: Somehow return the allMatches without screwing up other functions
+    //Somehow return the allMatches without screwing up other functions?
+    if (allMatches.length > 0 && scorecards.length > 0) {
+        scorecards[0].allMatches = allMatches;
+    }
 
     return scorecards;
 }
