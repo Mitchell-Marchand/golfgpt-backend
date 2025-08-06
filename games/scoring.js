@@ -1671,7 +1671,6 @@ function universalMatchScorer(scorecards, scores, config, answers) {
     }
 
     //TODO: Somehow return the allMatches without screwing up other functions
-    console.log("Matches:", JSON.stringify(allMatches, null, 2));
 
     return scorecards;
 }
