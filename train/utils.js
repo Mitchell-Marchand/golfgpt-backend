@@ -564,7 +564,7 @@ function generateSummary(scorecards, configType, config) {
             if (!isTied(t1Points, t2Points)) {
                 const lead = t1Points > t2Points ? team1 : team2;
                 const diff = Math.abs(t1Points - t2Points);
-                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)": ""} ${through} ${holesPlayed}`;
+                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)" : ""} ${through} ${holesPlayed}`;
             } else {
                 return `Tied ${through} ${holesPlayed}`;
             }
@@ -621,6 +621,38 @@ function generateSummary(scorecards, configType, config) {
     return `Tied through ${holesPlayed}`;
 }
 
+function tallyPlusMinus(scorecards) {
+    let allHolesPlayed = true;
+    for (i = 0; i < scorecards.length; i++) {
+        let plusMinus = 0;
+        let handicap = 0;
+        let points = 0;
+        let golferPlayedAllHoles = true;
+
+        for (j = 0; j < scorecards[i].holes.length; j++) {
+            if (scorecards[i].holes[j].score === 0) {
+                scorecards[i].holes[j].plusMinus = 0;
+                scorecards[i].holes[j].points = 0;
+                golferPlayedAllHoles = false;
+            }
+
+            plusMinus += scorecards[i].holes[j].plusMinus;
+            handicap += scorecards[i].holes[j].strokes;
+            points += scorecards[i].holes[j].points;
+        }
+
+        scorecards[i].plusMinus = plusMinus;
+        scorecards[i].handicap = handicap;
+        scorecards[i].points = points;
+
+        if (allHolesPlayed && !golferPlayedAllHoles) {
+            allHolesPlayed = false;
+        }
+    }
+
+    return { allHolesPlayed, scorecards }
+}
+
 module.exports = {
     getRandomInt,
     buildScorecards,
@@ -644,6 +676,7 @@ module.exports = {
     getPlusMinusSumUpToHole,
     getPointWorthForHole,
     generateSummary,
+    tallyPlusMinus,
     scoringSystemMessage,
     setupSystemMessage
 }

@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const authenticateUser = require('./authMiddleware');
 const OpenAI = require("openai");
 require('dotenv').config();
-const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers, generateSummary, countTokensForMessages } = require('./train/utils')
+const { buildScorecards, blankAnswers, extractJsonBlock, calculateWinPercents, capitalizeWords, addHolesToScorecard, addHolesToAnswers, generateSummary, countTokensForMessages, tallyPlusMinus } = require('./train/utils')
 const { scotchConfig, junkConfig, vegasConfig, wolfConfig, lrmoConfig, ninePointConfig, universalConfig, stablefordConfig } = require("./games/config");
 const { scotch, junk, vegas, wolf, leftRight, ninePoint, banker, universalMatchScorer, stableford } = require("./games/scoring");
 const { applyConfigToScorecards, getQuestionsFromConfig } = require('./train/questionUtils');
@@ -375,7 +375,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
-            
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -402,7 +402,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
-            
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -429,7 +429,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
-            
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -456,7 +456,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
-            
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -512,7 +512,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
-            
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -575,7 +575,7 @@ router.post("/create", authenticateUser, async (req, res) => {
 
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
-            
+
             const rawConfig = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -830,7 +830,11 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
 
-        let allHolesPlayed = true;
+        const result = tallyPlusMinus(scorecards);
+        scorecards = result.scorecards;
+        const allHolesPlayed = result.allHolesPlayed;
+
+        /*let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
             let plusMinus = 0;
             let handicap = 0;
@@ -856,7 +860,7 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
             if (allHolesPlayed && !golferPlayedAllHoles) {
                 allHolesPlayed = false;
             }
-        }
+        }*/
 
         let status = "IN_PROGRESS";
         if (allHolesPlayed) {

@@ -54,7 +54,7 @@ const junkConfig = `{
         teams //true or false (default false) whether or not "fish", or hitting it in the water hazard, is for the whole team 
     },
     birdieStreak: {
-        valid //true or false (default false) if the user says that making a certain number of birdies in a row is worth money
+        valid //true or false (default false) if the user says that making a certain number of birdies in a row is worth money, also referred to as a turkey
         streak //number (default 3) number of birdies in a row necessary to earn money
         value //number (default 0) dollar value of making the birdie streak
         team ///true or false (default false) whether or not birdie streaks are for the team
@@ -70,7 +70,7 @@ const junkConfig = `{
     bogeyStreak: {
         valid //true or false (default false) if the user says that making a certain number of bogeys in a means a player owes money
         streak //number (default 3) number of bogeys in a row necessary to owe money
-        value //number (default 0) dollar value to pay for making the bogey streak
+        value //number (default 0) dollar value to pay for making the bogey streak, always positive
         team ///true or false (default false) whether or not bogey streaks are for the team
         canOverlap //true or false (default true) whether or not bogey streaks can overlap
     },
