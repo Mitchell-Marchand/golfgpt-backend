@@ -1,3 +1,4 @@
+const { config } = require('dotenv');
 const { getTeamTotals, getLowScoreWinners, getTeamScoresOnHole, getTeamsFromAnswers, hasUnplayedHoles, getPlusMinusSumUpToHole, getPointWorthForHole } = require('../train/utils');
 
 function tallyStandardJunk(scorecards, question, holeNumber, teamsWithAnds, golfers, value, isTeam) {
@@ -216,6 +217,10 @@ function trackStreaks(scorecards, config, toPar, teams) {
         let streak = 0;
 
         for (let i = 0; i < golfer.holes.length; i++) {
+            if (golfer.holes[i].score === 0) {
+                continue;
+            }
+            
             const hole = golfer.holes[i];
             const diff = hole.score - hole.par;
 
@@ -306,17 +311,17 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
         scorecards = trackSkins(scorecards, strippedJunk.skins, golfers);
     }
 
-    /*if (strippedJunk.birdieStreak?.valid) {
-        scorecards = trackStreaks(scorecards, strippedJunk.birdieStreak, -1)
+    if (strippedJunk.birdieStreak?.valid) {
+        scorecards = trackStreaks(scorecards, strippedJunk.birdieStreak, -1, teams)
     }
 
     if (strippedJunk.parStreak?.valid) {
-        scorecards = trackStreaks(scorecards, strippedJunk.parStreak, 0)
+        scorecards = trackStreaks(scorecards, strippedJunk.parStreak, 0, teams)
     }
 
     if (strippedJunk.bogeyStreak?.valid) {
-        scorecards = trackStreaks(scorecards, strippedJunk.bogeyStreak, 1)
-    }*/
+        scorecards = trackStreaks(scorecards, strippedJunk.bogeyStreak, 1, teams)
+    }
 
     console.log("scorecards length ended", scorecards?.length);
 
