@@ -1555,7 +1555,7 @@ router.post("/extend", authenticateUser, async (req, res) => {
 
         let newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
 
-        const tallyResult = tallyPlusMinus(scorecards);
+        const tallyResult = tallyPlusMinus(newScorecards);
         newScorecards = tallyResult.scorecards;
 
         newScorecards = calculateWinPercents(newScorecards);
