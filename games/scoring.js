@@ -220,7 +220,7 @@ function trackStreaks(scorecards, config, toPar, teams) {
             if (golfer.holes[i].score === 0) {
                 continue;
             }
-            
+
             const hole = golfer.holes[i];
             const diff = hole.score - hole.par;
 
@@ -238,12 +238,47 @@ function trackStreaks(scorecards, config, toPar, teams) {
 
             // Apply reward/penalty on the hole where the streak is hit
             if (streak === config.streak) {
-                if (toPar === -1 || toPar === 0) {
-                    //TODO: Apply plusMinus based on teams and other golfers
-                    hole.plusMinus = (hole.plusMinus || 0) + config.value;
-                } else if (toPar === 1) {
-                    //TODO: Apply plusMinus based on teams and other golfers
-                    hole.plusMinus = (hole.plusMinus || 0) - Math.abs(config.value);
+                const isPenalty = toPar === 1;
+                const value = Math.abs(config.value);
+
+                if (!config.team) {
+                    // INDIVIDUAL MATCHES
+                    const otherGolfers = scorecards.filter(g => g.name !== golfer.name);
+                    const totalValue = value * otherGolfers.length;
+
+                    for (const other of otherGolfers) {
+                        const otherHole = other.holes[i];
+                        otherHole.plusMinus = (otherHole.plusMinus || 0) + (isPenalty ? value : -value);
+                    }
+
+                    hole.plusMinus = (hole.plusMinus || 0) + (isPenalty ? -totalValue : totalValue);
+
+                } else if (Array.isArray(teams) && teams.length === 2) {
+                    // TEAM MATCHES
+                    const golferTeam = teams.find(team => team.includes(golfer.name))?.split(" & ").map(name => name.trim());
+                    const opponentTeam = teams.find(team => !team.includes(golfer.name))?.split(" & ").map(name => name.trim());
+
+                    if (golferTeam && opponentTeam) {
+                        const totalValue = value * opponentTeam.length;
+
+                        for (const oppName of opponentTeam) {
+                            const opp = scorecards.find(g => g.name === oppName);
+                            if (opp) {
+                                const oppHole = opp.holes[i];
+                                oppHole.plusMinus = (oppHole.plusMinus || 0) + (isPenalty ? value : -value);
+                            }
+                        }
+
+                        const share = totalValue / golferTeam.length;
+
+                        for (const teammateName of golferTeam) {
+                            const teammate = scorecards.find(g => g.name === teammateName);
+                            if (teammate) {
+                                const teammateHole = teammate.holes[i];
+                                teammateHole.plusMinus = (teammateHole.plusMinus || 0) + (isPenalty ? -share : share);
+                            }
+                        }
+                    }
                 }
 
                 if (!config.canOverlap) {
