@@ -1962,7 +1962,7 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
                 type === "match" ? holeByHole.push({ hole: i, points: 1 }) : holeByHole.push({ hole: i, points: (secondTeamScore - firstTeamScore) })
             } else if (firstTeamScore > secondTeamScore) {
                 type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
-                type === "match" ? holeByHole.push({ hole: i, points: -1 }) : holeByHole.push({ hole: i, points: (firstTeamScore - secondTeamScore) })
+                type === "match" ? holeByHole.push({ hole: i, points: -1 }) : holeByHole.push({ hole: i, points: (secondTeamScore - firstTeamScore) })
             } else {
                 type === "match" ? holeByHole.push({ hole: i, points: 0.5 }) : holeByHole.push({ hole: i, points: 0 })
             }
