@@ -572,7 +572,7 @@ router.post("/create", authenticateUser, async (req, res) => {
                     content: prompt
                 }
             ];
-            
+
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
             
@@ -830,6 +830,8 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
         scorecards = calculateWinPercents(scorecards);
+
+        console.log("scorecards", JSON.stringify(scorecards));
 
         let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {

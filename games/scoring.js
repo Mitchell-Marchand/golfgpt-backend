@@ -211,7 +211,7 @@ function trackSkins(scorecards, skinsConfig, golfers) {
     return scorecards;
 }
 
-function trackStreaks(scorecards, config, toPar) {
+function trackStreaks(scorecards, config, toPar, teams) {
     for (const golfer of scorecards) {
         let streak = 0;
 
@@ -234,8 +234,10 @@ function trackStreaks(scorecards, config, toPar) {
             // Apply reward/penalty on the hole where the streak is hit
             if (streak === config.streak) {
                 if (toPar === -1 || toPar === 0) {
+                    //TODO: Apply plusMinus based on teams and other golfers
                     hole.plusMinus = (hole.plusMinus || 0) + config.value;
                 } else if (toPar === 1) {
+                    //TODO: Apply plusMinus based on teams and other golfers
                     hole.plusMinus = (hole.plusMinus || 0) - Math.abs(config.value);
                 }
 
