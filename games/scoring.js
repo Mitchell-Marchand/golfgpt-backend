@@ -248,6 +248,8 @@ function trackStreaks(scorecards, config, toPar) {
 }
 
 function junk(scorecards, answers, strippedJunk, golfers, teams) {
+    console.log("scorecards length started", scorecards?.length);
+
     for (let i = 0; i < scorecards[0].holes.length; i++) {
         const teamsWithAnds = teams || getTeamsFromAnswers(answers[i].answers, golfers);
         const questions = answers.find(obj => obj.hole === scorecards[0].holes[i].holeNumber);
@@ -311,6 +313,8 @@ function junk(scorecards, answers, strippedJunk, golfers, teams) {
     if (strippedJunk.parStreak?.valid) {
         scorecards = trackStreaks(scorecards, strippedJunk.bogeyStreak, 0)
     }
+
+    console.log("scorecards length ended", scorecards?.length);
 
     return scorecards;
 }
