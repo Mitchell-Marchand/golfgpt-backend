@@ -1402,6 +1402,8 @@ function universalMatchScorer(scorecards, scores, config, answers) {
         }
     }
 
+    let allMatches = [];
+
     if (perHoleOrMatch === "hole" || (teams.length !== 2 && !teamsChangeEveryThree && !teamsChangeEverySix)) {
         //Score just like a leftRight or whatever
         if (teams.length === 2 && !(type === "stroke" && perStrokeValue > 0)) {
