@@ -830,9 +830,9 @@ router.post("/score/submit", authenticateUser, async (req, res) => {
 
         scorecards = junk(scorecards, answers, strippedJunk, golfers, config.teams || false);
 
-        const result = tallyPlusMinus(scorecards);
-        scorecards = result.scorecards;
-        const allHolesPlayed = result.allHolesPlayed;
+        const tallyResult = tallyPlusMinus(scorecards);
+        scorecards = tallyResult.scorecards;
+        const allHolesPlayed = tallyResult.allHolesPlayed;
 
         /*let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
@@ -1376,6 +1376,10 @@ router.put("/settings", authenticateUser, async (req, res) => {
             return res.status(403).json({ error: "Error applying settings update" });
         }
 
+        const tallyResult = tallyPlusMinus(scorecards);
+        scorecards = tallyResult.scorecards;
+        scorecards = calculateWinPercents(scorecards);
+
         const summary = generateSummary(scorecards, configType, config);
 
         await mariadbPool.query(
@@ -1462,7 +1466,12 @@ router.post("/remove", authenticateUser, async (req, res) => {
 
         scorecards = applyConfigToScorecards(scorecards, configType, config, strippedJunk, answers, golfers, scores)
 
-        let allHolesPlayed = true;
+        const tallyResult = tallyPlusMinus(scorecards);
+        scorecards = tallyResult.scorecards;
+        scorecards = calculateWinPercents(scorecards);
+        const allHolesPlayed = tallyResult.allHolesPlayed;
+
+        /*let allHolesPlayed = true;
         for (i = 0; i < scorecards.length; i++) {
             let plusMinus = 0;
             let handicap = 0;
@@ -1486,7 +1495,7 @@ router.post("/remove", authenticateUser, async (req, res) => {
             if (allHolesPlayed && !golferPlayedAllHoles) {
                 allHolesPlayed = false;
             }
-        }
+        }*/
 
         let status = "IN_PROGRESS";
         if (allHolesPlayed) {
@@ -1545,6 +1554,10 @@ router.post("/extend", authenticateUser, async (req, res) => {
         }
 
         let newScorecards = addHolesToScorecard(currentScorecards, scorecards, selectedHoles, teesByGolfer);
+
+        const tallyResult = tallyPlusMinus(scorecards);
+        newScorecards = tallyResult.scorecards;
+
         newScorecards = calculateWinPercents(newScorecards);
         const newAnswers = addHolesToAnswers(answers, selectedHoles.length);
         const summary = generateSummary(newScorecards, configType, config);
