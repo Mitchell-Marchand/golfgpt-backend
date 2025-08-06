@@ -245,6 +245,8 @@ function trackStreaks(scorecards, config, toPar) {
             }
         }
     }
+
+    return scorecards;
 }
 
 function junk(scorecards, answers, strippedJunk, golfers, teams) {
