@@ -1773,7 +1773,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             if (differentTeams.length === 2) {
                 teams = [...differentTeams];
             }
-        }
+        } 
 
         const { firstTeamDown, holesRemaining, holeByHole } = getFirstTeamDownInMatch(
             teams,
@@ -1788,6 +1788,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
         );
 
         allMatches[i].holeByHole = holeByHole;
+        allMatches[i].teams = teams;
 
         //console.log("Match", JSON.stringify(allMatches[i], null, 2));
         //console.log(`First team: Up ${firstTeamDown} with ${holesRemaining} to go`);
