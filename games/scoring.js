@@ -1967,7 +1967,7 @@ function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, ty
                 type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
                 type === "match" ? holeByHole.push({ hole: i, points: -1 }) : holeByHole.push({ hole: i, points: (secondTeamScore - firstTeamScore) })
             } else {
-                type === "match" ? holeByHole.push({ hole: i, points: 0.5 }) : holeByHole.push({ hole: i, points: 0 })
+                type === "match" ? holeByHole.push({ hole: i, points: 0 }) : holeByHole.push({ hole: i, points: 0 })
             }
         }
 
