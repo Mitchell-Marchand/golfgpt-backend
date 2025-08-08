@@ -60,6 +60,7 @@ async function hasExceededTokenLimit(userId, tokensToAdd) {
     );
 
     const totalUsed = rows[0].total || 0;
+    console.log("tokens to add", totalUsed)
 
     return (totalUsed + tokensToAdd) > limit;
 }
