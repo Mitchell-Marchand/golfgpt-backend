@@ -48,6 +48,7 @@ async function canUserAccessMatch(matchId, userId) {
 
 async function hasExceededTokenLimit(userId, tokensToAdd) {
     const limit = 30000;
+    console.log("tokens to add", tokensToAdd)
 
     // Sum tokens used in the last 24 hours
     const [rows] = await mariadbPool.query(
@@ -316,7 +317,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             if (rules?.length > 3000) {
                 return res.status(400).json({ error: "Rules too long, please shorten." });
             }
-            
+
             const options = [
                 "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
                 "middle-outside", "king of the hill", "match play", "best ball", "stroke play", "stableford", "quota", "nine point",
