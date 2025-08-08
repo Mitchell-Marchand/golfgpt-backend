@@ -547,10 +547,12 @@ function generateSummary(scorecards, configType, config) {
 
             // Early finish if a side is up by more than holes remaining
             if (leadAbs > holesRemaining) {
-                return `${formatTeam(leaderTeam)} won ${leadAbs} & ${holesRemaining}`;
-            } else {
-                return `${formatTeam(leaderTeam)} ${leaderTeam.length === 1 ? "is" : "are"} up ${leadAbs} ${throughWordMatch} ${holesPlayedInMatch}`;
-            }
+                if (holesRemaining === 0) {
+                  return `${formatTeam(leaderTeam)} won ${leadAbs} up`;
+                } else {
+                  return `${formatTeam(leaderTeam)} won ${leadAbs} & ${holesRemaining}`;
+                }
+              }
         }
     }
 
