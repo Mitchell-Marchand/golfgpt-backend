@@ -102,6 +102,104 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
     }
 });
 
+// GET /api/social/matches/:matchId
+router.get('/matches/:matchId', authenticateUser, async (req, res) => {
+    const userId = req.user.id;
+    const { matchId } = req.params;
+
+    if (!matchId) {
+        return res.status(400).json({ success: false, error: 'matchId is required' });
+    }
+
+    try {
+        // 1) Fetch the match with the same fields your feed returns
+        const [matchRows] = await mariadbPool.query(
+            `
+        SELECT
+          m.id,
+          m.displayName,
+          m.status,
+          m.summary,
+          m.updatedAt,
+          m.createdAt,
+          m.scorecards,
+          m.teeTime,
+          m.golferIds,
+          m.golfers,
+          m.isPublic,
+          c.courseId,
+          c.courseName
+        FROM Matches m
+        LEFT JOIN Courses c ON m.courseId = c.courseId
+        WHERE m.id = ?
+        LIMIT 1
+        `,
+            [matchId]
+        );
+
+        if (!matchRows || matchRows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Match not found' });
+        }
+
+        const row = matchRows[0];
+
+        // 2) Access checks
+        // 2a) Is the requester a participant?
+        const [isPlayerRows] = await mariadbPool.query(
+            `SELECT 1 FROM MatchPlayers WHERE matchId = ? AND userId = ? LIMIT 1`,
+            [matchId, userId]
+        );
+        const isParticipant = isPlayerRows.length > 0;
+
+        // 2b) Does the requester follow ANY participant in this match?
+        const [followsAnyPlayer] = await mariadbPool.query(
+            `
+        SELECT 1
+        FROM Follows f
+        JOIN MatchPlayers mp ON mp.userId = f.followedId
+        WHERE f.followerId = ?
+          AND f.status = 'accepted'
+          AND mp.matchId = ?
+        LIMIT 1
+        `,
+            [userId, matchId]
+        );
+        const followsParticipant = followsAnyPlayer.length > 0;
+
+        const allowed = isParticipant || (row.isPublic === 1 && followsParticipant);
+        if (!allowed) {
+            return res.status(403).json({ success: false, error: 'Not authorized to view this match' });
+        }
+
+        // 3) Shape the payload like your feed
+        const {
+            courseId,
+            courseName,
+            scorecards,
+            golfers,
+            golferIds,
+            isPublic, // eslint-disable-line @typescript-eslint/no-unused-vars
+            ...match
+        } = row;
+
+        const payload = {
+            ...match,
+            scorecards: JSON.parse(scorecards || '[]'),
+            golfers: JSON.parse(golfers || '[]'),
+            golferIds: JSON.parse(golferIds || '[]'),
+            course: {
+                courseId,
+                courseName,
+            },
+        };
+
+        return res.json({ success: true, match: payload });
+    } catch (err) {
+        console.error('Error fetching single social match:', err);
+        return res.status(500).json({ success: false, error: 'Failed to fetch match' });
+    }
+});
+
 router.post('/follow/request', authenticateUser, async (req, res) => {
     const followerId = req.user.id;
     const { userId: followedId } = req.body;
