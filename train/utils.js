@@ -504,55 +504,68 @@ function generateSummary(scorecards, configType, config) {
 
     const formatStat = val => (val % 1 === 0 ? val : val.toFixed(1));
 
-    // NEW: If allMatches exists, use match-play style summary
     const matches = scorecards?.[0]?.allMatches;
     if (Array.isArray(matches) && matches.length > 0) {
-        // Prefer "Overall" original match if present, else first active, else first
         const match =
             matches.find(m => m.original && (m.name?.toLowerCase?.() === "overall")) ||
             matches.find(m => m.active) ||
             matches[0];
 
-        // Map only the holes that actually have scores entered
+        const type = (config?.type || "match").toLowerCase();
         const holesInMatch = (match.endingHole - match.startingHole + 1);
-        const playedInThisMatch = (match.holeByHole || [])
-            .filter(h => playedHoles.includes(h.hole));
-
-        const holesPlayedInMatch = playedInThisMatch.length;
+        const events = (match.holeByHole || []).filter(h => Number.isFinite(h.points));
+        const holesPlayedInMatch = events.length;
+        const holesRemaining = Math.max(0, holesInMatch - holesPlayedInMatch);
         const throughWordMatch = holesPlayedInMatch === holesInMatch ? "after" : "through";
 
-        // lead > 0 => first team leads; lead < 0 => second team leads
-        // Treat any positive points as a hole to Team 1, negative as a hole to Team 2, zero as halved
-        let lead = 0;
-        for (const h of playedInThisMatch) {
-            if (h.points > 0) lead += 1;
-            else if (h.points < 0) lead -= 1;
-            // 0 => halved, no change
-        }
-
-        const teams = parseTeams();
-        // Fallback if teams are not provided; use first two scorecards as teams of one
+        const teams =
+            (config.teams?.map(t => t.split(" & ").map(n => n.trim())) ||
+                scorecards.map(g => [g.name]));
         const team1 = teams[0] || [scorecards[0].name];
         const team2 = teams[1] || [scorecards[1]?.name].filter(Boolean);
+        const formatTeam = (teamArr) => {
+            const golfers = teamArr.map(n => scorecards.find(g => g.name === n)).filter(Boolean);
+            return golfers
+                .map(g => {
+                    const parts = g.name.trim().split(" ");
+                    return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
+                })
+                .join(teamArr.length === 2 ? " and " : ", ");
+        };
+        if (!team2.length) return `Tied ${throughWordMatch} ${holesPlayedInMatch}`;
 
-        // If still no team2 (weird edge case), bail to generic tied text
-        if (!team2.length) return `Tied ${throughWord} ${holesPlayed}`;
-
-        const holesRemaining = holesInMatch - holesPlayedInMatch;
-        if (lead === 0) {
-            return `All square ${throughWordMatch} ${holesPlayedInMatch}`;
+        if (type === "stroke") {
+            // Sum strokes diff directly
+            const leadStrokes = events.reduce((acc, h) => acc + h.points, 0); // + => Team1 ahead
+            if (leadStrokes === 0) {
+                return `Tied ${throughWordMatch} ${holesPlayedInMatch}`;
+            }
+            const leaderTeam = leadStrokes > 0 ? team1 : team2;
+            const abs = Math.abs(leadStrokes);
+            return `${formatTeam(leaderTeam)} ${leaderTeam.length === 1 ? "is" : "are"} up ${abs} (strokes) ${throughWordMatch} ${holesPlayedInMatch}`;
         } else {
+            // Classic match play: count holes only by sign
+            let lead = 0;
+            for (const h of events) {
+                if (h.points > 0) lead += 1;
+                else if (h.points < 0) lead -= 1;
+            }
+
+            if (lead === 0) {
+                return `All square ${throughWordMatch} ${holesPlayedInMatch}`;
+            }
+
             const leaderTeam = lead > 0 ? team1 : team2;
             const leadAbs = Math.abs(lead);
 
-            // Early finish if a side is up by more than holes remaining
+            // Early finish (cannot be caught)
             if (leadAbs > holesRemaining) {
-                if (holesRemaining === 0) {
-                  return `${formatTeam(leaderTeam)} won ${leadAbs} up`;
-                } else {
-                  return `${formatTeam(leaderTeam)} won ${leadAbs} & ${holesRemaining}`;
-                }
-              }
+                return holesRemaining === 0
+                    ? `${formatTeam(leaderTeam)} won ${leadAbs} up`
+                    : `${formatTeam(leaderTeam)} won ${leadAbs} & ${holesRemaining}`;
+            }
+
+            return `${formatTeam(leaderTeam)} ${leaderTeam.length === 1 ? "is" : "are"} up ${leadAbs} ${throughWordMatch} ${holesPlayedInMatch}`;
         }
     }
 
