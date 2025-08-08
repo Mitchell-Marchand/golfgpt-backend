@@ -480,7 +480,7 @@ function generateSummary(scorecards, configType, config) {
     const formatNames = golfers => golfers
         .map(g => {
             const parts = g.name.trim().split(" ");
-            return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
+            return parts.length === 1 ? parts[0] : `${parts[0]}`;
         })
         .join(golfers.length === 2 ? " and " : ", ");
 
