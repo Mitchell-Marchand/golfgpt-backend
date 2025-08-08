@@ -467,14 +467,15 @@ function getPointWorthForHole({
 function generateSummary(scorecards, configType, config) {
     if (!Array.isArray(scorecards) || scorecards.length === 0) return "";
 
-    const holesPlayed = scorecards[0].holes.filter(h =>
-        scorecards.some(g => g.holes.find(x => x.holeNumber === h.holeNumber && x?.score && x.score !== 0))
-    ).length;
+    // Holes with at least one entered score
+    const playedHoles = scorecards[0].holes
+        .filter(h => scorecards.some(g => g.holes.find(x => x.holeNumber === h.holeNumber && x?.score && x.score !== 0)))
+        .map(h => h.holeNumber);
 
+    const holesPlayed = playedHoles.length;
     if (holesPlayed === 0) return "";
 
-    let through = "through";
-    if (holesPlayed === scorecards[0].holes?.length) through = "after";
+    const throughWord = holesPlayed === scorecards[0].holes.length ? "after" : "through";
 
     const formatNames = golfers => golfers
         .map(g => {
@@ -487,7 +488,12 @@ function generateSummary(scorecards, configType, config) {
         g.holes.reduce((sum, h) => sum + (h[key] || 0), 0);
 
     const parseTeams = () =>
-        config.teams?.map(t => t.split(" & ").map(n => n.trim())) || scorecards.map(g => [g.name]);
+        (config.teams?.map(t => t.split(" & ").map(n => n.trim())) || scorecards.map(g => [g.name]));
+
+    const formatTeam = (teamArr) => {
+        const golfers = teamArr.map(n => scorecards.find(g => g.name === n)).filter(Boolean);
+        return formatNames(golfers);
+    };
 
     const isTied = (a, b) => Math.abs(a - b) < 0.001;
 
@@ -498,14 +504,65 @@ function generateSummary(scorecards, configType, config) {
 
     const formatStat = val => (val % 1 === 0 ? val : val.toFixed(1));
 
+    // NEW: If allMatches exists, use match-play style summary
+    const matches = scorecards?.[0]?.allMatches;
+    if (Array.isArray(matches) && matches.length > 0) {
+        // Prefer "Overall" original match if present, else first active, else first
+        const match =
+            matches.find(m => m.original && (m.name?.toLowerCase?.() === "overall")) ||
+            matches.find(m => m.active) ||
+            matches[0];
+
+        // Map only the holes that actually have scores entered
+        const holesInMatch = (match.endingHole - match.startingHole + 1);
+        const playedInThisMatch = (match.holeByHole || [])
+            .filter(h => playedHoles.includes(h.hole));
+
+        const holesPlayedInMatch = playedInThisMatch.length;
+        const throughWordMatch = holesPlayedInMatch === holesInMatch ? "after" : "through";
+
+        // lead > 0 => first team leads; lead < 0 => second team leads
+        // Treat any positive points as a hole to Team 1, negative as a hole to Team 2, zero as halved
+        let lead = 0;
+        for (const h of playedInThisMatch) {
+            if (h.points > 0) lead += 1;
+            else if (h.points < 0) lead -= 1;
+            // 0 => halved, no change
+        }
+
+        const teams = parseTeams();
+        // Fallback if teams are not provided; use first two scorecards as teams of one
+        const team1 = teams[0] || [scorecards[0].name];
+        const team2 = teams[1] || [scorecards[1]?.name].filter(Boolean);
+
+        // If still no team2 (weird edge case), bail to generic tied text
+        if (!team2.length) return `Tied ${throughWord} ${holesPlayed}`;
+
+        const holesRemaining = holesInMatch - holesPlayedInMatch;
+        if (lead === 0) {
+            return `All square ${throughWordMatch} ${holesPlayedInMatch}`;
+        } else {
+            const leaderTeam = lead > 0 ? team1 : team2;
+            const leadAbs = Math.abs(lead);
+
+            // Early finish if a side is up by more than holes remaining
+            if (leadAbs > holesRemaining) {
+                return `${formatTeam(leaderTeam)} won ${leadAbs} & ${holesRemaining}`;
+            } else {
+                return `${formatTeam(leaderTeam)} ${leaderTeam.length === 1 ? "is" : "are"} up ${leadAbs} ${throughWordMatch} ${holesPlayedInMatch}`;
+            }
+        }
+    }
+
+    // === Existing logic (money/points/stroke/etc.) ===
     const moneyGames = ["scotch", "umbrella", "bridge", "vegas", "daytona", "wolf", "left-right", "middle-outside", "flip wolf", "king of the hill", "banker"];
     if (moneyGames.includes(configType)) {
         const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
         const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
         if (maxMoney !== 0 && leaders.length < scorecards.length) {
-            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${through} ${holesPlayed}`;
+            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${throughWord} ${holesPlayed}`;
         } else {
-            return `Tied ${through} ${holesPlayed}`;
+            return `Tied ${throughWord} ${holesPlayed}`;
         }
     }
 
@@ -517,9 +574,9 @@ function generateSummary(scorecards, configType, config) {
         const leaders = scorecards.filter(g => getTotal(g, stat) === maxStat);
         if (maxStat !== 0 && leaders.length < scorecards.length) {
             const display = byMoney ? dollar(maxStat) : `${formatStat(maxStat)} pts`;
-            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} ${through} ${holesPlayed}`;
+            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} ${throughWord} ${holesPlayed}`;
         } else {
-            return `Tied ${through} ${holesPlayed}`;
+            return `Tied ${throughWord} ${holesPlayed}`;
         }
     }
 
@@ -547,7 +604,7 @@ function generateSummary(scorecards, configType, config) {
                 const teamScore = team =>
                     team.map(name => {
                         const s = scores.find(s => s.name === name);
-                        return (s.score || 0) - (s.strokes || 0);
+                        return (s?.score || 0) - (s?.strokes || 0);
                     });
 
                 const t1 = teamScore(team1);
@@ -564,9 +621,9 @@ function generateSummary(scorecards, configType, config) {
             if (!isTied(t1Points, t2Points)) {
                 const lead = t1Points > t2Points ? team1 : team2;
                 const diff = Math.abs(t1Points - t2Points);
-                return `${formatNames(lead.map(name => scorecards.find(g => g.name === name)))} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)" : ""} ${through} ${holesPlayed}`;
+                return `${formatTeam(lead)} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)" : ""} ${throughWord} ${holesPlayed}`;
             } else {
-                return `Tied ${through} ${holesPlayed}`;
+                return `Tied ${throughWord} ${holesPlayed}`;
             }
         }
 
@@ -585,7 +642,7 @@ function generateSummary(scorecards, configType, config) {
                     const parts = n.name.trim().split(" ");
                     return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}`;
                 });
-                return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} ${through} ${holesPlayed}`;
+                return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} ${throughWord} ${holesPlayed}`;
             }
         }
 
@@ -593,13 +650,14 @@ function generateSummary(scorecards, configType, config) {
             const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
             const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
             if (maxMoney !== 0 && leaders.length < scorecards.length) {
-                return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${through} ${holesPlayed}`;
+                return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${throughWord} ${holesPlayed}`;
             } else {
-                return `Tied ${through} ${holesPlayed}`;
+                return `Tied ${throughWord} ${holesPlayed}`;
             }
         }
     }
 
+    // Fallback: lowest net leader(s)
     const netScores = scorecards.map(g => ({
         name: g.name,
         net: g.holes.reduce((sum, h) => sum + ((h.score || 0) - (h.strokes || 0)), 0),
