@@ -46,6 +46,30 @@ async function canUserAccessMatch(matchId, userId) {
     }
 }
 
+async function hasExceededTokenLimit(userId, tokensToAdd) {
+    const limit = 30000;
+
+    // Sum tokens used in the last 24 hours
+    const [rows] = await mariadbPool.query(
+        `SELECT COALESCE(SUM(tokens), 0) AS total
+         FROM TokenUsage
+         WHERE userId = ?
+           AND createdAt >= (NOW() - INTERVAL 1 DAY)`,
+        [userId]
+    );
+
+    const totalUsed = rows[0].total || 0;
+
+    return (totalUsed + tokensToAdd) > limit;
+}
+
+async function logTokenUsage(userId, tokens) {
+    await mariadbPool.query(
+        `INSERT INTO TokenUsage (id, userId, tokens) VALUES (UUID(), ?, ?)`,
+        [userId, tokens]
+    );
+}
+
 /*function generateSummary(scorecards) {
     if (!Array.isArray(scorecards) || scorecards.length === 0) return "";
 
@@ -289,6 +313,10 @@ router.post("/create", authenticateUser, async (req, res) => {
         //Step 1: Determine game type
         let raw = "stroke play";
         if (rules?.trim() !== "") {
+            if (rules?.length > 3000) {
+                return res.status(400).json({ error: "Rules too long, please shorten." });
+            }
+            
             const options = [
                 "scotch", "bridge", "umbrella", "wolf", "flip wolf", "vegas", "daytona", "banker", "left-right",
                 "middle-outside", "king of the hill", "match play", "best ball", "stroke play", "stableford", "quota", "nine point",
@@ -309,6 +337,14 @@ router.post("/create", authenticateUser, async (req, res) => {
             const tokens = countTokensForMessages(messages);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
+            if (await hasExceededTokenLimit(req.user.id, tokens)) {
+                return res.status(429).json({
+                    error: "Daily token limit reached. Please try again later."
+                });
+            }
+
+            await logTokenUsage(req.user.id, tokens);
+
             const gameType = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages,
@@ -316,10 +352,10 @@ router.post("/create", authenticateUser, async (req, res) => {
             });
 
             raw = gameType.choices[0].message.content.trim().replaceAll(`"`, ``);
-        } else if (rules?.length > 3000) {
-            return res.status(400).json({ error: "Rules too long, please shorten." });
-        } else {
-            //TODO: Rate limit user somehow
+        } else if (await hasExceededTokenLimit(req.user.id, 0)) {
+            return res.status(429).json({
+                error: "Daily token limit reached. Please try again later."
+            });
         }
 
         let config;
@@ -374,6 +410,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -401,6 +438,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -428,6 +466,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -455,6 +494,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -482,6 +522,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -511,6 +552,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -538,6 +580,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -574,6 +617,7 @@ router.post("/create", authenticateUser, async (req, res) => {
             ];
 
             const tokens = countTokensForMessages(messages);
+            await logTokenUsage(req.user.id, tokens);
             console.log(`sending ${tokens} tokens to openai`, req?.user?.id);
 
             const rawConfig = await openai.chat.completions.create({
@@ -1305,9 +1349,17 @@ router.post("/matches/copy-setup", authenticateUser, async (req, res) => {
             }
         ]
 
-        //TODO: Determine if user has exceeded token length
+        //Determine if user has exceeded token length
         const tokens = countTokensForMessages(messages);
         console.log(`sending ${tokens} tokens to openai`, userId);
+
+        if (await hasExceededTokenLimit(req.user.id, tokens)) {
+            return res.status(429).json({
+                error: "Daily token limit reached. Please try again later."
+            });
+        }
+
+        await logTokenUsage(req.user.id, tokens);
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
