@@ -48,7 +48,6 @@ async function canUserAccessMatch(matchId, userId) {
 
 async function hasExceededTokenLimit(userId, tokensToAdd) {
     const limit = 30000;
-    console.log("tokens to add", tokensToAdd)
 
     // Sum tokens used in the last 24 hours
     const [rows] = await mariadbPool.query(
@@ -59,11 +58,10 @@ async function hasExceededTokenLimit(userId, tokensToAdd) {
         [userId]
     );
 
-    const totalUsed = rows[0].total || 0;
-    console.log("tokens to add", totalUsed)
-    console.log("returning", (totalUsed + tokensToAdd), limit, (totalUsed + tokensToAdd) > limit)
+    const totalUsed = Number(rows[0].total || 0); // force to number
+    const tokensNow = Number(tokensToAdd);        // force to number
 
-    return (totalUsed + tokensToAdd) > limit;
+    return (totalUsed + tokensNow) > limit;
 }
 
 async function logTokenUsage(userId, tokens) {
