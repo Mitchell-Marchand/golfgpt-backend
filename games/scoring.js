@@ -812,7 +812,7 @@ function wolf(scorecards, scores, config, answers) {
 
         const priorTotals = scorecards.map(p => ({
             name: p.name,
-            total: getPriorPlusMinus(p, currentHole),
+            total: getPriorPlusMinus(p, holeNumber),
         }));
 
         const matchTied = priorTotals.reduce((sum, p) => sum + p.total, 0) === 0;
