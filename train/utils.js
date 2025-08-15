@@ -552,7 +552,11 @@ function generateSummary(scorecards, configType, config) {
             }
 
             if (lead === 0) {
-                return `All square ${throughWordMatch} ${holesPlayedInMatch}`;
+                if (holesPlayedInMatch > 0) {
+                    return `All square ${throughWordMatch} ${holesPlayedInMatch}`;
+                } else {
+                    return `All square`;
+                }
             }
 
             const leaderTeam = lead > 0 ? team1 : team2;
