@@ -1773,7 +1773,7 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
             if (differentTeams.length === 2) {
                 teams = [...differentTeams];
             }
-        } 
+        }
 
         const { firstTeamDown, holesRemaining, holeByHole } = getFirstTeamDownInMatch(
             teams,
@@ -1904,109 +1904,143 @@ function trackMatchStatuses(scorecards, answers, teams, matches, matchValue, car
     return { scorecards, allMatches };
 }
 
-function getFirstTeamDownInMatch(teams, scorecards, startingHole, endingHole, type, combinedScore, stableford, stablefordPoints, stablefordQuota) {
-    const teamsArrays = teams.map(team => team.split(' & '));
+function getFirstTeamDownInMatch(
+    teams,
+    scorecards,
+    startingHole,
+    endingHole,
+    type,                // "match" or "stroke"
+    combinedScore,       // true = use combined (sum), false = best ball (min)
+    stableford,
+    stablefordPoints,
+    stablefordQuota
+) {
+    const norm = s => (s ?? "").trim().toLowerCase();
+
+    // Build normalized team rosters as Sets for O(1) membership checks
+    const teamSets = teams.map(teamStr => {
+        // teams can be like "A & B" or just "A" for 1v1
+        return new Set(teamStr.split(" & ").map(n => norm(n)));
+    });
+
     const holeByHole = [];
     let firstTeamPoints = 0;
     let holesRemaining = endingHole - startingHole + 1;
 
-    for (let i = startingHole; i <= endingHole; i++) {
+    for (let holeNum = startingHole; holeNum <= endingHole; holeNum++) {
         const firstTeamScores = [];
         const secondTeamScores = [];
 
         for (let j = 0; j < scorecards.length; j++) {
-            const playerHole = scorecards[j].holes.find(h => h.holeNumber === i);
-            const netScore = playerHole.score - playerHole.strokes;
-            const toPar = playerHole.score - playerHole.strokes - playerHole.par;
+            const g = scorecards[j];
+            // Find the hole by holeNumber (array order is not guaranteed)
+            const playerHole = g.holes.find(h => h.holeNumber === holeNum);
+            if (!playerHole || !Number.isFinite(playerHole.score) || playerHole.score <= 0) {
+                continue; // no score entered for this player on this hole
+            }
 
-            if (playerHole.score > 0) {
-                if (!stableford) {
-                    if (teamsArrays[0].includes(scorecards[j].name)) {
-                        firstTeamScores.push(combinedScore ? toPar : netScore);
-                    } else {
-                        secondTeamScores.push(combinedScore ? toPar : netScore);
-                    }
-                } else {
-                    let points = stablefordPoints.par;
-                    if (toPar === -1) {
-                        points = stablefordPoints.birdie;
-                    } else if (toPar === -2) {
-                        points = stablefordPoints.eagle;
-                    } else if (toPar <= -3) {
-                        points = stablefordPoints.albatross;
-                    } else if (toPar === 1) {
-                        points = stablefordPoints.bogey;
-                    } else if (toPar >= 2) {
-                        points = stablefordPoints.double;
-                    }
+            const netScore = (playerHole.score || 0) - (playerHole.strokes || 0);
+            const toPar = netScore - (playerHole.par || 0);
 
-                    playerHole.points = points;
-                    if (teamsArrays[0].includes(scorecards[j].name)) {
-                        firstTeamScores.push(points * -1);
-                    } else {
-                        secondTeamScores.push(points * -1);
-                    }
-                }
+            const isFirstTeam = teamSets[0].has(norm(g.name));
+
+            if (!stableford) {
+                // Best ball uses netScore (or toPar if combinedScore flag is meant for that mode)
+                const value = combinedScore ? toPar : netScore;
+                if (isFirstTeam) firstTeamScores.push(value);
+                else secondTeamScores.push(value);
+            } else {
+                // Stableford points (higher is better). Convert to “lower is better” by multiplying by -1
+                let points = stablefordPoints?.par ?? 0;
+                if (toPar === -1) points = stablefordPoints?.birdie ?? points;
+                else if (toPar === -2) points = stablefordPoints?.eagle ?? points;
+                else if (toPar <= -3) points = stablefordPoints?.albatross ?? points;
+                else if (toPar === 1) points = stablefordPoints?.bogey ?? points;
+                else if (toPar >= 2) points = stablefordPoints?.double ?? points;
+
+                // persist per-hole points if you rely on them later
+                playerHole.points = points;
+
+                const value = -points; // invert so “lower is better” like strokes
+                if (isFirstTeam) firstTeamScores.push(value);
+                else secondTeamScores.push(value);
             }
         }
 
+        // Need at least one valid score from each side
         if (firstTeamScores.length === 0 || secondTeamScores.length === 0) {
             continue;
         } else {
             holesRemaining--;
         }
 
-        let firstTeamScore = combinedScore ? Math.sum(...firstTeamScores) : Math.min(...firstTeamScores);
-        let secondTeamScore = combinedScore ? Math.sum(...secondTeamScores) : Math.min(...secondTeamScores);
+        // Best ball (min) or combined (sum)
+        const agg = (arr, combine) =>
+            combine ? arr.reduce((a, b) => a + b, 0) : Math.min(...arr);
+
+        const firstTeamScore = agg(firstTeamScores, combinedScore);
+        const secondTeamScore = agg(secondTeamScores, combinedScore);
 
         if (!stablefordQuota) {
             if (firstTeamScore < secondTeamScore) {
-                type === "match" ? firstTeamPoints++ : firstTeamPoints += (secondTeamScore - firstTeamScore);
-                type === "match" ? holeByHole.push({ hole: i, points: 1 }) : holeByHole.push({ hole: i, points: (secondTeamScore - firstTeamScore) })
+                if (type === "match") {
+                    firstTeamPoints += 1;
+                    holeByHole.push({ hole: holeNum, points: 1 });
+                } else {
+                    const diff = (secondTeamScore - firstTeamScore);
+                    firstTeamPoints += diff;
+                    holeByHole.push({ hole: holeNum, points: diff });
+                }
             } else if (firstTeamScore > secondTeamScore) {
-                type === "match" ? firstTeamPoints-- : firstTeamPoints -= (firstTeamScore - secondTeamScore);
-                type === "match" ? holeByHole.push({ hole: i, points: -1 }) : holeByHole.push({ hole: i, points: (secondTeamScore - firstTeamScore) })
+                if (type === "match") {
+                    firstTeamPoints -= 1;
+                    holeByHole.push({ hole: holeNum, points: -1 });
+                } else {
+                    const diff = (firstTeamScore - secondTeamScore);
+                    firstTeamPoints -= diff;
+                    // keep sign convention: negative means team 2 ahead
+                    holeByHole.push({ hole: holeNum, points: -diff });
+                }
             } else {
-                type === "match" ? holeByHole.push({ hole: i, points: 0 }) : holeByHole.push({ hole: i, points: 0 })
+                holeByHole.push({ hole: holeNum, points: 0 });
             }
         }
 
+        // Early finish for match play
         if (type === "match" && Math.abs(firstTeamPoints) > holesRemaining) {
             break;
         }
     }
 
     if (stablefordQuota) {
+        // Compute team quota totals
         let firstTeamQuotaPoints = 0;
         let secondTeamQuotaPoints = 0;
 
-        for (let i = 0; i < scorecards?.length; i++) {
-            let isFirstTeam = true;
-            if (teamsArrays[0].includes(scorecards[i].name)) {
-                firstTeamQuotaPoints += ((scorecards[i].holes.length * 2) - scorecards[i].handicap);
-            } else {
-                isFirstTeam = false;
-                secondTeamQuotaPoints += ((scorecards[i].holes.length * 2) - scorecards[i].handicap);
-            }
+        for (let i = 0; i < scorecards.length; i++) {
+            const g = scorecards[i];
+            const isFirstTeam = teamSets[0].has(norm(g.name));
 
-            for (let j = startingHole; j <= endingHole; j++) {
-                if (isFirstTeam) {
-                    firstTeamQuotaPoints += (36 - scorecards[i].holes[j].points);
-                } else {
-                    secondTeamQuotaPoints += (36 - scorecards[i].holes[j].points);
-                }
+            // Base quota: (holes * 2) - handicap
+            const base = (g.holes.length * 2) - (g.handicap || 0);
+            if (isFirstTeam) firstTeamQuotaPoints += base;
+            else secondTeamQuotaPoints += base;
+
+            for (let holeNum = startingHole; holeNum <= endingHole; holeNum++) {
+                const h = g.holes.find(hh => hh.holeNumber === holeNum);
+                const pts = h?.points ?? 0; // should have been set above
+                const add = 36 - pts;
+                if (isFirstTeam) firstTeamQuotaPoints += add;
+                else secondTeamQuotaPoints += add;
             }
         }
 
         firstTeamPoints = 0;
-        if (firstTeamQuotaPoints > secondTeamQuotaPoints) {
-            firstTeamPoints = 1;
-        } else if (secondTeamQuotaPoints > firstTeamQuotaPoints) {
-            firstTeamPoints = -1;
-        }
+        if (firstTeamQuotaPoints > secondTeamQuotaPoints) firstTeamPoints = 1;
+        else if (secondTeamQuotaPoints > firstTeamQuotaPoints) firstTeamPoints = -1;
     }
 
-    return { firstTeamDown: firstTeamPoints, holesRemaining, holeByHole }
+    return { firstTeamDown: firstTeamPoints, holesRemaining, holeByHole };
 }
 
 function stableford(scorecards, scores, config, answers) {
