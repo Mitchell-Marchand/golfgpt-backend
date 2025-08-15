@@ -86,6 +86,7 @@ router.get('/matches/feed', authenticateUser, async (req, res) => {
                 course: {
                     courseId,
                     courseName,
+                    FullName: courseName
                 },
             };
         });
@@ -190,6 +191,7 @@ router.get('/matches/:matchId', authenticateUser, async (req, res) => {
             course: {
                 courseId,
                 courseName,
+                FullName: courseName
             },
         };
 
