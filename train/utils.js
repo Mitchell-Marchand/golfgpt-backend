@@ -508,7 +508,7 @@ function generateSummary(scorecards, configType, config) {
     const formatStat = val => (val % 1 === 0 ? val : val.toFixed(1));
 
     const matches = scorecards?.[0]?.allMatches;
-    if (Array.isArray(matches) && matches.length > 0) {
+    if (Array.isArray(matches) && matches.length > 0 && matches[0].name?.toLowerCase?.() === "overall") {
         const match =
             matches.find(m => m.original && (m.name?.toLowerCase?.() === "overall")) ||
             matches.find(m => m.active) ||
