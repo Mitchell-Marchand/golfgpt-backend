@@ -476,6 +476,8 @@ function generateSummary(scorecards, configType, config) {
     if (holesPlayed === 0) return "";
 
     const throughWord = holesPlayed === scorecards[0].holes.length ? "after" : "through";
+    const norm = s => (s ?? "").trim().toLowerCase();
+    const findGolfer = (name) => scorecards.find(g => norm(g.name) === norm(name));
 
     const formatNames = golfers => golfers
         .map(g => {
@@ -488,10 +490,10 @@ function generateSummary(scorecards, configType, config) {
         g.holes.reduce((sum, h) => sum + (h[key] || 0), 0);
 
     const parseTeams = () =>
-        (config.teams?.map(t => t.split(" & ").map(n => n.trim())) || scorecards.map(g => [g.name]));
+        (config.teams?.map(t => t.split(" & ").map(n => n.trim())) || scorecards.map(g => [g.name.trim()]));
 
     const formatTeam = (teamArr) => {
-        const golfers = teamArr.map(n => scorecards.find(g => g.name === n)).filter(Boolean);
+        const golfers = teamArr.map(n => findGolfer(n)).filter(Boolean);
         return formatNames(golfers);
     };
 
@@ -524,7 +526,7 @@ function generateSummary(scorecards, configType, config) {
         const team1 = teams[0] || [scorecards[0].name];
         const team2 = teams[1] || [scorecards[1]?.name].filter(Boolean);
         const formatTeam = (teamArr) => {
-            const golfers = teamArr.map(n => scorecards.find(g => g.name === n)).filter(Boolean);
+            const golfers = teamArr.map(n => findGolfer(n)).filter(Boolean);
             return golfers
                 .map(g => {
                     const parts = g.name.trim().split(" ");
@@ -622,7 +624,7 @@ function generateSummary(scorecards, configType, config) {
 
                 const teamScore = team =>
                     team.map(name => {
-                        const s = scores.find(s => s.name === name);
+                        const s = scores.find(s => norm(s.name) === norm(name)); // was s.name === name
                         return (s?.score || 0) - (s?.strokes || 0);
                     });
 
