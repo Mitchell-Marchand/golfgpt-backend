@@ -476,6 +476,7 @@ function generateSummary(scorecards, configType, config) {
     if (holesPlayed === 0) return "";
 
     const throughWord = holesPlayed === scorecards[0].holes.length ? "after" : "through";
+    const showThrough = (count, word) => (count > 0 ? `${word} ${count}` : "");
     const norm = s => (s ?? "").trim().toLowerCase();
     const findGolfer = (name) => scorecards.find(g => norm(g.name) === norm(name));
 
@@ -522,7 +523,7 @@ function generateSummary(scorecards, configType, config) {
 
         const teams =
             (config.teams?.map(t => t.split(" & ").map(n => n.trim())) ||
-                scorecards.map(g => [g.name]));
+                scorecards.map(g => [g.name.trim()]));
         const team1 = teams[0] || [scorecards[0].name];
         const team2 = teams[1] || [scorecards[1]?.name].filter(Boolean);
         const formatTeam = (teamArr) => {
@@ -534,13 +535,17 @@ function generateSummary(scorecards, configType, config) {
                 })
                 .join(teamArr.length === 2 ? " and " : ", ");
         };
-        if (!team2.length) return `Tied ${throughWordMatch} ${holesPlayedInMatch}`;
+        if (!team2.length) {
+            const tail = showThrough(holesPlayedInMatch, throughWordMatch);
+            return tail ? `All square ${tail}` : `All square`;
+        }
 
         if (type === "stroke") {
             // Sum strokes diff directly
             const leadStrokes = events.reduce((acc, h) => acc + h.points, 0); // + => Team1 ahead
             if (leadStrokes === 0) {
-                return `Tied ${throughWordMatch} ${holesPlayedInMatch}`;
+                const tail = showThrough(holesPlayedInMatch, throughWordMatch);
+                return tail ? `Tied ${tail}` : `Tied`;
             }
             const leaderTeam = leadStrokes > 0 ? team1 : team2;
             const abs = Math.abs(leadStrokes);
@@ -554,11 +559,8 @@ function generateSummary(scorecards, configType, config) {
             }
 
             if (lead === 0) {
-                if (holesPlayedInMatch > 0) {
-                    return `All square ${throughWordMatch} ${holesPlayedInMatch}`;
-                } else {
-                    return `All square`;
-                }
+                const tail = showThrough(holesPlayedInMatch, throughWordMatch);
+                return tail ? `All square ${tail}` : `All square`;
             }
 
             const leaderTeam = lead > 0 ? team1 : team2;
@@ -571,7 +573,7 @@ function generateSummary(scorecards, configType, config) {
                     : `${formatTeam(leaderTeam)} won ${leadAbs} & ${holesRemaining}`;
             }
 
-            return `${formatTeam(leaderTeam)} ${leaderTeam.length === 1 ? "is" : "are"} up ${leadAbs} ${throughWordMatch} ${holesPlayedInMatch}`;
+            return `${formatTeam(leaderTeam)} ${leaderTeam.length === 1 ? "is" : "are"} up ${leadAbs} ${showThrough(holesPlayedInMatch, throughWordMatch)}`.trim();
         }
     }
 
@@ -644,7 +646,9 @@ function generateSummary(scorecards, configType, config) {
                 const diff = Math.abs(t1Points - t2Points);
                 return `${formatTeam(lead)} ${lead.length === 1 ? "is" : "are"} up ${formatStat(diff)}${type === "stroke" ? " (strokes)" : ""} ${throughWord} ${holesPlayed}`;
             } else {
-                return `Tied ${throughWord} ${holesPlayed}`;
+                const tail = showThrough(holesPlayed, throughWord);
+                if (type !== "stroke") return tail ? `All square ${tail}` : `All square`;
+                return tail ? `Tied ${tail}` : `Tied`;
             }
         }
 
@@ -697,7 +701,8 @@ function generateSummary(scorecards, configType, config) {
         return `${names.join(" and ")} ${names.length === 1 ? "is" : "are"} up${label} through ${holesPlayed}`;
     }
 
-    return `Tied through ${holesPlayed}`;
+    const tail = showThrough(holesPlayed, throughWord);
+    return tail ? `Tied ${tail}` : `Tied`;
 }
 
 function tallyPlusMinus(scorecards) {
