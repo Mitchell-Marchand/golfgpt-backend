@@ -1117,7 +1117,7 @@ router.post("/golfers/update", authenticateUser, async (req, res) => {
         }
 
         const displayName = rows[0].displayName;
-        const oldIds = JSON.parse(rows[0]?.golfers || "[]");
+        const oldIds = JSON.parse(rows[0]?.golferIds || "[]");
         const newIds = golferIds.filter(id => !oldIds.includes(id));
 
         for (let i = 0; i < newIds.length; i++) {
