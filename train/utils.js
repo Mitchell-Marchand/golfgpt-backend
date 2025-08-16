@@ -589,17 +589,46 @@ function generateSummary(scorecards, configType, config) {
         }
     }
 
+    // With this corrected version:
     if (["nine point", "stableford", "quota"].includes(configType)) {
         const pointVal = config.pointVal || config.perPointValue || 0;
         const byMoney = pointVal > 0;
-        const stat = byMoney ? "plusMinus" : "points";
-        const maxStat = Math.max(...scorecards.map(g => getTotal(g, stat)));
-        const leaders = scorecards.filter(g => getTotal(g, stat) === maxStat);
-        if (maxStat !== 0 && leaders.length < scorecards.length) {
-            const display = byMoney ? dollar(maxStat) : `${formatStat(maxStat)} pts`;
-            return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${display} ${throughWord} ${holesPlayed}`;
-        } else {
+
+        if (byMoney) {
+            // same as before: compare plusMinus (money)
+            const maxMoney = Math.max(...scorecards.map(g => getTotal(g, "plusMinus")));
+            const leaders = scorecards.filter(g => getTotal(g, "plusMinus") === maxMoney);
+            if (maxMoney !== 0 && leaders.length < scorecards.length) {
+                return `${formatNames(leaders)} ${leaders.length === 1 ? "is" : "are"} up ${dollar(maxMoney)} ${throughWord} ${holesPlayed}`;
+            }
             return `Tied ${throughWord} ${holesPlayed}`;
+        } else {
+            // NEW: compare point *margin* over the runner-up
+            const totals = scorecards.map(g => ({ g, pts: getTotal(g, "points") }));
+            // sort high -> low
+            totals.sort((a, b) => b.pts - a.pts);
+
+            if (totals.length === 0) return "";
+            if (totals.length === 1) {
+                // Only one player with any points — call it tied unless they actually have > 0?
+                return totals[0].pts > 0
+                    ? `${formatNames([totals[0].g])} is up ${formatStat(totals[0].pts)} points ${throughWord} ${holesPlayed}`
+                    : `Tied ${throughWord} ${holesPlayed}`;
+            }
+
+            const top = totals[0];
+            const second = totals[1];
+
+            // Tie for the lead -> tied summary
+            if (Math.abs(top.pts - second.pts) < 0.001) {
+                return `Tied ${throughWord} ${holesPlayed}`;
+            }
+
+            const diff = top.pts - second.pts; // positive
+            const leaderName = formatNames([top.g]);
+            const label = Math.abs(diff) === 1 ? "point" : "points";
+
+            return `${leaderName} is up ${formatStat(diff)} ${label} ${throughWord} ${holesPlayed}`;
         }
     }
 
